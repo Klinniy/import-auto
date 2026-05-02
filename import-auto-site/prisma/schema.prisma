@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum CarStatus {
+  DRAFT
+  ACTIVE
+  RESERVED
+  SOLD
+  HIDDEN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  phone        String?
+  city         String?
+  role         UserRole @default(CLIENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  requests     Request[]
+}
+
+model Market {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  cars        Car[]
+}
+
+model Car {
+  id            String    @id @default(cuid())
+  marketId      String
+  country       String
+  brand         String
+  model         String
+  year          Int?
+  mileage       Int?
+  engine        String?
+  drive         String?
+  transmission  String?
+  grade         String?
+  source        String?
+  lot           String?
+  foreignPrice  String?
+  totalPriceRub Int?
+  imageUrl      String?
+  status        CarStatus @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  market        Market    @relation(fields: [marketId], references: [id])
+  requests      Request[]
+}
+
+model Request {
+  id        String   @id @default(cuid())
+  userId    String?
+  carId     String?
+  name      String
+  contact   String
+  country   String?
+  message   String?
+  budgetRub Int?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
+  car       Car?     @relation(fields: [carId], references: [id])
+}
