@@ -1,0 +1,1406 @@
+{
+  "generated": "2026-06-25T10:13:04.926Z",
+  "note": "AJES API full access check",
+  "results": {
+    "auctions_limit_5": {
+      "type": "sql",
+      "query": "select * from main limit 5",
+      "status": 200,
+      "ms": 73,
+      "rows": 5,
+      "data": [
+        {
+          "ID": "8B6qeaorbCtaQtT",
+          "LOT": "23452",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-25 16:29:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "207",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "VOXY",
+          "YEAR": "2015",
+          "TOWN": "",
+          "ENG_V": "1800",
+          "PW": "99",
+          "KUZOV": "ZWR80G",
+          "GRADE": "HV V ",
+          "COLOR": "PEARL",
+          "KPP": "AT",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "72000",
+          "EQUIP": "",
+          "RATE": "3.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "not sold",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "1284000",
+          "AVG_STRING": "1493,1385,1221,1038",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXxZ07FrcLatY-8B6qeaorbCtaQtT-7&h=50#https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXxZ07FrcLatY-8B6qeaorbCtaQtT-7&h=50"
+        },
+        {
+          "ID": "8B6Sk17Ss7M2kqe",
+          "LOT": "23453",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-25 16:29:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "9580",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "AQUA",
+          "YEAR": "2016",
+          "TOWN": "",
+          "ENG_V": "1500",
+          "PW": "74",
+          "KUZOV": "NHP10",
+          "GRADE": "S STYLE BLACK ",
+          "COLOR": "PEARL",
+          "KPP": "FA",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "78000",
+          "EQUIP": "",
+          "RATE": "4.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "593000",
+          "AVG_STRING": "699,725,785,755,490,604,695,595,665,665",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXy3VxrMWBkmX-8B6Sk17Ss7M2kqe-7&h=50#https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXy3VxrMWBkmX-8B6Sk17Ss7M2kqe-7&h=50"
+        },
+        {
+          "ID": "8B7kpPPjIB5ROmz",
+          "LOT": "23454",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-25 16:29:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "25",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "CAMRY",
+          "YEAR": "2017",
+          "TOWN": "",
+          "ENG_V": "2500",
+          "PW": "178",
+          "KUZOV": "AXVH70",
+          "GRADE": "G ",
+          "COLOR": "PEARL",
+          "KPP": "FA",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "115000",
+          "EQUIP": "",
+          "RATE": "4",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "1329000",
+          "AVG_STRING": "1540,1485,1280,1175,1353,1586,1055,1530,1640,1320",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXy7HYe9GrufW-8B7kpPPjIB5ROmz-7&h=50#https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXy7HYe9GrufW-8B7kpPPjIB5ROmz-7&h=50"
+        },
+        {
+          "ID": "8B7MvFxKZ6nIiiU",
+          "LOT": "23455",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-25 16:30:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "42692",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "CROWN SPORT",
+          "YEAR": "2025",
+          "TOWN": "",
+          "ENG_V": "2500",
+          "PW": "186",
+          "KUZOV": "AZSH36W",
+          "GRADE": "SPORT Z HEV  AWD 4WD",
+          "COLOR": "PEARL",
+          "KPP": "FA",
+          "KPP_TYPE": "2",
+          "PRIV": "FULLTIME4WD",
+          "MILEAGE": "3000",
+          "EQUIP": "",
+          "RATE": "4.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "4674000",
+          "AVG_STRING": "5060,4720,4653,4650,4689,4355,4400,4703,5222,4364",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXyaup1uqhE9V-8B7MvFxKZ6nIiiU-7&h=50#https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXyaup1uqhE9V-8B7MvFxKZ6nIiiU-7&h=50"
+        },
+        {
+          "ID": "8B8eBvgcfzGyMff",
+          "LOT": "23456",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-25 16:30:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "5",
+          "MODEL_ID": "10853",
+          "MARKA_NAME": "HONDA",
+          "MODEL_NAME": "VEZEL",
+          "YEAR": "2016",
+          "TOWN": "",
+          "ENG_V": "1500",
+          "PW": "132",
+          "KUZOV": "RU4",
+          "GRADE": "HV Z*HSENSING AWD 4WD",
+          "COLOR": "PEARL WHITE",
+          "KPP": "AT",
+          "KPP_TYPE": "2",
+          "PRIV": "FULLTIME4WD",
+          "MILEAGE": "104000",
+          "EQUIP": "",
+          "RATE": "R",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "not sold",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "501000",
+          "AVG_STRING": "501",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXyegPMQa8O2U-8B8eBvgcfzGyMff-7&h=50#https://7.tru.ru/imgs/3b1IM84dD5F702iTrdty7eKC7D7AynRNzlXyegPMQa8O2U-8B8eBvgcfzGyMff-7&h=50"
+        }
+      ]
+    },
+    "statistics_limit_5": {
+      "type": "sql",
+      "query": "select * from stats limit 5",
+      "status": 200,
+      "ms": 19,
+      "rows": 5,
+      "data": [
+        {
+          "ID": "000P0Xlg5yeoOe0",
+          "LOT": "29424",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-05-21 18:53:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "212",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "WISH",
+          "YEAR": "2016",
+          "TOWN": "",
+          "ENG_V": "1800",
+          "PW": "143,144",
+          "KUZOV": "ZGE20W",
+          "GRADE": "1.8S ",
+          "COLOR": "GRAY",
+          "KPP": "IA",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "140000",
+          "MIL_ST": "6",
+          "EQUIP": "",
+          "RATE": "3.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "",
+          "SANCTION": "0",
+          "AVG_PRICE": "698000",
+          "AVG_STRING": "755,470,869",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3amIbZesajWqe3Cev6Ubi288vm6fU0pHkZ7CoZMdFToOj4-000P0Xlg5yeoOe0-7&h=50#https://7.tru.ru/imgs/3amIbZesajWqe3Cev6Ubi288vm6fU0pHkZ7CoZMdFToOj4-000P0Xlg5yeoOe0-7&h=50"
+        },
+        {
+          "ID": "000P0Xlg5yeoOe9",
+          "LOT": "29424",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-05-14 19:05:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "5",
+          "MODEL_ID": "43889",
+          "MARKA_NAME": "HONDA",
+          "MODEL_NAME": "WR-V",
+          "YEAR": "2025",
+          "TOWN": "",
+          "ENG_V": "1500",
+          "PW": "",
+          "KUZOV": "DG5",
+          "GRADE": "Z BLACK STYLE ",
+          "COLOR": "PEARL",
+          "KPP": "FA",
+          "KPP_TYPE": "2",
+          "PRIV": "",
+          "MILEAGE": "9000",
+          "MIL_ST": "1",
+          "EQUIP": "",
+          "RATE": "R",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "",
+          "TIME": "",
+          "SANCTION": "0",
+          "AVG_PRICE": "1742000",
+          "AVG_STRING": "1710,1673,1837,1590,1761,1725,1895",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3bwJf1UeoSreSBpLx3TLKm0RaQBJNCDaJrbTMMs9I4yRp3-000P0Xlg5yeoOe9-7&h=50#https://7.tru.ru/imgs/3bwJf1UeoSreSBpLx3TLKm0RaQBJNCDaJrbTMMs9I4yRp3-000P0Xlg5yeoOe9-7&h=50"
+        },
+        {
+          "ID": "000P0Xlg5yeoOea",
+          "LOT": "29424",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-05-28 18:29:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "5",
+          "MODEL_ID": "621",
+          "MARKA_NAME": "HONDA",
+          "MODEL_NAME": "STEP WAGON",
+          "YEAR": "2019",
+          "TOWN": "",
+          "ENG_V": "2000",
+          "PW": "",
+          "KUZOV": "RP5",
+          "GRADE": "HV HSENSI BLACK S ",
+          "COLOR": "BLACK",
+          "KPP": "IA",
+          "KPP_TYPE": "2",
+          "PRIV": "",
+          "MILEAGE": "150000",
+          "MIL_ST": "6",
+          "EQUIP": "",
+          "RATE": "3.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "H",
+          "SANCTION": "1",
+          "AVG_PRICE": "1306000",
+          "AVG_STRING": "1596,1015",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3auIjdccRgSXpr0itVf9lMcvClWOLD3nLbJslIzvGigDT4-000P0Xlg5yeoOea-7&h=50#https://7.tru.ru/imgs/3auIjdccRgSXpr0itVf9lMcvClWOLD3nLbJslIzvGigDT4-000P0Xlg5yeoOea-7&h=50"
+        },
+        {
+          "ID": "000P0Xlg5yeoOeb",
+          "LOT": "29424",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-04 18:21:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "82",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "HARRIER",
+          "YEAR": "2011",
+          "TOWN": "",
+          "ENG_V": "2400",
+          "PW": "160",
+          "KUZOV": "ACU30W",
+          "GRADE": "240G L PACKAGE ",
+          "COLOR": "WHITE",
+          "KPP": "AT",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "141000",
+          "MIL_ST": "6",
+          "EQUIP": "",
+          "RATE": "3.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "SOLD",
+          "TIME": "",
+          "SANCTION": "1",
+          "AVG_PRICE": "1019000",
+          "AVG_STRING": "965,981,1066,1065",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3aCIqr0XydPuAPHMfrHXcMQYD8Fnt6jANXY2rLCJw18gKX-000P0Xlg5yeoOeb-7&h=50#https://7.tru.ru/imgs/3aCIqr0XydPuAPHMfrHXcMQYD8Fnt6jANXY2rLCJw18gKX-000P0Xlg5yeoOeb-7&h=50"
+        },
+        {
+          "ID": "000P0Xlg5yeoOec",
+          "LOT": "29424",
+          "AUCTION_TYPE": "1",
+          "AUCTION_DATE": "2026-06-11 18:12:00",
+          "AUCTION": "USS Tokyo",
+          "MARKA_ID": "1",
+          "MODEL_ID": "2855",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "VELLFIRE",
+          "YEAR": "2015",
+          "TOWN": "",
+          "ENG_V": "3500",
+          "PW": "280,301",
+          "KUZOV": "GGH35W",
+          "GRADE": "3.5ZA AWD 4WD",
+          "COLOR": "BLACK",
+          "KPP": "IA",
+          "KPP_TYPE": "2",
+          "PRIV": "FULLTIME4WD",
+          "MILEAGE": "182000",
+          "MIL_ST": "7",
+          "EQUIP": "",
+          "RATE": "3.5",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "not sold",
+          "TIME": "",
+          "SANCTION": "1",
+          "AVG_PRICE": "0",
+          "AVG_STRING": "",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/3aKIxF8IfaM2MeeLmqJh6hPN6l0eCaUWXc6hFB8uhZOcE9-000P0Xlg5yeoOec-7&h=50#https://7.tru.ru/imgs/3aKIxF8IfaM2MeeLmqJh6hPN6l0eCaUWXc6hFB8uhZOcE9-000P0Xlg5yeoOec-7&h=50"
+        }
+      ]
+    },
+    "full_info_by_id_example": {
+      "type": "sql",
+      "query": "select * from main where id='YRcrOlZPsTPBOy'",
+      "status": 200,
+      "ms": 10,
+      "rows": 1,
+      "data": [
+        {
+          "ID": "YRcrOlZPsTPBOy",
+          "LOT": "3036",
+          "AUCTION_TYPE": "2",
+          "AUCTION_DATE": "2026-06-27 00:00:00",
+          "AUCTION": "JU Nara",
+          "MARKA_ID": "1",
+          "MODEL_ID": "74",
+          "MARKA_NAME": "TOYOTA",
+          "MODEL_NAME": "ESTIMA",
+          "YEAR": "2006",
+          "TOWN": "",
+          "ENG_V": "2400",
+          "PW": "170",
+          "KUZOV": "ACR50W",
+          "GRADE": "G",
+          "COLOR": "Silver 2",
+          "KPP": "AT",
+          "KPP_TYPE": "2",
+          "PRIV": "FF",
+          "MILEAGE": "62000",
+          "EQUIP": "WAA",
+          "RATE": "4",
+          "START": "0",
+          "FINISH": "0",
+          "STATUS": "",
+          "TIME": "",
+          "SANCTION": "1",
+          "AVG_PRICE": "182000",
+          "AVG_STRING": "180,198,168",
+          "LHDRIVE": "0",
+          "IMAGES": "https://7.tru.ru/imgs/pcNv89mCXux6SoncxcXSHbmaa33ZK78MdX5ilq05Jvz4gljweJg#https://7.tru.ru/imgs/pcNv89mCXuwOUWle3vGSgNr3IyCpRoptjDoqlZrgBLTtKsREKTV#https://7.tru.ru/imgs/pcNv89mCXuwOUWle3vGSgNr3IyCpRoptjDoqlZrgNFdHOQ3HQPM#https://7.tru.ru/imgs/pcNv89mCXuwOUWle3vGSgNr3IyCpRoptjDoqlZrgE0mka9HsYui#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUcGyd0Abt5w#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUgsYZvk2CXv#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUkfpLR4RMQu#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUo2QycNHWJt#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUrOhkyxy7Cs#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUvAI7Uhogvr#https://7.tru.ru/imgs/6hGnwuKKatoSFWerWwDZnwmFzlg4qc8l08g8wBSIvUzn9Tg2eqoq",
+          "SERIAL": "",
+          "INFO": "Rate ext: -, Rate int: -"
+        }
+      ]
+    },
+    "brands": {
+      "type": "sql",
+      "query": "select marka_id,marka_name from main group by marka_id order by marka_id ASC limit 0,50",
+      "status": 200,
+      "ms": 141,
+      "rows": 50,
+      "data": [
+        {
+          "MARKA_ID": "1",
+          "MARKA_NAME": "TOYOTA"
+        },
+        {
+          "MARKA_ID": "2",
+          "MARKA_NAME": "NISSAN"
+        },
+        {
+          "MARKA_ID": "3",
+          "MARKA_NAME": "MAZDA"
+        },
+        {
+          "MARKA_ID": "4",
+          "MARKA_NAME": "MITSUBISHI"
+        },
+        {
+          "MARKA_ID": "5",
+          "MARKA_NAME": "HONDA"
+        },
+        {
+          "MARKA_ID": "6",
+          "MARKA_NAME": "SUZUKI"
+        },
+        {
+          "MARKA_ID": "7",
+          "MARKA_NAME": "SUBARU"
+        },
+        {
+          "MARKA_ID": "8",
+          "MARKA_NAME": "ISUZU"
+        },
+        {
+          "MARKA_ID": "9",
+          "MARKA_NAME": "DAIHATSU"
+        },
+        {
+          "MARKA_ID": "10",
+          "MARKA_NAME": "MITSUOKA"
+        },
+        {
+          "MARKA_ID": "12",
+          "MARKA_NAME": "ALFAROMEO"
+        },
+        {
+          "MARKA_ID": "13",
+          "MARKA_NAME": "AUDI"
+        },
+        {
+          "MARKA_ID": "14",
+          "MARKA_NAME": "BMW"
+        },
+        {
+          "MARKA_ID": "15",
+          "MARKA_NAME": "CHRYSLER"
+        },
+        {
+          "MARKA_ID": "16",
+          "MARKA_NAME": "CITROEN"
+        },
+        {
+          "MARKA_ID": "17",
+          "MARKA_NAME": "DAIMLER"
+        },
+        {
+          "MARKA_ID": "18",
+          "MARKA_NAME": "FIAT"
+        },
+        {
+          "MARKA_ID": "19",
+          "MARKA_NAME": "FORD"
+        },
+        {
+          "MARKA_ID": "20",
+          "MARKA_NAME": "GM"
+        },
+        {
+          "MARKA_ID": "21",
+          "MARKA_NAME": "HINO"
+        },
+        {
+          "MARKA_ID": "23",
+          "MARKA_NAME": "LEXUS"
+        },
+        {
+          "MARKA_ID": "24",
+          "MARKA_NAME": "MERCEDES BENZ"
+        },
+        {
+          "MARKA_ID": "26",
+          "MARKA_NAME": "PEUGEOT"
+        },
+        {
+          "MARKA_ID": "27",
+          "MARKA_NAME": "RENAULT"
+        },
+        {
+          "MARKA_ID": "28",
+          "MARKA_NAME": "ROVER"
+        },
+        {
+          "MARKA_ID": "30",
+          "MARKA_NAME": "TCM"
+        },
+        {
+          "MARKA_ID": "31",
+          "MARKA_NAME": "VOLKSWAGEN"
+        },
+        {
+          "MARKA_ID": "32",
+          "MARKA_NAME": "VOLVO"
+        },
+        {
+          "MARKA_ID": "33",
+          "MARKA_NAME": "MG"
+        },
+        {
+          "MARKA_ID": "34",
+          "MARKA_NAME": "LAND ROVER"
+        },
+        {
+          "MARKA_ID": "35",
+          "MARKA_NAME": "LINCOLN"
+        },
+        {
+          "MARKA_ID": "36",
+          "MARKA_NAME": "MERCURY"
+        },
+        {
+          "MARKA_ID": "98",
+          "MARKA_NAME": "OTHERS"
+        },
+        {
+          "MARKA_ID": "112",
+          "MARKA_NAME": "ASTON MARTIN"
+        },
+        {
+          "MARKA_ID": "113",
+          "MARKA_NAME": "AUSTIN"
+        },
+        {
+          "MARKA_ID": "115",
+          "MARKA_NAME": "BENTLEY"
+        },
+        {
+          "MARKA_ID": "117",
+          "MARKA_NAME": "BMW ALPINA"
+        },
+        {
+          "MARKA_ID": "119",
+          "MARKA_NAME": "CADILLAC"
+        },
+        {
+          "MARKA_ID": "121",
+          "MARKA_NAME": "CHEVROLET"
+        },
+        {
+          "MARKA_ID": "124",
+          "MARKA_NAME": "DODGE"
+        },
+        {
+          "MARKA_ID": "126",
+          "MARKA_NAME": "FERRARI"
+        },
+        {
+          "MARKA_ID": "128",
+          "MARKA_NAME": "GMC"
+        },
+        {
+          "MARKA_ID": "129",
+          "MARKA_NAME": "HUMMER"
+        },
+        {
+          "MARKA_ID": "130",
+          "MARKA_NAME": "HYUNDAI"
+        },
+        {
+          "MARKA_ID": "132",
+          "MARKA_NAME": "JAGUAR"
+        },
+        {
+          "MARKA_ID": "134",
+          "MARKA_NAME": "LAMBORGHINI"
+        },
+        {
+          "MARKA_ID": "135",
+          "MARKA_NAME": "LANCIA"
+        },
+        {
+          "MARKA_ID": "136",
+          "MARKA_NAME": "LOTUS"
+        },
+        {
+          "MARKA_ID": "137",
+          "MARKA_NAME": "MASERATI"
+        },
+        {
+          "MARKA_ID": "139",
+          "MARKA_NAME": "MINI"
+        }
+      ]
+    },
+    "toyota_models": {
+      "type": "sql",
+      "query": "select model_id,model_name from main where marka_name='toyota' group by model_id order by model_name",
+      "status": 200,
+      "ms": 34,
+      "rows": 192,
+      "data": [
+        {
+          "MODEL_ID": "1",
+          "MODEL_NAME": "4RUNNER"
+        },
+        {
+          "MODEL_ID": "9948",
+          "MODEL_NAME": "86"
+        },
+        {
+          "MODEL_ID": "2",
+          "MODEL_NAME": "ALLEX"
+        },
+        {
+          "MODEL_ID": "3",
+          "MODEL_NAME": "ALLION"
+        },
+        {
+          "MODEL_ID": "4",
+          "MODEL_NAME": "ALPHARD"
+        },
+        {
+          "MODEL_ID": "8",
+          "MODEL_NAME": "ALTEZZA"
+        },
+        {
+          "MODEL_ID": "9",
+          "MODEL_NAME": "ALTEZZA WAGON"
+        },
+        {
+          "MODEL_ID": "9580",
+          "MODEL_NAME": "AQUA"
+        },
+        {
+          "MODEL_ID": "10",
+          "MODEL_NAME": "ARISTO"
+        },
+        {
+          "MODEL_ID": "11",
+          "MODEL_NAME": "AURIS"
+        },
+        {
+          "MODEL_ID": "14",
+          "MODEL_NAME": "AVENSIS SEDAN"
+        },
+        {
+          "MODEL_ID": "15",
+          "MODEL_NAME": "AVENSIS WAGON"
+        },
+        {
+          "MODEL_ID": "16",
+          "MODEL_NAME": "BB"
+        },
+        {
+          "MODEL_ID": "17",
+          "MODEL_NAME": "BELTA"
+        },
+        {
+          "MODEL_ID": "1291",
+          "MODEL_NAME": "BLADE"
+        },
+        {
+          "MODEL_ID": "20",
+          "MODEL_NAME": "BREVIS"
+        },
+        {
+          "MODEL_ID": "43346",
+          "MODEL_NAME": "BZ4X"
+        },
+        {
+          "MODEL_ID": "42320",
+          "MODEL_NAME": "C+POD"
+        },
+        {
+          "MODEL_ID": "26992",
+          "MODEL_NAME": "C-HR"
+        },
+        {
+          "MODEL_ID": "21",
+          "MODEL_NAME": "CALDINA"
+        },
+        {
+          "MODEL_ID": "22",
+          "MODEL_NAME": "CALDINA VAN"
+        },
+        {
+          "MODEL_ID": "23",
+          "MODEL_NAME": "CAMI"
+        },
+        {
+          "MODEL_ID": "24",
+          "MODEL_NAME": "CAMROAD"
+        },
+        {
+          "MODEL_ID": "38610",
+          "MODEL_NAME": "CAMROAD 2D"
+        },
+        {
+          "MODEL_ID": "25",
+          "MODEL_NAME": "CAMRY"
+        },
+        {
+          "MODEL_ID": "30",
+          "MODEL_NAME": "CARINA"
+        },
+        {
+          "MODEL_ID": "31",
+          "MODEL_NAME": "CARINA ED"
+        },
+        {
+          "MODEL_ID": "35",
+          "MODEL_NAME": "CELICA"
+        },
+        {
+          "MODEL_ID": "2866",
+          "MODEL_NAME": "CELICA XX"
+        },
+        {
+          "MODEL_ID": "36",
+          "MODEL_NAME": "CELSIOR"
+        },
+        {
+          "MODEL_ID": "37",
+          "MODEL_NAME": "CENTURY"
+        },
+        {
+          "MODEL_ID": "38",
+          "MODEL_NAME": "CHASER"
+        },
+        {
+          "MODEL_ID": "39",
+          "MODEL_NAME": "CLASSIC"
+        },
+        {
+          "MODEL_ID": "40",
+          "MODEL_NAME": "COASTER"
+        },
+        {
+          "MODEL_ID": "4852",
+          "MODEL_NAME": "COMFORT"
+        },
+        {
+          "MODEL_ID": "27459",
+          "MODEL_NAME": "COMS"
+        },
+        {
+          "MODEL_ID": "29218",
+          "MODEL_NAME": "COPEN"
+        },
+        {
+          "MODEL_ID": "41",
+          "MODEL_NAME": "COROLLA"
+        },
+        {
+          "MODEL_ID": "42",
+          "MODEL_NAME": "COROLLA AXIO"
+        },
+        {
+          "MODEL_ID": "33371",
+          "MODEL_NAME": "COROLLA CROSS"
+        },
+        {
+          "MODEL_ID": "44",
+          "MODEL_NAME": "COROLLA FIELDER"
+        },
+        {
+          "MODEL_ID": "45",
+          "MODEL_NAME": "COROLLA FX"
+        },
+        {
+          "MODEL_ID": "47",
+          "MODEL_NAME": "COROLLA LEVIN"
+        },
+        {
+          "MODEL_ID": "1922",
+          "MODEL_NAME": "COROLLA RUMION"
+        },
+        {
+          "MODEL_ID": "48",
+          "MODEL_NAME": "COROLLA RUNX"
+        },
+        {
+          "MODEL_ID": "49",
+          "MODEL_NAME": "COROLLA SPACIO"
+        },
+        {
+          "MODEL_ID": "20353",
+          "MODEL_NAME": "COROLLA SPORT"
+        },
+        {
+          "MODEL_ID": "29075",
+          "MODEL_NAME": "COROLLA TOURING"
+        },
+        {
+          "MODEL_ID": "50",
+          "MODEL_NAME": "COROLLA TOURING WAGON"
+        },
+        {
+          "MODEL_ID": "51",
+          "MODEL_NAME": "COROLLA VAN"
+        },
+        {
+          "MODEL_ID": "27231",
+          "MODEL_NAME": "COROLLA2"
+        },
+        {
+          "MODEL_ID": "53",
+          "MODEL_NAME": "CORONA"
+        },
+        {
+          "MODEL_ID": "54",
+          "MODEL_NAME": "CORONA EXIV"
+        },
+        {
+          "MODEL_ID": "137",
+          "MODEL_NAME": "CORONA PREMIO"
+        },
+        {
+          "MODEL_ID": "57",
+          "MODEL_NAME": "CORONA VAN"
+        },
+        {
+          "MODEL_ID": "58",
+          "MODEL_NAME": "CORSA"
+        },
+        {
+          "MODEL_ID": "59",
+          "MODEL_NAME": "CRESTA"
+        },
+        {
+          "MODEL_ID": "60",
+          "MODEL_NAME": "CROWN"
+        },
+        {
+          "MODEL_ID": "2185",
+          "MODEL_NAME": "CROWN COMFORT"
+        },
+        {
+          "MODEL_ID": "38899",
+          "MODEL_NAME": "CROWN CROSSOVER"
+        },
+        {
+          "MODEL_ID": "63",
+          "MODEL_NAME": "CROWN ESTATE"
+        },
+        {
+          "MODEL_ID": "42692",
+          "MODEL_NAME": "CROWN SPORT"
+        },
+        {
+          "MODEL_ID": "66",
+          "MODEL_NAME": "CROWN WAGON"
+        },
+        {
+          "MODEL_ID": "71",
+          "MODEL_NAME": "DUET"
+        },
+        {
+          "MODEL_ID": "72",
+          "MODEL_NAME": "DYNA"
+        },
+        {
+          "MODEL_ID": "28837",
+          "MODEL_NAME": "DYNA ABASAPO4W"
+        },
+        {
+          "MODEL_ID": "27870",
+          "MODEL_NAME": "DYNA TRUCK 4D4W"
+        },
+        {
+          "MODEL_ID": "22500",
+          "MODEL_NAME": "ESQUIRE"
+        },
+        {
+          "MODEL_ID": "74",
+          "MODEL_NAME": "ESTIMA"
+        },
+        {
+          "MODEL_ID": "75",
+          "MODEL_NAME": "ESTIMA HYBRID"
+        },
+        {
+          "MODEL_ID": "1744",
+          "MODEL_NAME": "FJ CRUISER"
+        },
+        {
+          "MODEL_ID": "7812",
+          "MODEL_NAME": "FORKLIFT"
+        },
+        {
+          "MODEL_ID": "78",
+          "MODEL_NAME": "FUNCARGO"
+        },
+        {
+          "MODEL_ID": "79",
+          "MODEL_NAME": "GAIA"
+        },
+        {
+          "MODEL_ID": "40381",
+          "MODEL_NAME": "GR COROLLA"
+        },
+        {
+          "MODEL_ID": "31615",
+          "MODEL_NAME": "GR YARIS"
+        },
+        {
+          "MODEL_ID": "33686",
+          "MODEL_NAME": "GR86"
+        },
+        {
+          "MODEL_ID": "30212",
+          "MODEL_NAME": "GRANACE"
+        },
+        {
+          "MODEL_ID": "81",
+          "MODEL_NAME": "GRANVIA"
+        },
+        {
+          "MODEL_ID": "82",
+          "MODEL_NAME": "HARRIER"
+        },
+        {
+          "MODEL_ID": "84",
+          "MODEL_NAME": "HIACE"
+        },
+        {
+          "MODEL_ID": "27869",
+          "MODEL_NAME": "HIACE KOMYU4D4W"
+        },
+        {
+          "MODEL_ID": "86",
+          "MODEL_NAME": "HIACE REGIUS"
+        },
+        {
+          "MODEL_ID": "87",
+          "MODEL_NAME": "HIACE TRUCK"
+        },
+        {
+          "MODEL_ID": "88",
+          "MODEL_NAME": "HIACE VAN"
+        },
+        {
+          "MODEL_ID": "89",
+          "MODEL_NAME": "HILUX"
+        },
+        {
+          "MODEL_ID": "2196",
+          "MODEL_NAME": "HILUX SURF"
+        },
+        {
+          "MODEL_ID": "9876",
+          "MODEL_NAME": "HIMEDIC"
+        },
+        {
+          "MODEL_ID": "96",
+          "MODEL_NAME": "IPSUM"
+        },
+        {
+          "MODEL_ID": "5053",
+          "MODEL_NAME": "IQ"
+        },
+        {
+          "MODEL_ID": "97",
+          "MODEL_NAME": "ISIS"
+        },
+        {
+          "MODEL_ID": "98",
+          "MODEL_NAME": "IST"
+        },
+        {
+          "MODEL_ID": "27246",
+          "MODEL_NAME": "JPN TAXI"
+        },
+        {
+          "MODEL_ID": "99",
+          "MODEL_NAME": "KLUGER"
+        },
+        {
+          "MODEL_ID": "9637",
+          "MODEL_NAME": "KLUGER HYBRID"
+        },
+        {
+          "MODEL_ID": "102",
+          "MODEL_NAME": "LAND CRUISER"
+        },
+        {
+          "MODEL_ID": "44323",
+          "MODEL_NAME": "LAND CRUISER 250"
+        },
+        {
+          "MODEL_ID": "33267",
+          "MODEL_NAME": "LAND CRUISER 4W"
+        },
+        {
+          "MODEL_ID": "49723",
+          "MODEL_NAME": "LAND CRUISER FJ"
+        },
+        {
+          "MODEL_ID": "106",
+          "MODEL_NAME": "LAND CRUISER PRADO"
+        },
+        {
+          "MODEL_ID": "110",
+          "MODEL_NAME": "LITE ACE NOAH"
+        },
+        {
+          "MODEL_ID": "113",
+          "MODEL_NAME": "LITE ACE TRUCK"
+        },
+        {
+          "MODEL_ID": "114",
+          "MODEL_NAME": "LITE ACE VAN"
+        },
+        {
+          "MODEL_ID": "115",
+          "MODEL_NAME": "LITE ACE WAGON"
+        },
+        {
+          "MODEL_ID": "117",
+          "MODEL_NAME": "MARK II"
+        },
+        {
+          "MODEL_ID": "26569",
+          "MODEL_NAME": "MARK II BLIT"
+        },
+        {
+          "MODEL_ID": "118",
+          "MODEL_NAME": "MARK II VAN"
+        },
+        {
+          "MODEL_ID": "122",
+          "MODEL_NAME": "MARK X"
+        },
+        {
+          "MODEL_ID": "1951",
+          "MODEL_NAME": "MARK X ZIO"
+        },
+        {
+          "MODEL_ID": "9800",
+          "MODEL_NAME": "MARK2 BLIT"
+        },
+        {
+          "MODEL_ID": "9801",
+          "MODEL_NAME": "MARK2 QUALIS"
+        },
+        {
+          "MODEL_ID": "10024",
+          "MODEL_NAME": "MARK2 VAN"
+        },
+        {
+          "MODEL_ID": "26001",
+          "MODEL_NAME": "MIRAI"
+        },
+        {
+          "MODEL_ID": "126",
+          "MODEL_NAME": "MR-S"
+        },
+        {
+          "MODEL_ID": "1747",
+          "MODEL_NAME": "MR2"
+        },
+        {
+          "MODEL_ID": "127",
+          "MODEL_NAME": "NADIA"
+        },
+        {
+          "MODEL_ID": "40142",
+          "MODEL_NAME": "NDOLA4D4W"
+        },
+        {
+          "MODEL_ID": "128",
+          "MODEL_NAME": "NOAH"
+        },
+        {
+          "MODEL_ID": "130",
+          "MODEL_NAME": "OPA"
+        },
+        {
+          "MODEL_ID": "131",
+          "MODEL_NAME": "ORIGIN"
+        },
+        {
+          "MODEL_ID": "132",
+          "MODEL_NAME": "OTHER"
+        },
+        {
+          "MODEL_ID": "134",
+          "MODEL_NAME": "PASSO"
+        },
+        {
+          "MODEL_ID": "5468",
+          "MODEL_NAME": "PASSO SETTE"
+        },
+        {
+          "MODEL_ID": "10203",
+          "MODEL_NAME": "PIXIS EPOCH"
+        },
+        {
+          "MODEL_ID": "27018",
+          "MODEL_NAME": "PIXIS JOY"
+        },
+        {
+          "MODEL_ID": "25432",
+          "MODEL_NAME": "PIXIS MEGA"
+        },
+        {
+          "MODEL_ID": "9499",
+          "MODEL_NAME": "PIXIS SPACE"
+        },
+        {
+          "MODEL_ID": "9938",
+          "MODEL_NAME": "PIXIS TRUCK"
+        },
+        {
+          "MODEL_ID": "9877",
+          "MODEL_NAME": "PIXIS VAN"
+        },
+        {
+          "MODEL_ID": "135",
+          "MODEL_NAME": "PLATZ"
+        },
+        {
+          "MODEL_ID": "136",
+          "MODEL_NAME": "PORTE"
+        },
+        {
+          "MODEL_ID": "55",
+          "MODEL_NAME": "PREMIO"
+        },
+        {
+          "MODEL_ID": "139",
+          "MODEL_NAME": "PRIUS"
+        },
+        {
+          "MODEL_ID": "9245",
+          "MODEL_NAME": "PRIUS ALPHA"
+        },
+        {
+          "MODEL_ID": "9784",
+          "MODEL_NAME": "PRIUS PHV"
+        },
+        {
+          "MODEL_ID": "140",
+          "MODEL_NAME": "PROBOX"
+        },
+        {
+          "MODEL_ID": "143",
+          "MODEL_NAME": "PROGRES"
+        },
+        {
+          "MODEL_ID": "145",
+          "MODEL_NAME": "PUBLICA"
+        },
+        {
+          "MODEL_ID": "2208",
+          "MODEL_NAME": "QUICK DELIVERY"
+        },
+        {
+          "MODEL_ID": "27750",
+          "MODEL_NAME": "QUICKDELIVERY VAN"
+        },
+        {
+          "MODEL_ID": "148",
+          "MODEL_NAME": "RACTIS"
+        },
+        {
+          "MODEL_ID": "29131",
+          "MODEL_NAME": "RAIZE"
+        },
+        {
+          "MODEL_ID": "149",
+          "MODEL_NAME": "RAUM"
+        },
+        {
+          "MODEL_ID": "150",
+          "MODEL_NAME": "RAV4"
+        },
+        {
+          "MODEL_ID": "152",
+          "MODEL_NAME": "RAV4 L"
+        },
+        {
+          "MODEL_ID": "155",
+          "MODEL_NAME": "REGIUS"
+        },
+        {
+          "MODEL_ID": "2089",
+          "MODEL_NAME": "REGIUS ACE COMMUTER"
+        },
+        {
+          "MODEL_ID": "6355",
+          "MODEL_NAME": "REGIUS ACE VAN"
+        },
+        {
+          "MODEL_ID": "157",
+          "MODEL_NAME": "REGIUS VAN"
+        },
+        {
+          "MODEL_ID": "27013",
+          "MODEL_NAME": "ROOMY"
+        },
+        {
+          "MODEL_ID": "159",
+          "MODEL_NAME": "RUSH"
+        },
+        {
+          "MODEL_ID": "6356",
+          "MODEL_NAME": "SAI"
+        },
+        {
+          "MODEL_ID": "167",
+          "MODEL_NAME": "SEQUOIA"
+        },
+        {
+          "MODEL_ID": "40129",
+          "MODEL_NAME": "SEQUOIA 5D4W"
+        },
+        {
+          "MODEL_ID": "168",
+          "MODEL_NAME": "SERA"
+        },
+        {
+          "MODEL_ID": "1750",
+          "MODEL_NAME": "SIENNA"
+        },
+        {
+          "MODEL_ID": "169",
+          "MODEL_NAME": "SIENTA"
+        },
+        {
+          "MODEL_ID": "170",
+          "MODEL_NAME": "SOARER"
+        },
+        {
+          "MODEL_ID": "10211",
+          "MODEL_NAME": "SPADE"
+        },
+        {
+          "MODEL_ID": "4957",
+          "MODEL_NAME": "SPORTS 800"
+        },
+        {
+          "MODEL_ID": "172",
+          "MODEL_NAME": "SPRINTER"
+        },
+        {
+          "MODEL_ID": "2210",
+          "MODEL_NAME": "SPRINTER CARIB"
+        },
+        {
+          "MODEL_ID": "178",
+          "MODEL_NAME": "STARLET"
+        },
+        {
+          "MODEL_ID": "179",
+          "MODEL_NAME": "SUCCEED"
+        },
+        {
+          "MODEL_ID": "182",
+          "MODEL_NAME": "SUPRA"
+        },
+        {
+          "MODEL_ID": "184",
+          "MODEL_NAME": "TACOMA"
+        },
+        {
+          "MODEL_ID": "40161",
+          "MODEL_NAME": "TACOMA 4D4W"
+        },
+        {
+          "MODEL_ID": "27012",
+          "MODEL_NAME": "TANK"
+        },
+        {
+          "MODEL_ID": "185",
+          "MODEL_NAME": "TERCEL"
+        },
+        {
+          "MODEL_ID": "187",
+          "MODEL_NAME": "TOWN ACE"
+        },
+        {
+          "MODEL_ID": "188",
+          "MODEL_NAME": "TOWN ACE NOAH"
+        },
+        {
+          "MODEL_ID": "190",
+          "MODEL_NAME": "TOWN ACE TRUCK"
+        },
+        {
+          "MODEL_ID": "191",
+          "MODEL_NAME": "TOWN ACE VAN"
+        },
+        {
+          "MODEL_ID": "193",
+          "MODEL_NAME": "TOYOACE"
+        },
+        {
+          "MODEL_ID": "195",
+          "MODEL_NAME": "TOYOACE VAN"
+        },
+        {
+          "MODEL_ID": "26571",
+          "MODEL_NAME": "TRUCK"
+        },
+        {
+          "MODEL_ID": "200",
+          "MODEL_NAME": "TUNDRA"
+        },
+        {
+          "MODEL_ID": "1274",
+          "MODEL_NAME": "URBAN SUPPORTER"
+        },
+        {
+          "MODEL_ID": "1853",
+          "MODEL_NAME": "VANGUARD"
+        },
+        {
+          "MODEL_ID": "2855",
+          "MODEL_NAME": "VELLFIRE"
+        },
+        {
+          "MODEL_ID": "9561",
+          "MODEL_NAME": "VELLFIRE HYBRID"
+        },
+        {
+          "MODEL_ID": "201",
+          "MODEL_NAME": "VEROSSA"
+        },
+        {
+          "MODEL_ID": "202",
+          "MODEL_NAME": "VISTA"
+        },
+        {
+          "MODEL_ID": "203",
+          "MODEL_NAME": "VISTA ARDEO"
+        },
+        {
+          "MODEL_ID": "205",
+          "MODEL_NAME": "VITZ"
+        },
+        {
+          "MODEL_ID": "207",
+          "MODEL_NAME": "VOXY"
+        },
+        {
+          "MODEL_ID": "208",
+          "MODEL_NAME": "WILL"
+        },
+        {
+          "MODEL_ID": "209",
+          "MODEL_NAME": "WILL VI"
+        },
+        {
+          "MODEL_ID": "211",
+          "MODEL_NAME": "WINDOM"
+        },
+        {
+          "MODEL_ID": "212",
+          "MODEL_NAME": "WISH"
+        },
+        {
+          "MODEL_ID": "1752",
+          "MODEL_NAME": "YARIS"
+        },
+        {
+          "MODEL_ID": "31230",
+          "MODEL_NAME": "YARIS CROSS"
+        }
+      ]
+    },
+    "currency": {
+      "type": "http",
+      "url": "http://auc.mosaicauto.ru/currency",
+      "status": 200,
+      "ms": 403,
+      "data": {
+        "date": "25.06.2026",
+        "usd": 74.77,
+        "eur": 85.18,
+        "jpy": 46.26,
+        "krw": 4.86,
+        "cny": 11,
+        "jpy2usd": 161.63,
+        "krw2usd": 1537,
+        "cny2usd": 6.8
+      }
+    }
+  }
+}

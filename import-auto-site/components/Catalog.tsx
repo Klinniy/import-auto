@@ -1,148 +1,205 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { cars } from "../data/cars";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 
 type CatalogProps = {
-  isLoggedIn: boolean;
+  onAuth: () => void;
 };
 
-function rub(value: number) {
-  return new Intl.NumberFormat("ru-RU").format(value) + " ₽";
+type Car = {
+  id: string;
+  lot?: string;
+  brand?: string;
+  model?: string;
+  year?: number | string;
+  auction?: string;
+  grade?: string;
+  mileage?: number | string;
+  engineVolume?: number | string;
+  rate?: string | number;
+  previewImage?: string;
+  images?: string[];
+};
+
+type Filters = {
+  brand?: string;
+  q?: string;
+  yearFrom?: string;
+  priceTo?: string;
+};
+
+function pickCars(payload: unknown): Car[] {
+  if (Array.isArray(payload)) return payload as Car[];
+
+  if (payload && typeof payload === "object") {
+    const obj = payload as {
+      data?: unknown;
+      items?: unknown;
+      cars?: unknown;
+      result?: unknown;
+    };
+
+    if (Array.isArray(obj.data)) return obj.data as Car[];
+    if (Array.isArray(obj.items)) return obj.items as Car[];
+    if (Array.isArray(obj.cars)) return obj.cars as Car[];
+    if (Array.isArray(obj.result)) return obj.result as Car[];
+  }
+
+  return [];
 }
 
-export default function Catalog({ isLoggedIn }: CatalogProps) {
-  const [selectedCountry, setSelectedCountry] = useState("Все");
+function formatNumber(value?: number | string) {
+  if (value === undefined || value === null || value === "") return "—";
+  const num = Number(value);
+  if (!Number.isFinite(num)) return String(value);
+  return new Intl.NumberFormat("ru-RU").format(num);
+}
 
-  const countries = useMemo(
-    () => ["Все", ...new Set(cars.map((car) => car.country))],
-    []
-  );
+function imageOf(car: Car) {
+  return car.previewImage || car.images?.[0] || "";
+}
 
-  const filteredCars =
-    selectedCountry === "Все"
-      ? cars
-      : cars.filter((car) => car.country === selectedCountry);
+export default function Catalog({ onAuth }: CatalogProps) {
+  const [cars, setCars] = useState<Car[] | null>(null);
+  const [filters, setFilters] = useState<Filters>({});
+
+  const query = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("limit", "8");
+    params.set("page", "1");
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+
+    return params.toString();
+  }, [filters]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<Filters>;
+      setCars(null);
+      setFilters(custom.detail || {});
+    };
+
+    window.addEventListener("mosaic-search", handler);
+    return () => window.removeEventListener("mosaic-search", handler);
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    fetch(`/api/catalog?${query}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!ignore) setCars(pickCars(data));
+      })
+      .catch(() => {
+        if (!ignore) setCars([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [query]);
+
+  const isLoading = cars === null;
 
   return (
-    <section id="catalog" className="bg-slate-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+    <section id="catalog" className="bg-[#08090d] px-4 py-16 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Каталог автомобилей
-            </h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Боевой каталог будет подтягивать данные из разных источников по
-              странам. На макете показана логика разделения.
+            <div className="text-sm font-black uppercase tracking-[0.24em] text-red-300">онлайн каталог</div>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.04em] md:text-5xl">Актуальные лоты</h2>
+            <p className="mt-4 max-w-2xl text-white/55">
+              Каталог обращается к /api/catalog. Полная карточка открывается через /api/car/:id.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {countries.map((country) => (
-              <button
-                key={country}
-                onClick={() => setSelectedCountry(country)}
-                className={`rounded-2xl px-5 py-3 text-sm font-semibold ${
-                  selectedCountry === country
-                    ? "bg-red-600 text-white"
-                    : "border border-slate-200 bg-white text-slate-700"
-                }`}
-              >
-                {country}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => {
+              setCars(null);
+              setFilters({});
+            }}
+            className="w-fit rounded-2xl border border-white/10 px-5 py-3 text-sm font-black text-white/75 transition hover:bg-white hover:text-black"
+          >
+            Сбросить поиск
+          </button>
         </div>
 
-        {!isLoggedIn ? (
-          <div className="mt-8 rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-            <div className="text-6xl">🔒</div>
-            <h3 className="mt-5 text-2xl font-bold">
-              Каталог доступен после входа
-            </h3>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">
-              Зарегистрируйтесь, чтобы смотреть автомобили из Японии, Китая,
-              Кореи, сохранять лоты и отправлять заявки на расчёт.
-            </p>
-            <a
-              href="#auth"
-              className="mt-6 inline-flex rounded-2xl bg-red-600 px-6 py-4 font-semibold text-white transition hover:bg-red-700"
-            >
-              Войти или зарегистрироваться
-            </a>
+        {isLoading ? (
+          <div className="mt-9 grid gap-5 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="h-[390px] animate-pulse rounded-[2rem] bg-white/8" />
+            ))}
+          </div>
+        ) : cars.length === 0 ? (
+          <div className="glass mt-9 rounded-[2rem] p-10 text-center">
+            <div className="text-3xl font-black">Лоты не найдены</div>
+            <p className="mt-3 text-white/55">Попробуйте изменить марку, год или бюджет.</p>
           </div>
         ) : (
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {filteredCars.map((car) => (
-              <article
-                key={car.id}
-                className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"
-              >
-                <div className="flex h-56 items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300">
-                  <div className="text-center">
-                    <div className="text-6xl">🚘</div>
-                    <div className="mt-2 text-sm font-semibold text-slate-600">
-                      {car.country} · {car.brand} {car.model}
-                    </div>
-                  </div>
-                </div>
+          <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {cars.map((car) => {
+              const image = imageOf(car);
 
-                <div className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold">
-                        {car.brand} {car.model}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {car.source} · {car.lot}
-                      </p>
-                    </div>
-                    <span className="rounded-xl bg-red-50 px-3 py-1 text-sm font-bold text-red-600">
-                      {car.country}
-                    </span>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-slate-600">
-                    <div>
-                      Год: <b className="text-slate-950">{car.year}</b>
-                    </div>
-                    <div>
-                      Пробег:{" "}
-                      <b className="text-slate-950">
-                        {new Intl.NumberFormat("ru-RU").format(car.mileage)} км
-                      </b>
-                    </div>
-                    <div>
-                      Двигатель: <b className="text-slate-950">{car.engine}</b>
-                    </div>
-                    <div>
-                      Привод: <b className="text-slate-950">{car.drive}</b>
+              return (
+                <article key={car.id} className="group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
+                  <div className="relative h-56 overflow-hidden bg-white/5">
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt={`${car.brand || "Автомобиль"} ${car.model || ""}`}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                        className="object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-6xl">🚗</div>
+                    )}
+                    <div className="absolute left-4 top-4 rounded-full bg-black/65 px-3 py-1 text-xs font-black backdrop-blur">
+                      {car.auction || "Аукцион"}
                     </div>
                   </div>
 
-                  <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-                    <div className="text-sm text-slate-500">
-                      Цена в стране покупки
+                  <div className="p-5">
+                    <div className="text-lg font-black">
+                      {car.brand || "AUTO"} {car.model || ""}
                     </div>
-                    <div className="font-bold">{car.foreignPrice}</div>
-                    <div className="mt-3 text-sm text-slate-500">
-                      Ориентир под ключ
-                    </div>
-                    <div className="text-2xl font-bold text-red-600">
-                      {rub(car.totalPrice)}
-                    </div>
-                  </div>
+                    <div className="mt-1 text-sm text-white/45">Лот {car.lot || car.id}</div>
 
-                  <a
-                    href="#contacts"
-                    className="mt-5 flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-red-600"
-                  >
-                    Запросить расчёт
-                  </a>
-                </div>
-              </article>
-            ))}
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <div className="text-white/35">Год</div>
+                        <b>{car.year || "—"}</b>
+                      </div>
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <div className="text-white/35">Пробег</div>
+                        <b>{formatNumber(car.mileage)} км</b>
+                      </div>
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <div className="text-white/35">Оценка</div>
+                        <b>{car.rate || car.grade || "—"}</b>
+                      </div>
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <div className="text-white/35">Объем</div>
+                        <b>{formatNumber(car.engineVolume)}</b>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={onAuth}
+                      className="mt-5 w-full rounded-2xl bg-red-600 px-5 py-4 font-black transition hover:bg-red-700"
+                    >
+                      Получить расчет
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

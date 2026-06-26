@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f8fc;
+  --foreground: #07152f;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 34rem),
+    linear-gradient(180deg, #ffffff 0%, #eef5ff 52%, #f8fbff 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.mosaic-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+.mosaic-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(205, 216, 232, 0.8);
+  box-shadow: 0 24px 80px rgba(10, 31, 68, 0.10);
+  backdrop-filter: blur(18px);
+}
+
+@media (max-width: 768px) {
+  .mosaic-shell {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }

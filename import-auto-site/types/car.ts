@@ -1,0 +1,40 @@
+export type CarImage = {
+  original: string;
+  preview: string;
+  medium: string;
+};
+
+export type CatalogCar = {
+  id: string;
+  lot: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  body: string;
+  auctionType: number | null;
+  auction: string;
+  auctionDate: string;
+  grade: string;
+  color: string;
+  transmission: string;
+  transmissionType: number | null;
+  drive: string;
+  mileage: number | null;
+  engineVolume: number | null;
+  horsePower: number | null;
+  equipment: string;
+  rate: string;
+  startPrice: number | null;
+  finishPrice: number | null;
+  averagePrice: number | null;
+  averageString: string;
+  status: string;
+  time: string;
+  sanction: boolean;
+  leftHandDrive: boolean;
+  previewImage: string;
+  imagesCount: number;
+  images: CarImage[];
+  info?: string;
+  serial?: string;
+};
