@@ -29,6 +29,30 @@ type Car = {
   };
 };
 
+function safeBadge(value: unknown): string {
+  const text = String(value ?? "").trim();
+
+  if (!text || text === "-" || text === "—") return "";
+
+  if (
+    text.length > 8 ||
+    text.includes("http") ||
+    text.includes("{") ||
+    text.includes("[") ||
+    text.includes("#") ||
+    text.includes("High ") ||
+    text.includes("Low ") ||
+    text.includes("Seat ") ||
+    text.includes("Package") ||
+    text.includes("&w=") ||
+    text.includes("&h=")
+  ) {
+    return "";
+  }
+
+  return text;
+}
+
 function getArray<T>(payload: unknown): T[] {
   if (Array.isArray(payload)) return payload as T[];
 
@@ -307,7 +331,11 @@ export default function CatalogFull() {
                       {isSanction(car) && (
                         <span className="rounded-lg bg-yellow-400 px-3 py-1 text-xs font-black text-black">САНКЦ.</span>
                       )}
-                      <span className="rounded-lg bg-red-500 px-3 py-1 text-xs font-black">{car.rate || car.grade || "—"}</span>
+                      {safeBadge(car.rate || car.grade) && (
+                <span className="rounded-lg bg-red-500 px-3 py-1 text-xs font-black">
+                  {safeBadge(car.rate || car.grade)}
+                </span>
+              )}
                     </div>
                   </div>
 
