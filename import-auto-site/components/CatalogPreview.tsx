@@ -78,16 +78,11 @@ function stripImageSize(url: string) {
 }
 
 function highQualityImage(url: string) {
-  const base = stripImageSize(url);
-
-  if (!base) return "";
-  if (base.includes("/mosaic/")) return base;
-
-  if (base.includes("tru.ru/imgs")) {
-    return `${base}&w=640`;
-  }
-
-  return base;
+  /*
+    Возвращаем рабочий URL из API.
+    Не форсируем w=640 до проверки через Debug Center.
+  */
+  return String(url || "");
 }
 
 function formatNumber(value?: number | string) {

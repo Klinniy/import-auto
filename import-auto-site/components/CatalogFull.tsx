@@ -153,21 +153,12 @@ function stripImageSize(url: string) {
 }
 
 function highQualityImage(url: string) {
-  const fallback = "/mosaic/car-placeholder.png";
-  const base = stripImageSize(url);
-
-  if (!base) return fallback;
-  if (base.includes("/mosaic/")) return base;
-
   /*
-    Для карточек каталога берём картинку крупнее, чем API medium w=320.
-    Это заметно улучшает качество на больших экранах.
+    ВАЖНО:
+    Не форсируем w=640, потому что TRU/AJES может не отдавать такой размер.
+    Возвращаем рабочий URL, который пришёл из API: medium w=320 / preview h=50 / original.
   */
-  if (base.includes("tru.ru/imgs")) {
-    return `${base}&w=640`;
-  }
-
-  return base;
+  return String(url || "/mosaic/car-placeholder.png");
 }
 
 function isSanction(car: Car) {
@@ -603,6 +594,9 @@ export default function CatalogFull() {
                         alt={title}
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = "/mosaic/car-placeholder.png";
+                        }}
                       />
 
                       <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-xs font-black text-[#07152f] shadow-sm backdrop-blur">
