@@ -51,7 +51,7 @@ function imageOf(car: Car) {
 
     if (typeof first === "string") return first;
 
-    return first.medium || first.preview || first.original || car.previewImage || "";
+    return first.original || first.medium || first.preview || car.previewImage || "";
   }
 
   return car.previewImage || "";

@@ -121,12 +121,12 @@ function carImage(car: Car) {
     if (typeof first === "string") return first || car.previewImage || fallback;
 
     if (first && typeof first === "object") {
-      return first.medium || first.preview || first.original || car.previewImage || fallback;
+      return first.original || first.medium || first.preview || car.previewImage || fallback;
     }
   }
 
   if (car.images && typeof car.images === "object" && !Array.isArray(car.images)) {
-    return car.images.medium || car.images.preview || car.images.original || car.previewImage || fallback;
+    return car.images.original || car.images.medium || car.images.preview || car.previewImage || fallback;
   }
 
   return car.previewImage || fallback;
@@ -154,9 +154,8 @@ function stripImageSize(url: string) {
 
 function highQualityImage(url: string) {
   /*
-    ВАЖНО:
-    Не форсируем w=640, потому что TRU/AJES может не отдавать такой размер.
-    Возвращаем рабочий URL, который пришёл из API: medium w=320 / preview h=50 / original.
+    Используем рабочий URL. Для качества отдаём приоритет original JPEG,
+    но без насильственного w=480/w=640, потому что эти варианты возвращают HTML.
   */
   return String(url || "/mosaic/car-placeholder.png");
 }

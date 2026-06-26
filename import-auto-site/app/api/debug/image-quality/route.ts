@@ -22,6 +22,10 @@ function stripImageSize(url: string) {
   return value;
 }
 
+function isRealImage(check: any) {
+  return Boolean(check?.ok && String(check?.contentType || "").startsWith("image/"));
+}
+
 async function checkImage(url: string) {
   const started = Date.now();
 
@@ -34,11 +38,14 @@ async function checkImage(url: string) {
       },
     });
 
+    const contentType = res.headers.get("content-type");
+
     return {
       url,
       ok: res.ok,
+      isImage: String(contentType || "").startsWith("image/"),
       status: res.status,
-      contentType: res.headers.get("content-type"),
+      contentType,
       contentLength: res.headers.get("content-length"),
       durationMs: Date.now() - started,
     };
@@ -46,6 +53,7 @@ async function checkImage(url: string) {
     return {
       url,
       ok: false,
+      isImage: false,
       status: 0,
       error: String(error),
       durationMs: Date.now() - started,
@@ -98,6 +106,7 @@ export async function GET() {
         brand: car.brand,
         model: car.model,
         lot: car.lot,
+        recommendedForCatalog: isRealImage(checks.original) ? variants.original : variants.currentApiMedium,
         variants,
         checks,
       };
@@ -106,24 +115,31 @@ export async function GET() {
 
   const summary = {
     checkedCars: cars.length,
-    mediumW320Ok: cars.filter((car: any) => car.checks.mediumW320?.ok).length,
-    testW480Ok: cars.filter((car: any) => car.checks.testW480?.ok).length,
-    testW640Ok: cars.filter((car: any) => car.checks.testW640?.ok).length,
-    currentApiMediumOk: cars.filter((car: any) => car.checks.currentApiMedium?.ok).length,
+
+    originalImageOk: cars.filter((car: any) => isRealImage(car.checks.original)).length,
+    mediumW320ImageOk: cars.filter((car: any) => isRealImage(car.checks.mediumW320)).length,
+    testW480ImageOk: cars.filter((car: any) => isRealImage(car.checks.testW480)).length,
+    testW640ImageOk: cars.filter((car: any) => isRealImage(car.checks.testW640)).length,
+    currentApiMediumImageOk: cars.filter((car: any) => isRealImage(car.checks.currentApiMedium)).length,
+
+    w480ReturnsHtml: cars.filter((car: any) => String(car.checks.testW480?.contentType || "").includes("text/html")).length,
+    w640ReturnsHtml: cars.filter((car: any) => String(car.checks.testW640?.contentType || "").includes("text/html")).length,
+
     verdict:
       cars.length > 0 &&
-      cars.every((car: any) => car.checks.currentApiMedium?.ok || car.checks.currentApiPreviewImage?.ok)
-        ? "OK_CURRENT_API_IMAGES_WORK"
+      cars.every((car: any) => isRealImage(car.checks.original) || isRealImage(car.checks.currentApiMedium))
+        ? "OK_USE_ORIGINAL_OR_W320"
         : "HAS_IMAGE_PROBLEMS",
+
+    recommendation:
+      "For catalog cards use original JPEG first. Do not force w=480/w=640 because they return text/html, not image.",
   };
 
   return NextResponse.json({
     ok: true,
-    version: "IMAGE QUALITY DEBUG V1",
+    version: "IMAGE QUALITY DEBUG V2",
     checkedAt: new Date().toISOString(),
     summary,
     cars,
-    conclusion:
-      "Если testW640Ok меньше checkedCars, значит нельзя форсировать w=640. Используем рабочий currentApiMedium / mediumW320.",
   });
 }
