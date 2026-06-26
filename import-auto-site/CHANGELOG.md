@@ -33,3 +33,19 @@
 - Filters работают
 - Images работают
 - Catalog Flow verdict: OK
+
+## v0.3.0 — Catalog Service Layer
+
+Дата: 2026-06-26
+
+Добавлено:
+- Вынесена логика каталога из `app/api/catalog/route.ts`.
+- Добавлен `lib/catalog/filters.ts`.
+- Добавлен `lib/catalog/repository.ts`.
+- Добавлен `lib/catalog/service.ts`.
+- `/api/catalog` теперь работает через CatalogService.
+- Добавлен debug-режим каталога: `/api/catalog?debug=1&page=1&limit=3`.
+
+Статус:
+- Архитектура каталога разделена на route → service → repository → mapper.
+- Поведение API каталога сохранено.
