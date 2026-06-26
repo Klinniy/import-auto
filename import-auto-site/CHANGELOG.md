@@ -122,3 +122,25 @@
 - Нужно проверить через Debug Center:
   - Dictionaries
   - Catalog Flow
+
+## v0.3.5 — Catalog Filter Options Service
+
+Дата: 2026-06-26
+
+Добавлено:
+- Новый сервис `lib/catalog/filter-options.ts`.
+- Новый endpoint `/api/filters`.
+- Debug-режим `/api/filters?debug=1`.
+- В фильтры добавлены группы:
+  - brands
+  - years
+  - auctions
+  - transmissions
+  - drives
+  - rates
+  - colors
+- В Debug Center добавлена кнопка `Filters`.
+- В `/api/debug/run?test=all` добавлена проверка filters.
+
+Статус:
+- Каталог, справочники и фильтры теперь разделены на отдельные сервисы.

@@ -21,7 +21,7 @@ export default function DebugPage() {
     } catch (error) {
       setData({
         ok: false,
-        version: "DEBUG CENTER V2.10",
+        version: "DEBUG CENTER V2.11",
         error: String(error),
       });
     } finally {
@@ -44,7 +44,7 @@ export default function DebugPage() {
     <main style={main}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <h1 style={{ margin: 0, fontSize: 34 }}>
-          Import Auto Debug Center V2.10
+          Import Auto Debug Center V2.11
         </h1>
 
         <p style={{ color: "#8ea4c8", marginTop: 8 }}>
@@ -58,6 +58,7 @@ export default function DebugPage() {
           <button style={btn} onClick={() => load("/api/debug/run?test=all")}>Run All</button>
           <button style={btn} onClick={() => load("/api/debug/run?test=catalog-flow")}>Catalog Flow</button>
           <button style={btn} onClick={() => load("/api/debug/run?test=dictionaries")}>Dictionaries</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=filters")}>Filters</button>
           <button style={btn} onClick={() => load("/api/debug/run?test=catalog-debug")}>Catalog Debug</button>
           <button style={btn} onClick={() => load("/api/debug/run?test=images")}>Images</button>
           <button style={btn} onClick={() => load("/api/debug/run?test=catalog")}>Catalog</button>

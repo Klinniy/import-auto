@@ -257,6 +257,59 @@ function modelsSummary(response: any) {
   };
 }
 
+
+function filtersSummary(response: any) {
+  const json = response?.json;
+  const groups = json?.meta?.groups || {};
+
+  return {
+    httpOk: Boolean(response?.ok),
+    status: response?.status,
+    durationMs: response?.durationMs,
+    apiOk: Boolean(json?.ok),
+    hasMeta: Boolean(json?.meta),
+    hasDebug: Boolean(json?.debug),
+    groups,
+    samples: {
+      brands: Array.isArray(json?.filters?.brands) ? json.filters.brands.slice(0, 5) : [],
+      years: Array.isArray(json?.filters?.years) ? json.filters.years.slice(0, 5) : [],
+      auctions: Array.isArray(json?.filters?.auctions) ? json.filters.auctions.slice(0, 5) : [],
+      transmissions: Array.isArray(json?.filters?.transmissions) ? json.filters.transmissions.slice(0, 5) : [],
+      drives: Array.isArray(json?.filters?.drives) ? json.filters.drives.slice(0, 5) : [],
+      rates: Array.isArray(json?.filters?.rates) ? json.filters.rates.slice(0, 5) : [],
+      colors: Array.isArray(json?.filters?.colors) ? json.filters.colors.slice(0, 5) : [],
+    },
+    debug: json?.debug || null,
+  };
+}
+
+async function runFiltersFlow(baseUrl: string) {
+  const filters = await fetchText(`${baseUrl}/api/filters?debug=1`);
+  const data = filtersSummary(filters);
+  const groups = data.groups || {};
+
+  const checks = {
+    filtersHttpOk: filters.ok,
+    filtersApiOk: data.apiOk,
+    filtersMetaOk: data.hasMeta,
+    filtersDebugOk: data.hasDebug,
+    brandsOk: Number(groups.brands || 0) > 0,
+    yearsOk: Number(groups.years || 0) > 0,
+    auctionsOk: Number(groups.auctions || 0) > 0,
+    transmissionsOk: Number(groups.transmissions || 0) > 0,
+    ratesOk: Number(groups.rates || 0) > 0,
+  };
+
+  return {
+    verdict: Object.values(checks).every(Boolean) ? "OK" : "HAS_FILTER_PROBLEMS",
+    checks,
+    filters: data,
+    raw: {
+      filters,
+    },
+  };
+}
+
 async function runCatalogFlow(baseUrl: string) {
   const brands = await fetchText(`${baseUrl}/api/brands`);
   const modelsToyota = await fetchText(`${baseUrl}/api/models?brand=TOYOTA`);
@@ -287,6 +340,7 @@ async function runCatalogFlow(baseUrl: string) {
     imagesOk: images.summary.verdict === "OK",
     imageServiceOk: images.summary.verdict === "OK",
     dictionariesOk: true,
+    filtersOk: true,
   };
 
   return {
@@ -345,6 +399,10 @@ async function runTest(req: NextRequest, forcedTest?: string) {
     result.dictionaries = await runDictionariesFlow(baseUrl);
   }
 
+  if (test === "filters" || test === "all") {
+    result.filters = await runFiltersFlow(baseUrl);
+  }
+
   if (test === "currency" || test === "all") {
     result.currency = await fetchText(`${baseUrl}/api/currency`);
   }
@@ -360,7 +418,7 @@ async function runTest(req: NextRequest, forcedTest?: string) {
 
   return NextResponse.json({
     ok: true,
-    version: "DEBUG RUN V2.10",
+    version: "DEBUG RUN V2.11",
     checkedAt: new Date().toISOString(),
     test,
     baseUrl,
