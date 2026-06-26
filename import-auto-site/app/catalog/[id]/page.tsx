@@ -54,8 +54,26 @@ type ApiResponse = {
 };
 
 function pickCar(payload: ApiResponse | Car): Car | null {
-  if (payload && "id" in payload) return payload;
-  return payload.data || payload.car || payload.item || null;
+  /*
+    /api/car/[id] возвращает wrapper:
+    { ok: true, id: "...", data: car }
+
+    Поэтому сначала проверяем data/car/item.
+    Нельзя принимать объект только по наличию id, иначе wrapper становится "автомобилем".
+  */
+  const wrapped = payload as ApiResponse;
+
+  if (wrapped.data || wrapped.car || wrapped.item) {
+    return wrapped.data || wrapped.car || wrapped.item || null;
+  }
+
+  const maybeCar = payload as Car;
+
+  if (maybeCar.brand || maybeCar.model || maybeCar.lot) {
+    return maybeCar;
+  }
+
+  return null;
 }
 
 function siteBaseUrl() {
