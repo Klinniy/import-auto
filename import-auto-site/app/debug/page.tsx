@@ -1,100 +1,116 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 
-type DebugData = Record<string, any>;
+type AnyJson = Record<string, unknown>;
 
-function asText(value: any) {
-  if (typeof value === "string") return value;
-  return JSON.stringify(value, null, 2);
-}
-
-function Block({ title, value }: { title: string; value: any }) {
-  const text = asText(value);
-
-  async function copy() {
-    await navigator.clipboard.writeText(text);
-  }
-
-  return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-black text-white">{title}</h2>
-        <button
-          onClick={copy}
-          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500"
-        >
-          Копировать
-        </button>
-      </div>
-      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-xl bg-black p-4 text-xs leading-5 text-slate-100">
-        {text}
-      </pre>
-    </section>
-  );
-}
+export const dynamic = "force-dynamic";
 
 export default function DebugPage() {
-  const [data, setData] = useState<DebugData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AnyJson>({ loading: true });
+  const [loading, setLoading] = useState(false);
 
-  async function load() {
+  async function load(path: string) {
     setLoading(true);
-    const res = await fetch("/api/debug", { cache: "no-store" });
-    const json = await res.json();
-    setData(json);
-    setLoading(false);
+
+    try {
+      const res = await fetch(path, { cache: "no-store" });
+      const json = await res.json();
+      setData(json);
+    } catch (error) {
+      setData({
+        ok: false,
+        version: "DEBUG CENTER V2.6",
+        error: String(error),
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    load();
+    load("/api/debug?smoke=1");
   }, []);
 
-  const fullText = useMemo(() => asText(data), [data]);
+  const pretty = useMemo(() => JSON.stringify(data, null, 2), [data]);
+
+  async function copy() {
+    await navigator.clipboard.writeText(pretty);
+    alert("JSON скопирован");
+  }
 
   return (
-    <main className="min-h-screen bg-[#0b0f17] p-6 text-white">
-      <div className="mx-auto max-w-[1600px]">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black">Mosaicauto Debug</h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Страница для копирования диагностики проекта
-            </p>
-          </div>
+    <main style={main}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <h1 style={{ margin: 0, fontSize: 34 }}>
+          Import Auto Debug Center V2.6
+        </h1>
 
-          <div className="flex gap-2">
-            <button
-              onClick={load}
-              className="rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold hover:bg-slate-700"
-            >
-              Обновить
-            </button>
-            <button
-              onClick={() => navigator.clipboard.writeText(fullText)}
-              className="rounded-xl bg-red-600 px-4 py-3 text-sm font-bold hover:bg-red-500"
-            >
-              Копировать всё
-            </button>
-          </div>
+        <p style={{ color: "#8ea4c8", marginTop: 8 }}>
+          Все проверки выводятся здесь. Консоль сервера используем только для установки кода.
+        </p>
+
+        <div style={buttons}>
+          <button style={btn} onClick={() => load("/api/debug")}>Debug</button>
+          <button style={btn} onClick={() => load("/api/debug?smoke=1")}>Smoke</button>
+          <button style={btn} onClick={() => load("/summary.json")}>Summary</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=all")}>Run All</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=catalog-flow")}>Catalog Flow</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=images")}>Images</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=catalog")}>Catalog</button>
+          <button style={btn} onClick={() => load("/api/debug/run?test=brands")}>Brands</button>
+          <button style={btn} onClick={copy}>Copy JSON</button>
         </div>
 
-        {loading || !data ? (
-          <div className="rounded-2xl bg-slate-900 p-6 font-bold">Загрузка...</div>
-        ) : (
-          <div className="grid gap-4">
-            <Block title="SSH public key для GitHub" value={data.ssh?.githubPublicKey} />
-            <Block title="Git" value={data.git} />
-            <Block title="System / PM2" value={data.system} />
-            <Block title="Поиск по image / grade / mapper" value={data.search} />
-            <Block title="next.config.ts" value={data.project?.nextConfig} />
-            <Block title="components/CatalogFull.tsx" value={data.project?.catalogFull} />
-            <Block title="lib/catalog/mapper.ts" value={data.project?.mapper} />
-            <Block title="package.json" value={data.project?.packageJson} />
-            <Block title="Полный JSON" value={data} />
-          </div>
-        )}
+        {loading && <div style={box}>Загрузка проверки...</div>}
+
+        <pre style={pre}>{pretty}</pre>
       </div>
     </main>
   );
 }
+
+const main: CSSProperties = {
+  minHeight: "100vh",
+  background: "#07111f",
+  color: "#e5eefc",
+  padding: 24,
+  fontFamily: "Arial, sans-serif",
+};
+
+const buttons: CSSProperties = {
+  display: "flex",
+  gap: 10,
+  flexWrap: "wrap",
+  margin: "20px 0",
+};
+
+const btn: CSSProperties = {
+  padding: "10px 14px",
+  borderRadius: 12,
+  border: "1px solid #3b82f6",
+  background: "#1d4ed8",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: 700,
+};
+
+const box: CSSProperties = {
+  padding: 16,
+  borderRadius: 12,
+  background: "#10213d",
+  border: "1px solid #26466f",
+  marginBottom: 16,
+};
+
+const pre: CSSProperties = {
+  background: "#020817",
+  border: "1px solid #1d355c",
+  borderRadius: 16,
+  padding: 18,
+  overflowX: "auto",
+  whiteSpace: "pre-wrap",
+  fontSize: 13,
+  lineHeight: 1.45,
+};

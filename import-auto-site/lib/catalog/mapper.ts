@@ -31,51 +31,106 @@ function cleanShort(value: unknown, max = 12): string {
     text.includes("Package") ||
     text.includes("#") ||
     text.includes("&w=") ||
-    text.includes("&h=");
+    text.includes("&h=") ||
+    text.includes("?w=") ||
+    text.includes("?h=");
 
   return bad ? "" : text;
 }
 
 function stripSize(url: string): string {
-  return url.replace(/([?&])[hw]=\d+$/i, "");
+  let value = String(url || "").trim();
+
+  if (!value) return "";
+
+  /*
+    Важно:
+    AJES/TRU часто отдает размер не как нормальный query-параметр ?h=50,
+    а как хвост &h=50 без знака вопроса.
+    Поэтому нельзя полагаться только на URLSearchParams.
+  */
+  for (let i = 0; i < 5; i++) {
+    const next = value
+      .replace(/([?&])(h|w)=\d+/gi, "")
+      .replace(/\?&/g, "?")
+      .replace(/[?&]$/g, "");
+
+    if (next === value) break;
+    value = next;
+  }
+
+  return value;
 }
 
-function withSize(url: string, size: "h=50" | "w=320"): string {
+function withAjesSize(url: string, size: "h=50" | "w=320"): string {
   const base = stripSize(url);
-  return base.includes("?") ? `${base}&${size}` : `${base}?${size}`;
+
+  if (!base) return "";
+
+  /*
+    Для доменов AJES/TRU поставщик использует формат:
+    https://7.tru.ru/imgs/TOKEN&w=320
+    а не стандартный ?w=320.
+  */
+  return `${base}&${size}`;
+}
+
+function normalizeOneImage(url: string): CarImage | null {
+  const original = stripSize(url);
+
+  if (!original || !original.startsWith("http")) return null;
+
+  return {
+    original,
+    preview: withAjesSize(original, "h=50"),
+    medium: withAjesSize(original, "w=320"),
+  };
+}
+
+function uniqueImages(images: CarImage[]): CarImage[] {
+  const seen = new Set<string>();
+  const result: CarImage[] = [];
+
+  for (const image of images) {
+    const original = stripSize(image.original || image.medium || image.preview);
+
+    if (!original || seen.has(original)) continue;
+
+    seen.add(original);
+
+    result.push({
+      original,
+      preview: withAjesSize(original, "h=50"),
+      medium: withAjesSize(original, "w=320"),
+    });
+  }
+
+  return result;
 }
 
 export function parseImages(images?: unknown): CarImage[] {
   if (!images) return [];
 
   if (Array.isArray(images)) {
-    return images
+    const mapped = images
       .map((item) => {
         if (typeof item === "string") {
-          const original = item.trim();
-          if (!original) return null;
-          return {
-            original,
-            preview: withSize(original, "h=50"),
-            medium: withSize(original, "w=320"),
-          };
+          return normalizeOneImage(item);
         }
 
         if (item && typeof item === "object") {
           const obj = item as Partial<CarImage>;
-          const original = clean(obj.original || obj.medium || obj.preview);
-          if (!original) return null;
 
-          return {
-            original,
-            preview: clean(obj.preview) || withSize(original, "h=50"),
-            medium: clean(obj.medium) || withSize(original, "w=320"),
-          };
+          return normalizeOneImage(
+            clean(obj.original || obj.medium || obj.preview)
+          );
         }
 
         return null;
       })
       .filter(Boolean) as CarImage[];
+
+    return uniqueImages(mapped);
   }
 
   const raw = clean(images);
@@ -89,26 +144,24 @@ export function parseImages(images?: unknown): CarImage[] {
     // AJES часто отдаёт картинки строкой через #
   }
 
-  return raw
+  const mapped = raw
     .split("#")
     .map((x) => x.trim())
     .filter(Boolean)
-    .filter((url) => url.startsWith("http"))
-    .map((url) => {
-      const preview = url;
-      const original = stripSize(url);
+    .map((url) => normalizeOneImage(url))
+    .filter(Boolean) as CarImage[];
 
-      return {
-        original,
-        preview,
-        medium: preview,
-      };
-    });
+  return uniqueImages(mapped);
 }
 
 export function mapCar(row: Raw): CatalogCar {
   const images = parseImages(row.IMAGES);
-  const previewImage = images[0]?.preview || images[0]?.medium || images[0]?.original || "";
+
+  const previewImage =
+    images[0]?.preview ||
+    images[0]?.medium ||
+    images[0]?.original ||
+    "";
 
   return {
     id: clean(row.ID),
@@ -121,7 +174,6 @@ export function mapCar(row: Raw): CatalogCar {
     auction: clean(row.AUCTION),
     auctionDate: clean(row.AUCTION_DATE),
 
-    // Важно: сюда не должен попадать мусор из комплектаций/фото/строк AJES
     grade: cleanShort(row.GRADE, 8),
 
     color: clean(row.COLOR),
@@ -133,7 +185,6 @@ export function mapCar(row: Raw): CatalogCar {
     horsePower: num(row.PW),
     equipment: clean(row.EQUIP),
 
-    // Важно: rate показываем только если это короткая оценка
     rate: cleanShort(row.RATE, 8),
 
     startPrice: num(row.START),
