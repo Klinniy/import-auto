@@ -85,6 +85,21 @@ function highQualityImage(url: string) {
   return String(url || "");
 }
 
+function isGoodPreviewCar(car: Car) {
+  const year = Number(car.year);
+  const image = imageOf(car);
+
+  if (!Number.isFinite(year) || year < 2023) return false;
+  if (!car.brand || !car.model) return false;
+  if (!image || image.includes("car-placeholder")) return false;
+
+  /*
+    Для главной нужен не просто любой лот, а витринная карточка.
+    Оставляем авто с фото и базовыми данными.
+  */
+  return true;
+}
+
 function formatNumber(value?: number | string) {
   if (value === undefined || value === null || value === "") return "—";
 
@@ -101,11 +116,11 @@ export default function CatalogPreview() {
   useEffect(() => {
     let ignore = false;
 
-    fetch("/api/catalog?page=1&limit=3", { cache: "no-store" })
+    fetch("/api/catalog?page=1&limit=30&yearFrom=2023", { cache: "no-store" })
       .then((res) => res.json())
       .then((payload) => {
         if (!ignore) {
-          setCars(getCars(payload).slice(0, 3));
+          setCars(getCars(payload).filter(isGoodPreviewCar).slice(0, 3));
         }
       })
       .catch(() => {
@@ -131,9 +146,9 @@ export default function CatalogPreview() {
             </h2>
 
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              Каталог уже подключен к API: показываем реальные автомобили, фото,
-              год, пробег, оценку и аукцион. Полный список доступен на отдельной
-              странице каталога.
+              Подбираем для главной только свежие автомобили от 2023 года с хорошими
+              фото, понятным пробегом, оценкой и данными аукциона. Полный список
+              доступен на отдельной странице каталога.
             </p>
           </div>
 
