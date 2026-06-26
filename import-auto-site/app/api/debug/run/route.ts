@@ -140,6 +140,8 @@ function catalogSummary(response: any) {
     total: json?.total ?? null,
     pages: json?.pages ?? null,
     itemsCount: items.length,
+    meta: json?.meta || null,
+    hasMeta: Boolean(json?.meta),
     firstCar: items[0]
       ? {
           id: items[0].id,
@@ -151,6 +153,19 @@ function catalogSummary(response: any) {
           imagesCount: items[0].imagesCount,
         }
       : null,
+  };
+}
+
+function catalogDebugSummary(response: any) {
+  const json = response?.json;
+
+  return {
+    ...catalogSummary(response),
+    hasDebug: Boolean(json?.debug),
+    hasWhereSql: Boolean(json?.debug?.whereSql !== undefined),
+    hasCountSql: Boolean(json?.debug?.countSql),
+    hasItemsSql: Boolean(json?.debug?.itemsSql),
+    debug: json?.debug || null,
   };
 }
 
@@ -191,16 +206,26 @@ async function runCatalogFlow(baseUrl: string) {
   const brands = await fetchText(`${baseUrl}/api/brands`);
   const modelsToyota = await fetchText(`${baseUrl}/api/models?brand=TOYOTA`);
   const catalogFirstPage = await fetchText(`${baseUrl}/api/catalog?page=1&limit=5`);
+  const catalogDebug = await fetchText(`${baseUrl}/api/catalog?debug=1&page=1&limit=3`);
   const catalogToyota = await fetchText(`${baseUrl}/api/catalog?brand=TOYOTA&page=1&limit=5`);
   const catalogSearch = await fetchText(`${baseUrl}/api/catalog?q=crown&page=1&limit=5`);
   const catalogYear = await fetchText(`${baseUrl}/api/catalog?yearFrom=2020&yearTo=2026&page=1&limit=5`);
 
   const images = analyzeCatalogImages(catalogFirstPage.json);
 
+  const catalogFirstPageSummary = catalogSummary(catalogFirstPage);
+  const catalogDebugData = catalogDebugSummary(catalogDebug);
+
   const checks = {
     brandsOk: brands.ok && brandsSummary(brands).count > 0,
     modelsOk: modelsToyota.ok,
-    catalogOk: catalogFirstPage.ok && catalogSummary(catalogFirstPage).itemsCount > 0,
+    catalogOk: catalogFirstPage.ok && catalogFirstPageSummary.itemsCount > 0,
+    catalogMetaOk: Boolean(catalogFirstPageSummary.hasMeta),
+    catalogDebugOk:
+      catalogDebug.ok &&
+      catalogDebugData.hasDebug &&
+      catalogDebugData.hasCountSql &&
+      catalogDebugData.hasItemsSql,
     catalogToyotaOk: catalogToyota.ok,
     catalogSearchOk: catalogSearch.ok,
     catalogYearOk: catalogYear.ok,
@@ -212,7 +237,8 @@ async function runCatalogFlow(baseUrl: string) {
     checks,
     brands: brandsSummary(brands),
     modelsToyota: modelsSummary(modelsToyota),
-    catalogFirstPage: catalogSummary(catalogFirstPage),
+    catalogFirstPage: catalogFirstPageSummary,
+    catalogDebug: catalogDebugData,
     catalogToyota: catalogSummary(catalogToyota),
     catalogSearch: catalogSummary(catalogSearch),
     catalogYear: catalogSummary(catalogYear),
@@ -221,6 +247,7 @@ async function runCatalogFlow(baseUrl: string) {
       brands,
       modelsToyota,
       catalogFirstPage,
+      catalogDebug,
       catalogToyota,
       catalogSearch,
       catalogYear,
@@ -249,6 +276,10 @@ async function runTest(req: NextRequest, forcedTest?: string) {
     result.catalog = await fetchText(`${baseUrl}/api/catalog?page=1&limit=5`);
   }
 
+  if (test === "catalog-debug" || test === "all") {
+    result.catalogDebug = await fetchText(`${baseUrl}/api/catalog?debug=1&page=1&limit=3`);
+  }
+
   if (test === "catalog-flow" || test === "all") {
     result.catalogFlow = await runCatalogFlow(baseUrl);
   }
@@ -268,7 +299,7 @@ async function runTest(req: NextRequest, forcedTest?: string) {
 
   return NextResponse.json({
     ok: true,
-    version: "DEBUG RUN V2.6",
+    version: "DEBUG RUN V2.7",
     checkedAt: new Date().toISOString(),
     test,
     baseUrl,

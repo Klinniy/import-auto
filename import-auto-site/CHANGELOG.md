@@ -49,3 +49,18 @@
 Статус:
 - Архитектура каталога разделена на route → service → repository → mapper.
 - Поведение API каталога сохранено.
+
+## v0.3.1 — Catalog Performance Diagnostics
+
+Дата: 2026-06-26
+
+Добавлено:
+- В `CatalogRepository` добавлены тайминги `countMs`, `itemsMs`, `totalMs`.
+- `/api/catalog` теперь возвращает `meta` с длительностью выполнения.
+- `/api/catalog?debug=1` возвращает SQL и meta-диагностику.
+- В Debug Center добавлена проверка `Catalog Debug`.
+- В `Catalog Flow` добавлены проверки `catalogMetaOk` и `catalogDebugOk`.
+
+Статус:
+- Каталог сохраняет прежнее поведение.
+- Производительность и SQL теперь удобно проверяются через `/debug`.

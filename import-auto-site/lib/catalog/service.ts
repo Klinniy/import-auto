@@ -9,6 +9,12 @@ export type CatalogServiceResponse = {
   total: number;
   pages: number;
   items: ReturnType<typeof mapCar>[];
+  meta: {
+    durationMs: number;
+    countMs: number;
+    itemsMs: number;
+    rowsMapped: number;
+  };
   debug?: {
     whereSql: string;
     countSql: string;
@@ -16,7 +22,13 @@ export type CatalogServiceResponse = {
   };
 };
 
+function nowMs() {
+  return Date.now();
+}
+
 export async function getCatalogResponse(params: URLSearchParams): Promise<CatalogServiceResponse> {
+  const started = nowMs();
+
   const query = parseCatalogQuery(params);
   const result = await fetchCatalogRows(query);
 
@@ -29,10 +41,18 @@ export async function getCatalogResponse(params: URLSearchParams): Promise<Catal
     total: result.total,
     pages: Math.ceil(result.total / query.limit),
     items,
+    meta: {
+      durationMs: nowMs() - started,
+      countMs: result.timing.countMs,
+      itemsMs: result.timing.itemsMs,
+      rowsMapped: items.length,
+    },
   };
 }
 
 export async function getCatalogDebugResponse(params: URLSearchParams): Promise<CatalogServiceResponse> {
+  const started = nowMs();
+
   const query = parseCatalogQuery(params);
   const result = await fetchCatalogRows(query);
 
@@ -45,6 +65,12 @@ export async function getCatalogDebugResponse(params: URLSearchParams): Promise<
     total: result.total,
     pages: Math.ceil(result.total / query.limit),
     items,
+    meta: {
+      durationMs: nowMs() - started,
+      countMs: result.timing.countMs,
+      itemsMs: result.timing.itemsMs,
+      rowsMapped: items.length,
+    },
     debug: {
       whereSql: result.whereSql,
       countSql: result.countSql,
