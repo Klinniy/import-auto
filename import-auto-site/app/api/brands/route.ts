@@ -1,20 +1,22 @@
-import { NextResponse } from "next/server";
-import { ajesSql } from "@/lib/ajes/client";
+import { NextRequest, NextResponse } from "next/server";
+import { getBrandsDictionary } from "@/lib/catalog/dictionaries";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export async function GET(req: NextRequest) {
   try {
-    const rows = await ajesSql<Array<Record<string, string>>>(
-      "select marka_id,marka_name,count(*) from main group by marka_id order by marka_name asc"
+    const debug = req.nextUrl.searchParams.get("debug") === "1";
+    const data = await getBrandsDictionary(debug);
+
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: String(error),
+      },
+      { status: 500 }
     );
-
-    const data = rows.map((x) => ({
-      id: x.MARKA_ID,
-      name: x.MARKA_NAME,
-      count: Number(x.TAG2 || 0)
-    }));
-
-    return NextResponse.json({ ok: true, data });
-  } catch (e) {
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 }

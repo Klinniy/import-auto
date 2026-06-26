@@ -85,3 +85,21 @@
 Статус:
 - Архитектура каталога теперь ближе к схеме route → service → repository → mapper → image service.
 - Поведение API каталога сохранено.
+
+## v0.3.3 — Catalog Dictionary Service
+
+Дата: 2026-06-26
+
+Добавлено:
+- Вынесена логика марок и моделей в `lib/catalog/dictionaries.ts`.
+- `/api/brands` теперь работает через Dictionary Service.
+- `/api/models` теперь работает через Dictionary Service.
+- Добавлен debug-режим:
+  - `/api/brands?debug=1`
+  - `/api/models?brand=TOYOTA&debug=1`
+- В Debug Center добавлена проверка `Dictionaries`.
+- В `/api/debug/run?test=all` добавлена проверка dictionaries.
+
+Статус:
+- Архитектура справочников приведена к общей схеме.
+- Brands / Models проверяются через Debug Center.

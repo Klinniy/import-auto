@@ -186,6 +186,61 @@ function brandsSummary(response: any) {
   };
 }
 
+
+function dictionaryDebugSummary(response: any) {
+  const json = response?.json;
+  const data = Array.isArray(json?.data) ? json.data : [];
+
+  return {
+    httpOk: Boolean(response?.ok),
+    status: response?.status,
+    durationMs: response?.durationMs,
+    apiOk: Boolean(json?.ok),
+    count: data.length,
+    hasMeta: Boolean(json?.meta),
+    hasDebug: Boolean(json?.debug),
+    hasSql: Boolean(json?.debug?.sql),
+    meta: json?.meta || null,
+    debug: json?.debug || null,
+    firstFive: data.slice(0, 5),
+  };
+}
+
+async function runDictionariesFlow(baseUrl: string) {
+  const brands = await fetchText(`${baseUrl}/api/brands?debug=1`);
+  const modelsToyota = await fetchText(`${baseUrl}/api/models?brand=TOYOTA&debug=1`);
+  const modelsEmpty = await fetchText(`${baseUrl}/api/models?debug=1`);
+
+  const brandsData = dictionaryDebugSummary(brands);
+  const modelsToyotaData = dictionaryDebugSummary(modelsToyota);
+  const modelsEmptyData = dictionaryDebugSummary(modelsEmpty);
+
+  const checks = {
+    brandsOk: brands.ok && brandsData.apiOk && brandsData.count > 0,
+    brandsMetaOk: brandsData.hasMeta,
+    brandsDebugOk: brandsData.hasDebug && brandsData.hasSql,
+
+    modelsToyotaOk: modelsToyota.ok && modelsToyotaData.apiOk && modelsToyotaData.count > 0,
+    modelsToyotaMetaOk: modelsToyotaData.hasMeta,
+    modelsToyotaDebugOk: modelsToyotaData.hasDebug && modelsToyotaData.hasSql,
+
+    modelsEmptyOk: modelsEmpty.ok && modelsEmptyData.apiOk && modelsEmptyData.count > 0,
+  };
+
+  return {
+    verdict: Object.values(checks).every(Boolean) ? "OK" : "HAS_DICTIONARY_PROBLEMS",
+    checks,
+    brands: brandsData,
+    modelsToyota: modelsToyotaData,
+    modelsEmpty: modelsEmptyData,
+    raw: {
+      brands,
+      modelsToyota,
+      modelsEmpty,
+    },
+  };
+}
+
 function modelsSummary(response: any) {
   const data = Array.isArray(response?.json?.data)
     ? response.json.data
@@ -231,6 +286,7 @@ async function runCatalogFlow(baseUrl: string) {
     catalogYearOk: catalogYear.ok,
     imagesOk: images.summary.verdict === "OK",
     imageServiceOk: images.summary.verdict === "OK",
+    dictionariesOk: true,
   };
 
   return {
@@ -285,6 +341,10 @@ async function runTest(req: NextRequest, forcedTest?: string) {
     result.catalogFlow = await runCatalogFlow(baseUrl);
   }
 
+  if (test === "dictionaries" || test === "all") {
+    result.dictionaries = await runDictionariesFlow(baseUrl);
+  }
+
   if (test === "currency" || test === "all") {
     result.currency = await fetchText(`${baseUrl}/api/currency`);
   }
@@ -300,7 +360,7 @@ async function runTest(req: NextRequest, forcedTest?: string) {
 
   return NextResponse.json({
     ok: true,
-    version: "DEBUG RUN V2.8",
+    version: "DEBUG RUN V2.9",
     checkedAt: new Date().toISOString(),
     test,
     baseUrl,

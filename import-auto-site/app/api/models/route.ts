@@ -1,26 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ajesSql, sqlValue } from "@/lib/ajes/client";
+import { getModelsDictionary } from "@/lib/catalog/dictionaries";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    const brand = req.nextUrl.searchParams.get("brand") || req.nextUrl.searchParams.get("marka") || "";
+    const brand =
+      req.nextUrl.searchParams.get("brand") ||
+      req.nextUrl.searchParams.get("marka") ||
+      req.nextUrl.searchParams.get("markaName") ||
+      "";
 
-    if (!brand) {
-      return NextResponse.json({ ok: false, error: "brand is required" }, { status: 400 });
-    }
+    const debug = req.nextUrl.searchParams.get("debug") === "1";
 
-    const rows = await ajesSql<Array<Record<string, string>>>(
-      `select model_id,model_name,count(*) from main where marka_name=${sqlValue(brand)} group by model_id order by model_name asc`
+    const data = await getModelsDictionary(brand, debug);
+
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: String(error),
+      },
+      { status: 500 }
     );
-
-    const data = rows.map((x) => ({
-      id: x.MODEL_ID,
-      name: x.MODEL_NAME,
-      count: Number(x.TAG2 || 0)
-    }));
-
-    return NextResponse.json({ ok: true, brand, data });
-  } catch (e) {
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 }
