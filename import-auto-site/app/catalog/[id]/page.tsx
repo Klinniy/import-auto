@@ -140,6 +140,15 @@ function formatPrice(value?: number | string | null) {
   return `¥ ${formatNumber(num)}`;
 }
 
+function cleanHtmlText(value: unknown) {
+  return String(value ?? "")
+    .replace(/&amp;/g, "&")
+    .replace(/&#\d+;/g, "")
+    .replace(/&[a-zA-Z]+;/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function valueText(value?: number | string | boolean | null) {
   if (value === undefined || value === null || value === "") return "—";
 
@@ -170,6 +179,28 @@ function cleanBadge(value: unknown) {
   return text;
 }
 
+function splitLotImages(images: string[]) {
+  /*
+    У части лотов первое изображение — аукционный лист.
+    Для пользователя в главном блоке лучше показывать фото автомобиля.
+    Поэтому при наличии нескольких фото основным делаем второе изображение,
+    а первое показываем отдельным блоком как аукционный лист.
+  */
+  if (images.length <= 1) {
+    return {
+      mainImage: images[0] || "",
+      auctionSheet: "",
+      galleryImages: images,
+    };
+  }
+
+  return {
+    mainImage: images[1] || images[0],
+    auctionSheet: images[0],
+    galleryImages: images.slice(1),
+  };
+}
+
 export default async function CarPage({ params }: PageProps) {
   const { id } = await params;
   const car = await getCar(id);
@@ -177,12 +208,13 @@ export default async function CarPage({ params }: PageProps) {
   if (!car) notFound();
 
   const images = imageList(car);
+  const { mainImage, auctionSheet, galleryImages } = splitLotImages(images);
   const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
   const rate = cleanBadge(car.rate || car.grade);
 
   const mainSpecs: Array<[string, string | number | boolean | null | undefined]> = [
     ["Год", car.year],
-    ["Кузов", car.body],
+    ["Кузов", cleanHtmlText(car.body)],
     ["Пробег", car.mileage ? `${formatNumber(car.mileage)} км` : ""],
     ["Объем", car.engineVolume ? `${formatNumber(car.engineVolume)} см³` : ""],
     ["Мощность", car.horsePower ? `${formatNumber(car.horsePower)} л.с.` : ""],
@@ -258,9 +290,9 @@ export default async function CarPage({ params }: PageProps) {
 
             <div className="overflow-hidden rounded-[2rem] bg-white shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
               <div className="relative h-[360px] bg-slate-100 md:h-[520px]">
-                {images[0] ? (
+                {mainImage ? (
                   <Image
-                    src={images[0]}
+                    src={mainImage}
                     alt={title}
                     fill
                     priority
@@ -276,9 +308,9 @@ export default async function CarPage({ params }: PageProps) {
               </div>
             </div>
 
-            {images.length > 1 && (
+            {galleryImages.length > 1 && (
               <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-                {images.slice(1, 9).map((image) => (
+                {galleryImages.slice(1, 9).map((image) => (
                   <div
                     key={image}
                     className="relative h-32 overflow-hidden rounded-[1.4rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 md:h-36"
@@ -294,6 +326,25 @@ export default async function CarPage({ params }: PageProps) {
                   </div>
                 ))}
               </div>
+            )}
+
+            {auctionSheet && (
+              <section className="mt-6 rounded-[2rem] bg-white p-7 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
+                <h2 className="text-2xl font-black tracking-[-0.03em]">
+                  Аукционный лист
+                </h2>
+
+                <div className="relative mt-5 h-[420px] overflow-hidden rounded-[1.5rem] bg-slate-100 md:h-[560px]">
+                  <Image
+                    src={auctionSheet}
+                    alt={`Аукционный лист ${title}`}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 1024px) 100vw, 65vw"
+                    className="object-contain"
+                  />
+                </div>
+              </section>
             )}
 
             {car.info && (
