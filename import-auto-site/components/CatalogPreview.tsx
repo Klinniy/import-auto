@@ -57,6 +57,39 @@ function imageOf(car: Car) {
   return car.previewImage || "";
 }
 
+
+function stripImageSize(url: string) {
+  let value = String(url || "").trim();
+
+  if (!value) return "";
+
+  for (let i = 0; i < 5; i++) {
+    const next = value
+      .replace(/([?&])(h|w)=\d+/gi, "")
+      .replace(/\?&/g, "?")
+      .replace(/[?&]$/g, "");
+
+    if (next === value) break;
+
+    value = next;
+  }
+
+  return value;
+}
+
+function highQualityImage(url: string) {
+  const base = stripImageSize(url);
+
+  if (!base) return "";
+  if (base.includes("/mosaic/")) return base;
+
+  if (base.includes("tru.ru/imgs")) {
+    return `${base}&w=640`;
+  }
+
+  return base;
+}
+
 function formatNumber(value?: number | string) {
   if (value === undefined || value === null || value === "") return "—";
 
@@ -157,7 +190,7 @@ export default function CatalogPreview() {
                   <div className="relative h-64 overflow-hidden bg-slate-100">
                     {image ? (
                       <Image
-                        src={image}
+                        src={highQualityImage(image)}
                         alt={title}
                         fill
                         unoptimized

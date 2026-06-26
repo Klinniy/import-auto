@@ -132,6 +132,44 @@ function carImage(car: Car) {
   return car.previewImage || fallback;
 }
 
+
+function stripImageSize(url: string) {
+  let value = String(url || "").trim();
+
+  if (!value) return "";
+
+  for (let i = 0; i < 5; i++) {
+    const next = value
+      .replace(/([?&])(h|w)=\d+/gi, "")
+      .replace(/\?&/g, "?")
+      .replace(/[?&]$/g, "");
+
+    if (next === value) break;
+
+    value = next;
+  }
+
+  return value;
+}
+
+function highQualityImage(url: string) {
+  const fallback = "/mosaic/car-placeholder.png";
+  const base = stripImageSize(url);
+
+  if (!base) return fallback;
+  if (base.includes("/mosaic/")) return base;
+
+  /*
+    Для карточек каталога берём картинку крупнее, чем API medium w=320.
+    Это заметно улучшает качество на больших экранах.
+  */
+  if (base.includes("tru.ru/imgs")) {
+    return `${base}&w=640`;
+  }
+
+  return base;
+}
+
 function isSanction(car: Car) {
   const value = car.sanction;
 
@@ -561,7 +599,7 @@ export default function CatalogFull() {
                   >
                     <div className="relative h-56 overflow-hidden bg-slate-100">
                       <img
-                        src={image}
+                        src={highQualityImage(image)}
                         alt={title}
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         loading="lazy"
