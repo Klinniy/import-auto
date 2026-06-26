@@ -360,7 +360,7 @@ async function runTest(req: NextRequest, forcedTest?: string) {
 
   return NextResponse.json({
     ok: true,
-    version: "DEBUG RUN V2.9",
+    version: "DEBUG RUN V2.10",
     checkedAt: new Date().toISOString(),
     test,
     baseUrl,

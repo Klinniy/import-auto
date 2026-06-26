@@ -103,3 +103,22 @@
 Статус:
 - Архитектура справочников приведена к общей схеме.
 - Brands / Models проверяются через Debug Center.
+
+## v0.3.4 — Fix AJES Dictionary SQL
+
+Дата: 2026-06-26
+
+Исправлено:
+- Dictionary Service больше не использует SQL alias `as id`, `as name`, `as count`, потому что AJES возвращал `unknown field`.
+- Для `/api/brands` восстановлена рабочая схема:
+  - `select marka_id,marka_name,count(*) from main group by marka_id order by marka_name asc`
+  - mapping: `MARKA_ID`, `MARKA_NAME`, `TAG2`
+- Для `/api/models` восстановлена рабочая схема:
+  - `select model_id,model_name,count(*) from main ... group by model_id order by model_name asc`
+  - mapping: `MODEL_ID`, `MODEL_NAME`, `TAG2`
+- `/api/models` без brand теперь возвращает общий список моделей для Debug Center.
+
+Статус:
+- Нужно проверить через Debug Center:
+  - Dictionaries
+  - Catalog Flow

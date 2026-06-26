@@ -21,7 +21,7 @@ export default function DebugPage() {
     } catch (error) {
       setData({
         ok: false,
-        version: "DEBUG CENTER V2.9",
+        version: "DEBUG CENTER V2.10",
         error: String(error),
       });
     } finally {
@@ -44,7 +44,7 @@ export default function DebugPage() {
     <main style={main}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <h1 style={{ margin: 0, fontSize: 34 }}>
-          Import Auto Debug Center V2.9
+          Import Auto Debug Center V2.10
         </h1>
 
         <p style={{ color: "#8ea4c8", marginTop: 8 }}>
