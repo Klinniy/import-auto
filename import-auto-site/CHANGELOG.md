@@ -64,3 +64,24 @@
 Статус:
 - Каталог сохраняет прежнее поведение.
 - Производительность и SQL теперь удобно проверяются через `/debug`.
+
+## v0.3.2 — Catalog Image Service
+
+Дата: 2026-06-26
+
+Добавлено:
+- Вынесена логика изображений из `lib/catalog/mapper.ts`.
+- Добавлен `lib/catalog/images.ts`.
+- Добавлены функции:
+  - `stripImageSize`
+  - `withAjesImageSize`
+  - `normalizeCatalogImage`
+  - `parseImages`
+  - `getPreviewImage`
+  - `validateImageSet`
+- `mapper.ts` теперь отвечает только за преобразование строки AJES в `CatalogCar`.
+- В `Catalog Flow` добавлена проверка `imageServiceOk`.
+
+Статус:
+- Архитектура каталога теперь ближе к схеме route → service → repository → mapper → image service.
+- Поведение API каталога сохранено.

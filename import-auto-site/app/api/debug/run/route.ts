@@ -230,6 +230,7 @@ async function runCatalogFlow(baseUrl: string) {
     catalogSearchOk: catalogSearch.ok,
     catalogYearOk: catalogYear.ok,
     imagesOk: images.summary.verdict === "OK",
+    imageServiceOk: images.summary.verdict === "OK",
   };
 
   return {
@@ -299,7 +300,7 @@ async function runTest(req: NextRequest, forcedTest?: string) {
 
   return NextResponse.json({
     ok: true,
-    version: "DEBUG RUN V2.7",
+    version: "DEBUG RUN V2.8",
     checkedAt: new Date().toISOString(),
     test,
     baseUrl,
