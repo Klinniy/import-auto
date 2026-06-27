@@ -51,7 +51,9 @@ export async function GET() {
     drive: await check(`${baseUrl}/api/catalog?drive=FF&page=1&limit=5&debug=1`),
     statusSold: await check(`${baseUrl}/api/catalog?status=sold&page=1&limit=5&debug=1`),
     sanction: await check(`${baseUrl}/api/catalog?sanction=1&page=1&limit=5&debug=1`),
+    noSanction: await check(`${baseUrl}/api/catalog?sanction=0&page=1&limit=5&debug=1`),
     leftHandDrive: await check(`${baseUrl}/api/catalog?leftHandDrive=1&page=1&limit=5&debug=1`),
+    rightHandDrive: await check(`${baseUrl}/api/catalog?leftHandDrive=0&page=1&limit=5&debug=1`),
     sortYear: await check(`${baseUrl}/api/catalog?sort=year_desc&page=1&limit=5&debug=1`),
     sortMileage: await check(`${baseUrl}/api/catalog?sort=mileage_asc&page=1&limit=5&debug=1`),
   };
@@ -62,7 +64,7 @@ export async function GET() {
 
   return NextResponse.json({
     ok: Object.values(checks).every(Boolean),
-    version: "CATALOG SAFE FILTERS V2",
+    version: "CATALOG SAFE FILTERS V3",
     checkedAt: new Date().toISOString(),
     checks,
     tests,

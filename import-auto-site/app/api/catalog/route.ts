@@ -172,8 +172,16 @@ async function buildWhere(params: URLSearchParams) {
     where.push(`${field.sanction}=1`);
   }
 
+  if (sanction === "0" && field.sanction) {
+    where.push(`${field.sanction}=0`);
+  }
+
   if (leftHandDrive === "1" && field.leftHandDrive) {
     where.push(`${field.leftHandDrive}=1`);
+  }
+
+  if (leftHandDrive === "0" && field.leftHandDrive) {
+    where.push(`${field.leftHandDrive}=0`);
   }
 
   return {
