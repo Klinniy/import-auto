@@ -17,7 +17,6 @@ type FiltersResponse = {
     brands?: Option[];
     years?: Option[];
     auctions?: Option[];
-    rates?: Option[];
   };
 };
 
@@ -61,14 +60,11 @@ type CatalogPayload = {
   total?: number;
   pages?: number;
   page?: number;
-  limit?: number;
   error?: string;
 };
 
 type CbrCurrency = {
-  nominalLabel: string;
   value: number;
-  diff: number;
 };
 
 type CbrResponse = {
@@ -109,7 +105,6 @@ function formatNumber(value?: number | string | null) {
   if (value === undefined || value === null || value === "") return "—";
 
   const n = Number(value);
-
   if (!Number.isFinite(n)) return String(value);
 
   return new Intl.NumberFormat("ru-RU").format(n);
@@ -117,7 +112,6 @@ function formatNumber(value?: number | string | null) {
 
 function formatRate(value?: number | null) {
   const n = Number(value);
-
   if (!Number.isFinite(n)) return "—";
 
   return new Intl.NumberFormat("ru-RU", {
@@ -128,9 +122,7 @@ function formatRate(value?: number | null) {
 
 function formatPrice(value?: number | string | null) {
   const n = Number(value);
-
   if (!Number.isFinite(n) || n <= 0) return "—";
-
   return `¥ ${formatNumber(n)}`;
 }
 
@@ -214,13 +206,19 @@ export default function CatalogFull() {
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [mileageTo, setMileageTo] = useState("");
-  const [rateFrom, setRateFrom] = useState("");
   const [auction, setAuction] = useState("");
+  const [rateFrom, setRateFrom] = useState("");
   const [page, setPage] = useState(1);
 
   const [loading, setLoading] = useState(false);
   const [loadingFilters, setLoadingFilters] = useState(true);
   const [error, setError] = useState("");
+
+  const brands = useMemo(() => {
+    return (filters?.filters?.brands || [])
+      .filter((item) => optionLabel(item))
+      .sort((a, b) => optionLabel(a).localeCompare(optionLabel(b), "en"));
+  }, [filters]);
 
   const years = useMemo(() => {
     return (filters?.filters?.years || [])
@@ -229,12 +227,6 @@ export default function CatalogFull() {
         return year >= 1990 && year <= 2026;
       })
       .slice(0, 45);
-  }, [filters]);
-
-  const brands = useMemo(() => {
-    return (filters?.filters?.brands || [])
-      .filter((item) => optionLabel(item))
-      .sort((a, b) => optionLabel(a).localeCompare(optionLabel(b), "en"));
   }, [filters]);
 
   const auctions = filters?.filters?.auctions || [];
@@ -249,8 +241,8 @@ export default function CatalogFull() {
     setYearFrom(params.get("yearFrom") || "");
     setYearTo(params.get("yearTo") || "");
     setMileageTo(params.get("mileageTo") || "");
-    setRateFrom(params.get("rateFrom") || "");
     setAuction(params.get("auction") || "");
+    setRateFrom(params.get("rateFrom") || "");
     setPage(Number(params.get("page") || 1) || 1);
     setInitialized(true);
   }, []);
@@ -294,14 +286,13 @@ export default function CatalogFull() {
     if (yearFrom) params.set("yearFrom", yearFrom);
     if (yearTo) params.set("yearTo", yearTo);
     if (mileageTo) params.set("mileageTo", mileageTo);
-    if (rateFrom) params.set("rateFrom", rateFrom);
     if (auction) params.set("auction", auction);
+    if (rateFrom) params.set("rateFrom", rateFrom);
 
     params.set("page", String(page));
     params.set("limit", "24");
 
     const qs = params.toString();
-
     window.history.replaceState(null, "", `/catalog?${qs}`);
 
     setLoading(true);
@@ -327,7 +318,7 @@ export default function CatalogFull() {
         setError(String(err));
       })
       .finally(() => setLoading(false));
-  }, [initialized, brand, model, q, yearFrom, yearTo, mileageTo, rateFrom, auction, page]);
+  }, [initialized, brand, model, q, yearFrom, yearTo, mileageTo, auction, rateFrom, page]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -343,8 +334,8 @@ export default function CatalogFull() {
     setYearFrom("");
     setYearTo("");
     setMileageTo("");
-    setRateFrom("");
     setAuction("");
+    setRateFrom("");
     setPage(1);
   }
 
@@ -354,77 +345,76 @@ export default function CatalogFull() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
-          <div className="flex items-center gap-4">
+    <main className="min-h-screen bg-white text-[#111827]">
+      <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4 px-3 py-2">
+          <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-black uppercase text-slate-600 transition hover:bg-[#07152f] hover:text-white"
+              className="rounded bg-slate-100 px-2.5 py-1.5 text-[12px] font-black uppercase text-slate-600 hover:bg-[#111827] hover:text-white"
             >
               Начало
             </Link>
 
-            <div className="hidden items-center gap-2 text-sm font-black text-slate-500 md:flex">
+            <div className="hidden items-center gap-2 text-[13px] font-black text-slate-500 md:flex">
               <span>TOKYO</span>
-              <span className="text-[#07152f]">{tokyoTime()}</span>
+              <span className="text-[#111827]">{tokyoTime()}</span>
             </div>
 
-            <div className="text-sm font-black text-blue-700">
+            <div className="text-[13px] font-black text-blue-700">
               {formatNumber(total)} авто из Японии
             </div>
           </div>
 
-          <div className="hidden items-center gap-3 xl:flex">
-            <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-black ring-1 ring-slate-100">
+          <div className="hidden items-center gap-2 xl:flex">
+            <div className="rounded bg-slate-50 px-3 py-1.5 text-[12px] font-black ring-1 ring-slate-100">
               ЦБ · 100 JPY: {formatRate(rates?.currencies?.JPY?.value)} ₽
             </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-black ring-1 ring-slate-100">
+            <div className="rounded bg-slate-50 px-3 py-1.5 text-[12px] font-black ring-1 ring-slate-100">
               ЦБ · 1 CNY: {formatRate(rates?.currencies?.CNY?.value)} ₽
             </div>
           </div>
 
           <Link
             href="/"
-            className="rounded-xl bg-[#07152f] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
+            className="rounded-lg bg-[#07152f] px-4 py-2 text-[12px] font-black text-white hover:bg-[#d8001f]"
           >
             На главную
           </Link>
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-[1600px] gap-5 px-4 py-5 lg:grid-cols-[360px_1fr] lg:px-6">
-        <aside className="h-fit rounded-[1.4rem] bg-white p-4 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 lg:sticky lg:top-4">
-          <form onSubmit={submitSearch}>
-            <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff2d3d]">
-                  японские аукционы
-                </div>
-                <h1 className="mt-1 text-2xl font-black tracking-[-0.04em]">
-                  Поиск авто
-                </h1>
-              </div>
-
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-black text-slate-600 transition hover:bg-[#ff2d3d] hover:text-white"
-              >
-                сброс
-              </button>
+      <section className="mx-auto flex max-w-[1800px] gap-3 px-3 py-3">
+        <aside className="hidden w-9 shrink-0 border-r border-slate-100 pr-2 text-[11px] font-black text-slate-500 lg:block">
+          {["CS", "BC", "ПП", "BT", "CP", "100", "LHD"].map((item, index) => (
+            <div
+              key={item}
+              className={`mb-2 flex h-7 items-center justify-center rounded ${
+                index === 5 ? "bg-lime-100 text-lime-700" : "bg-slate-50"
+              }`}
+            >
+              {item}
             </div>
+          ))}
+        </aside>
 
-            <div className="grid gap-3">
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+        <div className="min-w-0 flex-1">
+          <form
+            onSubmit={submitSearch}
+            className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm"
+          >
+            <div className="grid gap-3 lg:grid-cols-[280px_280px_260px_1fr]">
+              <div>
+                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
                   Марка
-                </span>
+                </div>
+
                 <select
                   value={brand}
                   disabled={loadingFilters}
+                  size={10}
                   onChange={(event) => setFilter(() => setBrand(event.target.value))}
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
+                  className="h-[220px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] font-black outline-none focus:border-blue-400"
                 >
                   <option value="">Любая</option>
                   {brands.map((item) => {
@@ -437,17 +427,19 @@ export default function CatalogFull() {
                     );
                   })}
                 </select>
-              </label>
+              </div>
 
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+              <div>
+                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
                   Модель
-                </span>
+                </div>
+
                 <select
                   value={model}
                   disabled={!brand || models.length === 0}
+                  size={10}
                   onChange={(event) => setFilter(() => setModel(event.target.value))}
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400 disabled:opacity-45"
+                  className="h-[220px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] font-black outline-none focus:border-blue-400 disabled:opacity-45"
                 >
                   <option value="">Любая</option>
                   {models.map((item) => {
@@ -460,191 +452,190 @@ export default function CatalogFull() {
                     );
                   })}
                 </select>
-              </label>
-
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Номер лота / кузов / текст
-                </span>
-                <input
-                  value={qDraft}
-                  onChange={(event) => setQDraft(event.target.value)}
-                  placeholder="например: Crown, 60072, CX-5"
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                    Год от
-                  </span>
-                  <select
-                    value={yearFrom}
-                    onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
-                    className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                  >
-                    <option value="">Любой</option>
-                    {years.map((item) => {
-                      const value = optionValue(item);
-                      return <option key={`from-${value}`} value={value}>{value}</option>;
-                    })}
-                  </select>
-                </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                    Год до
-                  </span>
-                  <select
-                    value={yearTo}
-                    onChange={(event) => setFilter(() => setYearTo(event.target.value))}
-                    className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                  >
-                    <option value="">Любой</option>
-                    {years.map((item) => {
-                      const value = optionValue(item);
-                      return <option key={`to-${value}`} value={value}>{value}</option>;
-                    })}
-                  </select>
-                </label>
               </div>
 
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Пробег до, км
-                </span>
-                <input
-                  value={mileageTo}
-                  inputMode="numeric"
-                  onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
-                  placeholder="100000"
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                />
-              </label>
+              <div>
+                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
+                  Параметры
+                </div>
 
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Аукцион
-                </span>
-                <select
-                  value={auction}
-                  onChange={(event) => setFilter(() => setAuction(event.target.value))}
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                >
-                  <option value="">Любой</option>
-                  {auctions.slice(0, 140).map((item) => {
-                    const value = optionValue(item);
+                <div className="grid gap-2">
+                  <input
+                    value={qDraft}
+                    onChange={(event) => setQDraft(event.target.value)}
+                    placeholder="Номер лота / текст"
+                    className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-black outline-none focus:border-blue-400"
+                  />
 
-                    return (
-                      <option key={value} value={value}>
-                        {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={yearFrom}
+                      onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
+                      className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
+                    >
+                      <option value="">Год от</option>
+                      {years.map((item) => {
+                        const value = optionValue(item);
+                        return <option key={`from-${value}`} value={value}>{value}</option>;
+                      })}
+                    </select>
 
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Оценка от
-                </span>
-                <select
-                  value={rateFrom}
-                  onChange={(event) => setFilter(() => setRateFrom(event.target.value))}
-                  className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black outline-none focus:border-blue-400"
-                >
-                  <option value="">Любая</option>
-                  <option value="3">3</option>
-                  <option value="3.5">3.5</option>
-                  <option value="4">4</option>
-                  <option value="4.5">4.5</option>
-                  <option value="5">5</option>
-                </select>
-              </label>
+                    <select
+                      value={yearTo}
+                      onChange={(event) => setFilter(() => setYearTo(event.target.value))}
+                      className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
+                    >
+                      <option value="">Год до</option>
+                      {years.map((item) => {
+                        const value = optionValue(item);
+                        return <option key={`to-${value}`} value={value}>{value}</option>;
+                      })}
+                    </select>
+                  </div>
 
-              <button
-                type="submit"
-                className="mt-1 h-12 rounded-xl bg-[#2f80ed] text-sm font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-100 transition hover:bg-[#1f6fd8]"
-              >
-                Поиск
-              </button>
+                  <input
+                    value={mileageTo}
+                    inputMode="numeric"
+                    onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
+                    placeholder="Пробег до, км"
+                    className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-black outline-none focus:border-blue-400"
+                  />
 
-              <button
-                type="button"
-                onClick={() => alert("Расширенный поиск появится следующим этапом")}
-                className="text-left text-xs font-black uppercase tracking-[0.14em] text-amber-600 transition hover:text-[#ff2d3d]"
-              >
-                расширенный поиск скоро
-              </button>
+                  <select
+                    value={auction}
+                    onChange={(event) => setFilter(() => setAuction(event.target.value))}
+                    className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
+                  >
+                    <option value="">Любой аукцион</option>
+                    {auctions.slice(0, 160).map((item) => {
+                      const value = optionValue(item);
+
+                      return (
+                        <option key={value} value={value}>
+                          {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <select
+                    value={rateFrom}
+                    onChange={(event) => setFilter(() => setRateFrom(event.target.value))}
+                    className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
+                  >
+                    <option value="">Оценка от</option>
+                    <option value="3">3</option>
+                    <option value="3.5">3.5</option>
+                    <option value="4">4</option>
+                    <option value="4.5">4.5</option>
+                    <option value="5">5</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between gap-3">
+                <div className="rounded-lg bg-white p-3 ring-1 ring-slate-200">
+                  <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    быстрый поиск
+                  </div>
+                  <div className="mt-2 text-sm font-bold text-slate-600">
+                    Выберите марку, модель или введите номер лота. Результаты обновятся справа ниже.
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <button
+                    type="submit"
+                    className="h-12 rounded-lg bg-gradient-to-b from-[#5ab3ff] to-[#2f80ed] text-sm font-black uppercase tracking-[0.16em] text-white shadow"
+                  >
+                    поиск
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="h-10 rounded-lg border border-slate-300 bg-white text-[12px] font-black uppercase tracking-[0.14em] text-slate-600 hover:bg-slate-100"
+                  >
+                    сброс
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => alert("Расширенный поиск появится следующим этапом")}
+                    className="text-left text-[12px] font-black uppercase tracking-[0.14em] text-amber-600"
+                  >
+                    расширенный поиск скоро
+                  </button>
+                </div>
+              </div>
             </div>
           </form>
-        </aside>
 
-        <section className="min-w-0">
-          <div className="mb-4 rounded-[1.4rem] bg-white p-4 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                  найдено
-                </div>
-                <h2 className="mt-1 text-3xl font-black tracking-[-0.05em]">
-                  {formatNumber(total)} авто
-                </h2>
+          <div className="my-3 h-8 rounded bg-[#fff5cc] px-4 py-2 text-[12px] font-black uppercase text-[#9a1b1b]">
+            Войдите, чтобы видеть всю информацию по лоту
+          </div>
+
+          <div className="mb-3 flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:flex-row md:items-center">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                найдено
+              </div>
+              <h1 className="text-2xl font-black tracking-[-0.04em]">
+                {formatNumber(total)} авто
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                className="h-9 rounded-lg bg-slate-100 px-4 text-sm font-black hover:bg-[#07152f] hover:text-white disabled:opacity-40"
+              >
+                ←
+              </button>
+
+              <div className="rounded-lg bg-slate-100 px-5 py-2 text-sm font-black">
+                стр. {page} из {formatNumber(pages)}
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1 || loading}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="h-10 rounded-xl bg-slate-100 px-4 text-sm font-black transition hover:bg-[#07152f] hover:text-white disabled:opacity-40"
-                >
-                  ←
-                </button>
-
-                <div className="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-black">
-                  стр. {page} из {formatNumber(pages)}
-                </div>
-
-                <button
-                  disabled={page >= pages || loading}
-                  onClick={() => setPage((current) => Math.min(pages, current + 1))}
-                  className="h-10 rounded-xl bg-slate-100 px-4 text-sm font-black transition hover:bg-[#07152f] hover:text-white disabled:opacity-40"
-                >
-                  →
-                </button>
-              </div>
+              <button
+                disabled={page >= pages || loading}
+                onClick={() => setPage((current) => Math.min(pages, current + 1))}
+                className="h-9 rounded-lg bg-slate-100 px-4 text-sm font-black hover:bg-[#07152f] hover:text-white disabled:opacity-40"
+              >
+                →
+              </button>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
-              {Array.from({ length: 12 }).map((_, index) => (
+            <div className="grid gap-3">
+              {Array.from({ length: 10 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-[250px] animate-pulse rounded-[1.4rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200"
+                  className="h-[170px] animate-pulse rounded-xl border border-slate-200 bg-white"
                 />
               ))}
             </div>
           ) : cars.length === 0 ? (
-            <div className="rounded-[1.4rem] bg-white p-10 text-center shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
+            <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
               <div className="text-2xl font-black">Лоты не найдены</div>
               <p className="mt-2 text-slate-500">Попробуйте изменить параметры поиска.</p>
               <button
                 onClick={reset}
-                className="mt-5 rounded-xl bg-[#ff2d3d] px-6 py-3 font-black text-white"
+                className="mt-5 rounded-lg bg-[#d8001f] px-6 py-3 font-black text-white"
               >
                 Сбросить
               </button>
             </div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid gap-3">
               {cars.map((car) => {
                 const image = carImage(car);
                 const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
@@ -654,84 +645,87 @@ export default function CatalogFull() {
                   <Link
                     key={car.id || `${car.lot}-${title}`}
                     href={`/catalog/${car.id}`}
-                    className="group grid overflow-hidden rounded-[1.4rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-2xl sm:grid-cols-[210px_1fr]"
+                    className="group grid overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-md md:grid-cols-[230px_1fr]"
                   >
-                    <div className="relative h-56 bg-slate-100 sm:h-full">
+                    <div className="relative h-44 bg-slate-100 md:h-full">
                       <img
                         src={image}
                         alt={title}
                         loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        className="h-full w-full object-cover"
                         onError={(event) => {
                           event.currentTarget.src = "/mosaic/car-placeholder.png";
                         }}
                       />
 
-                      <div className="absolute left-3 top-3 rounded-full bg-white/92 px-3 py-1 text-[11px] font-black shadow-sm">
+                      <div className="absolute left-2 top-2 rounded bg-white/92 px-2 py-1 text-[11px] font-black shadow-sm">
                         LOT {car.lot || "—"}
                       </div>
 
                       {rate && (
-                        <div className="absolute bottom-3 left-3 rounded-full bg-[#ff2d3d] px-3 py-1 text-[11px] font-black text-white">
+                        <div className="absolute bottom-2 left-2 rounded bg-[#d8001f] px-2 py-1 text-[11px] font-black text-white">
                           {rate}
                         </div>
                       )}
 
                       {isSanction(car) && (
-                        <div className="absolute right-3 top-3 rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-black">
+                        <div className="absolute right-2 top-2 rounded bg-yellow-400 px-2 py-1 text-[11px] font-black">
                           санкц.
                         </div>
                       )}
                     </div>
 
                     <div className="p-4">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
                         <div>
-                          <h3 className="line-clamp-2 text-xl font-black uppercase leading-tight tracking-[-0.04em]">
+                          <h2 className="text-xl font-black uppercase tracking-[-0.04em]">
                             {title}
-                          </h3>
-                          <div className="mt-1 text-xs font-black uppercase tracking-[0.11em] text-slate-400">
-                            {car.year || "—"} · {car.auction || "Аукцион"}
+                          </h2>
+
+                          <div className="mt-1 text-[12px] font-black uppercase tracking-[0.12em] text-slate-400">
+                            {car.year || "—"} · {car.auction || "Аукцион"} · {car.auctionDate || "дата не указана"}
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+                            <div className="rounded-lg bg-slate-50 p-3">
+                              <div className="text-[11px] font-bold text-slate-400">Пробег</div>
+                              <b>{formatNumber(car.mileage)} км</b>
+                            </div>
+
+                            <div className="rounded-lg bg-slate-50 p-3">
+                              <div className="text-[11px] font-bold text-slate-400">Объем</div>
+                              <b>{formatNumber(car.engineVolume)} см³</b>
+                            </div>
+
+                            <div className="rounded-lg bg-slate-50 p-3">
+                              <div className="text-[11px] font-bold text-slate-400">КПП</div>
+                              <b>{car.transmission || "—"}</b>
+                            </div>
+
+                            <div className="rounded-lg bg-slate-50 p-3">
+                              <div className="text-[11px] font-bold text-slate-400">Привод</div>
+                              <b>{car.drive || "—"}</b>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                        <div className="rounded-xl bg-slate-50 p-3">
-                          <div className="text-[11px] font-bold text-slate-400">Пробег</div>
-                          <b>{formatNumber(car.mileage)} км</b>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <div className="text-[11px] font-bold text-slate-400">Старт</div>
+                              <div className="font-black">{formatPrice(car.startPrice)}</div>
+                            </div>
+
+                            <div>
+                              <div className="text-[11px] font-bold text-slate-400">Финиш</div>
+                              <div className="font-black">{formatPrice(car.finishPrice)}</div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 rounded-lg bg-[#07152f] px-4 py-3 text-center text-sm font-black text-white group-hover:bg-[#d8001f]">
+                            Подробнее
+                          </div>
                         </div>
-
-                        <div className="rounded-xl bg-slate-50 p-3">
-                          <div className="text-[11px] font-bold text-slate-400">Объем</div>
-                          <b>{formatNumber(car.engineVolume)} см³</b>
-                        </div>
-
-                        <div className="rounded-xl bg-slate-50 p-3">
-                          <div className="text-[11px] font-bold text-slate-400">КПП</div>
-                          <b>{car.transmission || "—"}</b>
-                        </div>
-
-                        <div className="rounded-xl bg-slate-50 p-3">
-                          <div className="text-[11px] font-bold text-slate-400">Привод</div>
-                          <b>{car.drive || "—"}</b>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-                        <div>
-                          <div className="text-[11px] font-bold text-slate-400">Старт</div>
-                          <div className="font-black">{formatPrice(car.startPrice)}</div>
-                        </div>
-
-                        <div>
-                          <div className="text-[11px] font-bold text-slate-400">Финиш</div>
-                          <div className="font-black">{formatPrice(car.finishPrice)}</div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-xl bg-[#07152f] px-4 py-3 text-center text-sm font-black text-white transition group-hover:bg-[#ff2d3d]">
-                        Подробнее
                       </div>
                     </div>
                   </Link>
@@ -739,7 +733,7 @@ export default function CatalogFull() {
               })}
             </div>
           )}
-        </section>
+        </div>
       </section>
     </main>
   );
