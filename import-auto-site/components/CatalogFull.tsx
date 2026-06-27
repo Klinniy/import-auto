@@ -895,31 +895,71 @@ function AfaCheckList({
   active: string;
   onPick: (value: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const visible = items.slice(0, 6);
+  const hiddenCount = Math.max(0, items.length - visible.length);
+
+  function renderItem(item: FilterButton) {
+    const selected = active === item.value;
+
+    return (
+      <button
+        key={`${title}-${item.value}`}
+        type="button"
+        onClick={() => {
+          onPick(item.value);
+          setOpen(false);
+        }}
+        className="flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px]"
+      >
+        <span
+          className={`h-[7px] w-[7px] shrink-0 border border-[#8fa0b3] ${
+            selected ? "bg-[#2f80ed]" : "bg-white"
+          }`}
+        />
+        <span className="truncate">{item.label}</span>
+      </button>
+    );
+  }
+
   return (
-    <div className="min-w-0">
+    <div className="relative min-w-0">
       <AfaTitle>{title}</AfaTitle>
 
       <div className="grid gap-[5px]">
-        {items.slice(0, 7).map((item) => {
-          const selected = active === item.value;
+        {visible.map(renderItem)}
 
-          return (
-            <button
-              key={`${title}-${item.value}`}
-              type="button"
-              onClick={() => onPick(item.value)}
-              className="flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px]"
-            >
-              <span
-                className={`h-[7px] w-[7px] shrink-0 border border-[#8fa0b3] ${
-                  selected ? "bg-[#2f80ed]" : "bg-white"
-                }`}
-              />
-              <span className="truncate">{item.label}</span>
-            </button>
-          );
-        })}
+        {hiddenCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="mt-[2px] text-left text-[11px] font-bold text-[#2f6fad]"
+          >
+            еще {hiddenCount}
+          </button>
+        )}
       </div>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-[280px] w-[260px] overflow-y-auto border border-[#b8c4d2] bg-white p-2 shadow-xl">
+          <div className="mb-2 flex items-center justify-between border-b border-[#e3e8ef] pb-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#d8001f]">
+              {title}
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-[12px] font-bold text-[#777]"
+            >
+              закрыть
+            </button>
+          </div>
+
+          <div className="grid gap-[6px]">
+            {items.map(renderItem)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

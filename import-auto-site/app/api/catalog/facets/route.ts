@@ -103,7 +103,28 @@ async function buildWhere(params: URLSearchParams) {
   if (auction && field.auction) where.push(`${field.auction}=${sqlValue(auction)}`);
   if (rateFrom && field.rate) where.push(`${field.rate}>=${sqlValue(rateFrom)}`);
   if (body && field.body) where.push(`${field.body} like ${like(body)}`);
-  if (color && field.color) where.push(`${field.color}=${sqlValue(color)}`);
+  if (color && field.color) {
+    const c = color.toLowerCase();
+
+    const colorVariants: Record<string, string[]> = {
+      black: ["black", "BLACK", "Black"],
+      white: ["white", "WHITE", "White"],
+      silver: ["silver", "SILVER", "Silver"],
+      pearl: ["pearl", "PEARL", "Pearl"],
+      gray: ["gray", "GRAY", "Gray", "grey", "GREY", "Grey"],
+      blue: ["blue", "BLUE", "Blue"],
+      red: ["red", "RED", "Red"],
+      brown: ["brown", "BROWN", "Brown"],
+      green: ["green", "GREEN", "Green"],
+      yellow: ["yellow", "YELLOW", "Yellow"],
+      gold: ["gold", "GOLD", "Gold"],
+      beige: ["beige", "BEIGE", "Beige"],
+      orange: ["orange", "ORANGE", "Orange"],
+    };
+
+    const variants = colorVariants[c] || [color];
+    where.push(`(${variants.map((item) => `${field.color}=${sqlValue(item)}`).join(" or ")})`);
+  }
   if (transmission && field.transmission) where.push(`${field.transmission}=${sqlValue(transmission)}`);
   if (drive && field.drive) where.push(`${field.drive}=${sqlValue(drive)}`);
   if (status && field.status) where.push(`${field.status}=${sqlValue(status === "sold" ? "Sold" : "Not Sold")}`);
@@ -139,24 +160,77 @@ function isBadFacetValue(value: string) {
   );
 }
 
+function normalizeFacet(fieldName: string, raw: string) {
+  const value = cleanFacetValue(raw);
+  const field = fieldName.toLowerCase();
+  const lower = value.toLowerCase();
+
+  if (field.includes("color")) {
+    const colors: Record<string, { value: string; label: string }> = {
+      black: { value: "black", label: "черный" },
+      white: { value: "white", label: "белый" },
+      silver: { value: "silver", label: "серебристый" },
+      pearl: { value: "pearl", label: "жемчуг" },
+      gray: { value: "gray", label: "серый" },
+      grey: { value: "gray", label: "серый" },
+      blue: { value: "blue", label: "синий" },
+      red: { value: "red", label: "красный" },
+      brown: { value: "brown", label: "коричневый" },
+      green: { value: "green", label: "зеленый" },
+      yellow: { value: "yellow", label: "желтый" },
+      gold: { value: "gold", label: "золотой" },
+      beige: { value: "beige", label: "бежевый" },
+      orange: { value: "orange", label: "оранжевый" },
+    };
+
+    return colors[lower] || { value, label: value };
+  }
+
+  if (field.includes("status")) {
+    if (lower === "sold" || lower.includes("sold by")) {
+      return { value: "sold", label: "продан" };
+    }
+
+    if (lower === "not sold") {
+      return { value: "not_sold", label: "не продан" };
+    }
+
+    if (lower === "removed") {
+      return { value: "removed", label: "снят" };
+    }
+
+    if (lower === "cancelled") {
+      return { value: "cancelled", label: "отменен" };
+    }
+  }
+
+  return { value, label: value };
+}
+
 function buildFacet(rows: Array<Record<string, string>>, fieldName: string, limit = 12) {
   if (!fieldName) return [];
 
-  const map = new Map<string, number>();
+  const map = new Map<string, { label: string; count: number }>();
 
   for (const row of rows) {
-    const value = cleanFacetValue(row[fieldName]);
+    const raw = cleanFacetValue(row[fieldName]);
 
-    if (isBadFacetValue(value)) continue;
+    if (isBadFacetValue(raw)) continue;
 
-    map.set(value, (map.get(value) || 0) + 1);
+    const item = normalizeFacet(fieldName, raw);
+
+    if (isBadFacetValue(item.value)) continue;
+
+    const current = map.get(item.value) || { label: item.label, count: 0 };
+    current.count += 1;
+    map.set(item.value, current);
   }
 
   return Array.from(map.entries())
-    .map(([value, count]) => ({
+    .map(([value, item]) => ({
       value,
-      label: value,
-      count,
+      label: item.label,
+      count: item.count,
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
     .slice(0, limit);

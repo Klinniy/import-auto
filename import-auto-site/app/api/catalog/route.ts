@@ -160,7 +160,28 @@ async function buildWhere(params: URLSearchParams) {
 
   addEqual(where, field.auction, auction);
   addLike(where, field.body, body);
-  addEqual(where, field.color, color);
+  if (color && field.color) {
+    const c = color.toLowerCase();
+
+    const colorVariants: Record<string, string[]> = {
+      black: ["black", "BLACK", "Black"],
+      white: ["white", "WHITE", "White"],
+      silver: ["silver", "SILVER", "Silver"],
+      pearl: ["pearl", "PEARL", "Pearl"],
+      gray: ["gray", "GRAY", "Gray", "grey", "GREY", "Grey"],
+      blue: ["blue", "BLUE", "Blue"],
+      red: ["red", "RED", "Red"],
+      brown: ["brown", "BROWN", "Brown"],
+      green: ["green", "GREEN", "Green"],
+      yellow: ["yellow", "YELLOW", "Yellow"],
+      gold: ["gold", "GOLD", "Gold"],
+      beige: ["beige", "BEIGE", "Beige"],
+      orange: ["orange", "ORANGE", "Orange"],
+    };
+
+    const variants = colorVariants[c] || [color];
+    where.push(`(${variants.map((item) => `${field.color}=${sqlValue(item)}`).join(" or ")})`);
+  }
   addEqual(where, field.transmission, transmission);
   addEqual(where, field.drive, drive);
 
