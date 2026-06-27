@@ -67,14 +67,6 @@ type CatalogPayload = {
   error?: string;
 };
 
-type CbrResponse = {
-  ok?: boolean;
-  currencies?: {
-    JPY?: { value: number };
-    CNY?: { value: number };
-  };
-};
-
 type FilterButton = {
   label: string;
   value: string;
@@ -115,7 +107,7 @@ function cleanText(value: unknown) {
     .trim();
 }
 
-function isBadFilterValue(value: unknown) {
+function badFilterValue(value: unknown) {
   const text = String(value ?? "").toLowerCase().trim();
 
   return (
@@ -125,7 +117,7 @@ function isBadFilterValue(value: unknown) {
     text.includes("http") ||
     text.includes("&#") ||
     text.includes("{") ||
-    text.length > 32
+    text.length > 28
   );
 }
 
@@ -136,16 +128,6 @@ function formatNumber(value?: number | string | null) {
   if (!Number.isFinite(n)) return String(value);
 
   return new Intl.NumberFormat("ru-RU").format(n);
-}
-
-function formatRateValue(value?: number | null) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-
-  return new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(n);
 }
 
 function formatPrice(value?: number | string | null) {
@@ -165,11 +147,11 @@ function carImages(car: Car) {
       if (typeof item === "string") {
         result.push(item);
       } else {
-        result.push(item.original || item.medium || item.preview || "");
+        result.push(item.preview || item.medium || item.original || "");
       }
     }
   } else if (car.images && typeof car.images === "object") {
-    result.push(car.images.original || car.images.medium || car.images.preview || "");
+    result.push(car.images.preview || car.images.medium || car.images.original || "");
   }
 
   if (car.previewImage) result.push(car.previewImage);
@@ -196,7 +178,7 @@ function isSanction(car: Car) {
 function statusLabel(value?: string) {
   const text = String(value || "").toLowerCase().trim();
 
-  if (!text) return "—";
+  if (!text) return "";
   if (text === "sold" || text.includes("sold by")) return "продан";
   if (text === "not sold") return "не продан";
   if (text === "removed") return "снят";
@@ -215,25 +197,23 @@ function tokyoTime() {
   }).format(new Date());
 }
 
-function optionButtons(options: Option[], limit = 12): FilterButton[] {
+function optionButtons(options: Option[], limit = 8): FilterButton[] {
   return options
     .map((item) => ({
       label: cleanText(optionLabel(item)),
       value: cleanText(optionValue(item)),
     }))
     .filter((item) => item.label && item.value)
-    .filter((item) => !isBadFilterValue(item.label) && !isBadFilterValue(item.value))
+    .filter((item) => !badFilterValue(item.label) && !badFilterValue(item.value))
     .slice(0, limit);
 }
 
 export default function CatalogFull() {
   const [initialized, setInitialized] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
   const [models, setModels] = useState<Option[]>([]);
   const [cars, setCars] = useState<Car[]>([]);
-  const [rates, setRates] = useState<CbrResponse | null>(null);
 
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -276,26 +256,21 @@ export default function CatalogFull() {
       .slice(0, 45);
   }, [filters]);
 
-  const auctions = useMemo(() => optionButtons(filters?.filters?.auctions || [], 16), [filters]);
-  const colors = useMemo(() => optionButtons(filters?.filters?.colors || [], 16), [filters]);
-  const drives = useMemo(() => optionButtons(filters?.filters?.drives || [], 10), [filters]);
+  const auctions = useMemo(() => optionButtons(filters?.filters?.auctions || [], 8), [filters]);
+  const colors = useMemo(() => optionButtons(filters?.filters?.colors || [], 8), [filters]);
+  const drives = useMemo(() => optionButtons(filters?.filters?.drives || [], 6), [filters]);
 
   const bodyOptions: FilterButton[] = [
+    { label: "GJ2", value: "GJ2" },
+    { label: "GJ1", value: "GJ1" },
     { label: "FE0", value: "FE0" },
-    { label: "SNFE0", value: "SNFE0" },
     { label: "NCP", value: "NCP" },
     { label: "ZVW", value: "ZVW" },
-    { label: "ANH", value: "ANH" },
-    { label: "ATH", value: "ATH" },
-    { label: "AHR", value: "AHR" },
   ];
 
   const rateOptions: FilterButton[] = [
-    { label: "3", value: "3" },
-    { label: "3.5", value: "3.5" },
     { label: "4", value: "4" },
-    { label: "4.5", value: "4.5" },
-    { label: "5", value: "5" },
+    { label: "3.5", value: "3.5" },
     { label: "R", value: "R" },
   ];
 
@@ -305,21 +280,6 @@ export default function CatalogFull() {
     { label: "IAT", value: "IAT" },
     { label: "CVT", value: "CVT" },
     { label: "MT", value: "MT" },
-  ];
-
-  const statusOptions: FilterButton[] = [
-    { label: "продан", value: "sold" },
-    { label: "не продан", value: "not_sold" },
-  ];
-
-  const sanctionOptions: FilterButton[] = [
-    { label: "санкционный", value: "1" },
-    { label: "без санкций", value: "0" },
-  ];
-
-  const handDriveOptions: FilterButton[] = [
-    { label: "LHD", value: "1" },
-    { label: "RHD", value: "0" },
   ];
 
   useEffect(() => {
@@ -343,7 +303,6 @@ export default function CatalogFull() {
     setLeftHandDrive(params.get("leftHandDrive") || "");
     setSort(params.get("sort") || "");
     setPage(Number(params.get("page") || 1) || 1);
-    setAdvancedOpen(Boolean(params.get("auction") || params.get("rateFrom") || params.get("color") || params.get("body")));
 
     setInitialized(true);
   }, []);
@@ -356,11 +315,6 @@ export default function CatalogFull() {
       .then((payload) => setFilters(payload))
       .catch(() => setFilters(null))
       .finally(() => setLoadingFilters(false));
-
-    fetch("/api/cbr", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((payload: CbrResponse) => setRates(payload))
-      .catch(() => setRates(null));
   }, []);
 
   useEffect(() => {
@@ -482,448 +436,353 @@ export default function CatalogFull() {
     setLeftHandDrive("");
     setSort("");
     setPage(1);
-    setAdvancedOpen(false);
   }
 
-  const activeFiltersCount = [
-    brand,
-    model,
-    q,
-    yearFrom,
-    yearTo,
-    mileageTo,
-    auction,
-    rateFrom,
-    transmission,
-    drive,
-    color,
-    status,
-    body,
-    sanction,
-    leftHandDrive,
-    sort,
-  ].filter(Boolean).length;
-
   return (
-    <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
+    <main className="min-h-screen bg-white text-[12px] text-black">
+      <div className="border-b border-[#d9d9d9] bg-[#f7f7f7]">
+        <div className="flex h-[34px] items-center justify-between px-2">
+          <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="rounded-xl bg-[#07152f] px-4 py-2 text-sm font-black uppercase text-white hover:bg-[#d8001f]"
+              className="rounded-sm bg-[#dfe8f3] px-2 py-[2px] text-[12px] font-bold text-[#3d516b]"
             >
               Начало
             </Link>
-
-            <div className="hidden text-sm font-black text-slate-500 md:block">
-              TOKYO <span className="text-slate-950">{tokyoTime()}</span>
-            </div>
-
-            <div className="truncate text-sm font-black text-blue-700">
-              {formatNumber(total)} авто из Японии
-            </div>
-          </div>
-
-          <div className="hidden items-center gap-2 xl:flex">
-            <div className="rounded-xl bg-slate-50 px-4 py-2 text-sm font-black ring-1 ring-slate-100">
-              ЦБ · 100 JPY {formatRateValue(rates?.currencies?.JPY?.value)} ₽
-            </div>
-            <div className="rounded-xl bg-slate-50 px-4 py-2 text-sm font-black ring-1 ring-slate-100">
-              ЦБ · 1 CNY {formatRateValue(rates?.currencies?.CNY?.value)} ₽
-            </div>
+            <span className="font-bold text-[#5a6d80]">TOKYO</span>
+            <span className="font-bold">{tokyoTime()}</span>
+            <span className="font-bold text-[#1155cc]">{formatNumber(total)} авто из Японии</span>
           </div>
 
           <Link
             href="/"
-            className="rounded-xl bg-white px-4 py-2 text-sm font-black text-[#07152f] ring-1 ring-slate-200 hover:bg-slate-50"
+            className="rounded-sm bg-[#07152f] px-5 py-2 text-[12px] font-bold text-white"
           >
             На главную
           </Link>
         </div>
-      </header>
+      </div>
 
-      <section className="mx-auto max-w-[1800px] px-4 py-4">
-        <form
-          onSubmit={submitSearch}
-          className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
-        >
-          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_150px_130px_130px_150px_160px_120px]">
-            <SelectField
-              label="Марка"
-              value={brand}
-              disabled={loadingFilters}
-              onChange={(value) => setFilter(() => setBrand(value))}
-              options={brands}
-              emptyLabel="Любая марка"
-            />
-
-            <SelectField
-              label="Модель"
-              value={model}
-              disabled={!brand || models.length === 0}
-              onChange={(value) => setFilter(() => setModel(value))}
-              options={models}
-              emptyLabel="Любая модель"
-            />
-
-            <TextField
-              label="Номер лота"
-              value={qDraft}
-              placeholder="Напр. 60246"
-              onChange={setQDraft}
-            />
-
-            <SelectField
-              label="Год от"
-              value={yearFrom}
-              onChange={(value) => setFilter(() => setYearFrom(value))}
-              options={years}
-              emptyLabel="От"
-              compact
-            />
-
-            <SelectField
-              label="Год до"
-              value={yearTo}
-              onChange={(value) => setFilter(() => setYearTo(value))}
-              options={years}
-              emptyLabel="До"
-              compact
-            />
-
-            <TextField
-              label="Пробег до"
-              value={mileageTo}
-              placeholder="км"
-              onChange={(value) => setFilter(() => setMileageTo(value.replace(/\D/g, "")))}
-            />
-
-            <SelectNative
-              label="Сортировка"
-              value={sort}
-              onChange={(value) => setFilter(() => setSort(value))}
-              options={[
-                ["", "По дате аукциона"],
-                ["year_desc", "Год ↓"],
-                ["year_asc", "Год ↑"],
-                ["mileage_asc", "Пробег ↑"],
-                ["mileage_desc", "Пробег ↓"],
-                ["price_asc", "Цена ↑"],
-                ["price_desc", "Цена ↓"],
-              ]}
-            />
-
-            <div className="flex items-end">
-              <button
-                type="submit"
-                className="h-11 w-full rounded-2xl bg-gradient-to-b from-[#61b7ff] to-[#2f80ed] text-sm font-black uppercase tracking-[0.14em] text-white shadow-sm hover:brightness-105"
-              >
-                Поиск
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAdvancedOpen((value) => !value)}
-                className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
-              >
-                {advancedOpen ? "Скрыть фильтры" : "Расширенные фильтры"}
-              </button>
-
-              {activeFiltersCount > 0 && (
-                <div className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-black text-blue-700">
-                  Активно: {activeFiltersCount}
-                </div>
-              )}
-            </div>
-
+      <section className="flex">
+        <aside className="w-[42px] shrink-0 bg-[#f4f7fb] pt-2 text-center text-[10px] font-bold text-[#53667c]">
+          {["CS", "BC", "ПП", "BT", "CP", "☝", "100", "LHD"].map((item) => (
             <button
+              key={item}
               type="button"
-              onClick={reset}
-              className="rounded-2xl bg-white px-4 py-2 text-sm font-black text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              className={`mb-1 block h-[26px] w-full ${
+                item === "100" ? "bg-[#dff5a7] text-[#4e8a00]" : ""
+              }`}
+              onClick={() => {
+                if (item === "100") toggle(sanction, "0", setSanction);
+                if (item === "LHD") toggle(leftHandDrive, "1", setLeftHandDrive);
+              }}
             >
-              Сбросить всё
+              {item}
             </button>
+          ))}
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <form
+            onSubmit={submitSearch}
+            className="mx-2 mt-2 rounded-sm border border-[#d7dce3] bg-[#f6f7f9] p-2"
+          >
+            <div className="grid grid-cols-[290px_290px_190px_120px_120px_140px_160px_130px_120px] gap-x-3">
+              <AfaSelectList
+                title="Марка"
+                value={brand}
+                disabled={loadingFilters}
+                options={brands}
+                emptyLabel="Любая"
+                onChange={(value) => setFilter(() => setBrand(value))}
+              />
+
+              <AfaSelectList
+                title="Модель"
+                value={model}
+                disabled={!brand || models.length === 0}
+                options={models}
+                emptyLabel="Любая"
+                onChange={(value) => setFilter(() => setModel(value))}
+              />
+
+              <div>
+                <AfaTitle>Параметры</AfaTitle>
+
+                <input
+                  value={qDraft}
+                  onChange={(event) => setQDraft(event.target.value)}
+                  placeholder="Номер лота"
+                  className="mb-[5px] h-[25px] w-full border border-[#c7d0da] px-2 text-[12px]"
+                />
+
+                <div className="mb-[5px] grid grid-cols-2 gap-1">
+                  <select
+                    value={yearFrom}
+                    onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
+                    className="h-[25px] border border-[#c7d0da] text-[12px]"
+                  >
+                    <option value="">Год от</option>
+                    {years.map((item) => {
+                      const value = optionValue(item);
+                      return <option key={`yf-${value}`} value={value}>{value}</option>;
+                    })}
+                  </select>
+
+                  <select
+                    value={yearTo}
+                    onChange={(event) => setFilter(() => setYearTo(event.target.value))}
+                    className="h-[25px] border border-[#c7d0da] text-[12px]"
+                  >
+                    <option value="">Год до</option>
+                    {years.map((item) => {
+                      const value = optionValue(item);
+                      return <option key={`yt-${value}`} value={value}>{value}</option>;
+                    })}
+                  </select>
+                </div>
+
+                <input
+                  value={mileageTo}
+                  onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
+                  placeholder="Пробег до, км"
+                  className="mb-[5px] h-[25px] w-full border border-[#c7d0da] px-2 text-[12px]"
+                />
+
+                <button
+                  type="submit"
+                  className="mb-[5px] h-[28px] w-full rounded-sm bg-gradient-to-b from-[#6fbaff] to-[#2f80ed] text-[13px] font-bold uppercase tracking-[0.16em] text-white"
+                >
+                  Поиск
+                </button>
+
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="mb-[5px] h-[25px] w-full border border-[#c7d0da] bg-white text-[12px] font-bold uppercase tracking-[0.16em] text-[#687789]"
+                >
+                  Сброс
+                </button>
+
+                <button
+                  type="button"
+                  className="text-left text-[12px] font-bold uppercase tracking-[0.16em] text-[#d96f13]"
+                >
+                  Расширенный поиск
+                </button>
+              </div>
+
+              <AfaCheckList title="Кузов" items={bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
+              <AfaCheckList title="Оценка" items={rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
+              <AfaCheckList title="Аукцион" items={auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
+              <AfaCheckList title="Цвета" items={colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
+              <AfaCheckList title="Статус" items={[
+                { label: "не продан", value: "not_sold" },
+                { label: "продан", value: "sold" },
+              ]} active={status} onPick={(value) => toggle(status, value, setStatus)} />
+              <AfaCheckList title="КПП" items={transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
+            </div>
+          </form>
+
+          <div className="mx-2 mt-2 bg-[#fff6c9] px-3 py-[5px] text-[12px] font-bold uppercase tracking-[0.08em] text-[#9d1b1b]">
+            Войдите, чтобы видеть всю информацию по лоту
           </div>
 
-          {advancedOpen && (
-            <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 lg:grid-cols-2 xl:grid-cols-4">
-              <FilterGroup title="Кузов" items={bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
-              <FilterGroup title="Оценка" items={rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
-              <FilterGroup title="КПП" items={transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
-              <FilterGroup title="Статус" items={statusOptions} active={status} onPick={(value) => toggle(status, value, setStatus)} />
-              <FilterGroup title="Аукцион" items={auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
-              <FilterGroup title="Цвет" items={colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
-              <FilterGroup title="Привод" items={drives.length ? drives : [{ label: "FF", value: "FF" }, { label: "FR", value: "FR" }, { label: "4WD", value: "4WD" }]} active={drive} onPick={(value) => toggle(drive, value, setDrive)} />
-              <FilterGroup title="Санкции" items={sanctionOptions} active={sanction} onPick={(value) => toggle(sanction, value, setSanction)} />
-              <FilterGroup title="Руль" items={handDriveOptions} active={leftHandDrive} onPick={(value) => toggle(leftHandDrive, value, setLeftHandDrive)} />
+          <div className="mx-2 mt-2 flex items-center justify-between">
+            <div className="text-[14px] font-bold">
+              <span className="text-[#498000]">{formatNumber(total)}</span>{" "}
+              найдено · {formatNumber(total)} · {brand || "все марки"}{model ? ` · ${model}` : ""}
+            </div>
+
+            <AfaPager page={page} pages={pages} loading={loading} setPage={setPage} />
+          </div>
+
+          {error && (
+            <div className="mx-2 mt-2 border border-red-300 bg-red-50 p-3 text-red-700">
+              {error}
             </div>
           )}
-        </form>
 
-        <div className="mt-4 rounded-2xl bg-[#fff5cc] px-4 py-3 text-sm font-black uppercase tracking-[0.04em] text-[#9a1b1b]">
-          Войдите, чтобы видеть всю информацию по лоту
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-2xl font-black text-slate-950">
-              {formatNumber(total)} найдено
+          {loading ? (
+            <div className="mx-2 mt-3 text-center text-[14px] font-bold">
+              Загружаем лоты...
             </div>
-            <div className="mt-1 text-sm font-bold text-slate-500">
-              {brand || "все марки"}{model ? ` · ${model}` : ""}
-            </div>
-          </div>
-
-          <Pagination page={page} pages={pages} loading={loading} setPage={setPage} />
+          ) : (
+            <AfaTable cars={cars} />
+          )}
         </div>
-
-        {error && (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="mt-4 grid gap-2">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="h-28 animate-pulse rounded-2xl bg-white" />
-            ))}
-          </div>
-        ) : cars.length === 0 ? (
-          <div className="mt-4 rounded-3xl bg-white p-12 text-center shadow-sm">
-            <div className="text-2xl font-black">Лоты не найдены</div>
-            <button
-              type="button"
-              onClick={reset}
-              className="mt-4 rounded-2xl bg-[#d8001f] px-5 py-3 font-black text-white"
-            >
-              Сбросить фильтры
-            </button>
-          </div>
-        ) : (
-          <CatalogTable cars={cars} />
-        )}
       </section>
     </main>
   );
 }
 
-function CatalogTable({ cars }: { cars: Car[] }) {
-  return (
-    <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1280px] border-collapse text-sm">
-          <thead>
-            <tr className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
-              <Th>Фото</Th>
-              <Th>Лот</Th>
-              <Th>Аукцион</Th>
-              <Th>Автомобиль</Th>
-              <Th>Характеристики</Th>
-              <Th>Пробег / Оценка</Th>
-              <Th>Цены</Th>
-              <Th>Действие</Th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {cars.map((car, index) => {
-              const images = carImages(car).slice(0, 3);
-              const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
-
-              return (
-                <tr
-                  key={car.id || `${car.lot}-${index}`}
-                  className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}
-                >
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <Link href={`/catalog/${car.id}`} className="flex gap-2">
-                      {(images.length ? images : [firstImage(car)]).map((image) => (
-                        <img
-                          key={image}
-                          src={image}
-                          alt={title}
-                          className="h-20 w-28 rounded-xl object-cover ring-1 ring-slate-200"
-                          loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.src = "/mosaic/car-placeholder.png";
-                          }}
-                        />
-                      ))}
-                    </Link>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <Link
-                      href={`/catalog/${car.id}`}
-                      className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-lg font-black text-[#b24a1b] shadow-sm hover:border-[#d8001f]"
-                    >
-                      {car.lot || "—"}
-                    </Link>
-                    <div className="mt-2 text-xs text-slate-400">☆ ☆ ☆ ☆ ☆</div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <div className="font-bold text-slate-900">{car.auctionDate || "—"}</div>
-                    <div className="mt-1 font-black text-slate-950">{car.auction || "—"}</div>
-                    <div className="mt-2 text-xs font-bold text-slate-500">{statusLabel(car.status)}</div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <div className="font-black text-slate-950">
-                      <span className="text-[#d8001f]">{car.year || "—"}</span>{" "}
-                      {cleanText(car.body) || "—"}
-                    </div>
-                    <div className="mt-1 text-base font-black text-slate-950">{title}</div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {isSanction(car) && <Badge>санкц.</Badge>}
-                      {car.leftHandDrive && <Badge>LHD</Badge>}
-                    </div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <div>
-                      <span className="font-black text-[#d8001f]">{cleanText(car.transmission) || "—"}</span>{" "}
-                      {formatNumber(car.engineVolume)} cc
-                    </div>
-                    <div className="mt-1 text-slate-500">
-                      {cleanText(car.color) || "—"} {cleanText(car.drive)}
-                    </div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top">
-                    <div className="font-bold">{formatNumber(car.mileage)} км</div>
-                    <div className="mt-1 font-black text-amber-600">▲ {cleanText(car.rate || car.grade) || "—"}</div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top text-right">
-                    <div className="text-slate-500">Старт: {formatPrice(car.startPrice)}</div>
-                    <div className="mt-1 text-slate-950">Продано: {formatPrice(car.finishPrice)}</div>
-                    <div className="mt-2 text-lg font-black text-green-700">{formatPrice(car.averagePrice)}</div>
-                  </td>
-
-                  <td className="border-t border-slate-100 p-3 align-top text-right">
-                    <Link
-                      href={`/catalog/${car.id}`}
-                      className="inline-flex rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white hover:bg-[#d8001f]"
-                    >
-                      Открыть
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+function AfaTable({ cars }: { cars: Car[] }) {
+  if (!cars.length) {
+    return (
+      <div className="mx-2 mt-3 bg-[#f3f3f3] p-8 text-center text-[14px] font-bold">
+        Лоты не найдены
       </div>
+    );
+  }
+
+  return (
+    <div className="mx-2 mt-2 overflow-x-auto">
+      <table className="w-full min-w-[1380px] border-collapse text-[11px]">
+        <thead>
+          <tr className="bg-gradient-to-b from-white to-[#eef2f6] text-[#314154]">
+            <AfaTh>Фото ↑</AfaTh>
+            <AfaTh>Номер лота ↑</AfaTh>
+            <AfaTh>Дата аукцион / Аукцион ↑</AfaTh>
+            <AfaTh>Год / Кузов ↑</AfaTh>
+            <AfaTh>Объем, см³ / Комплектация ↑</AfaTh>
+            <AfaTh>Пробег / Оценка ↑</AfaTh>
+            <AfaTh>Начальная / Продано за ↑</AfaTh>
+            <AfaTh>Средняя цена ↑</AfaTh>
+          </tr>
+        </thead>
+
+        <tbody>
+          {cars.map((car, index) => {
+            const images = carImages(car).slice(0, 3);
+            const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
+
+            return (
+              <tr
+                key={car.id || `${car.lot}-${index}`}
+                className={index % 2 === 0 ? "bg-white" : "bg-[#eeeeee]"}
+              >
+                <td className="border-b border-white px-1 py-[5px] align-top">
+                  <Link href={`/catalog/${car.id}`} className="flex gap-[3px]">
+                    {(images.length ? images : [firstImage(car)]).map((image) => (
+                      <img
+                        key={image}
+                        src={image}
+                        alt={title}
+                        loading="lazy"
+                        className="h-[58px] w-[78px] object-cover"
+                        onError={(event) => {
+                          event.currentTarget.src = "/mosaic/car-placeholder.png";
+                        }}
+                      />
+                    ))}
+                  </Link>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                  <Link
+                    href={`/catalog/${car.id}`}
+                    className="inline-block min-w-[58px] rounded-sm border border-[#cfd6df] bg-white px-3 py-[6px] text-[14px] font-bold text-[#bf4d22]"
+                  >
+                    {car.lot || "—"}
+                  </Link>
+                  <div className="mt-[4px] text-[10px] tracking-[2px] text-[#a9b5c2]">
+                    ☆☆☆☆☆
+                  </div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                  <div>{car.auctionDate || "—"}</div>
+                  <div className="font-bold">{car.auction || "—"}</div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] align-top">
+                  <div>
+                    <span className="font-bold text-[#c52b16]">{car.year || "—"}</span>{" "}
+                    {cleanText(car.body) || "—"}
+                  </div>
+                  <div className="mt-[4px] font-bold uppercase">{title}</div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] align-top">
+                  <div>
+                    <span className="font-bold text-[#c52b16]">
+                      {cleanText(car.transmission) || "—"}
+                    </span>{" "}
+                    {formatNumber(car.engineVolume)} cc
+                  </div>
+                  <div className="mt-[4px] text-[#66758a]">
+                    {cleanText(car.color) || "—"} {cleanText(car.drive)}
+                  </div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                  <div>{formatNumber(car.mileage)} km</div>
+                  <div className="mt-[4px] font-bold text-[#b78300]">
+                    ▲ {cleanText(car.rate || car.grade) || "—"}
+                  </div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] text-right align-top">
+                  <div>{formatPrice(car.startPrice)}</div>
+                  <div className="mt-[4px]">{formatPrice(car.finishPrice)}</div>
+                  <div className="mt-[4px] text-[10px] text-[#4d6680]">
+                    {isSanction(car) ? "санкц." : statusLabel(car.status)}
+                  </div>
+                </td>
+
+                <td className="border-b border-white px-2 py-[6px] text-right align-top">
+                  <div className="font-bold text-[#008000]">
+                    {formatPrice(car.averagePrice)}
+                  </div>
+
+                  <Link
+                    href={`/catalog/${car.id}`}
+                    className="mt-[8px] inline-block rounded-sm border border-[#07152f] bg-white px-4 py-[6px] text-[12px] font-bold text-[#07152f]"
+                  >
+                    открыть
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function SelectField({
-  label,
+function AfaSelectList({
+  title,
   value,
   disabled,
-  onChange,
   options,
   emptyLabel,
+  onChange,
 }: {
-  label: string;
+  title: string;
   value: string;
   disabled?: boolean;
-  onChange: (value: string) => void;
   options: Option[];
   emptyLabel: string;
-  compact?: boolean;
+  onChange: (value: string) => void;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
+    <div>
+      <AfaTitle>{title}</AfaTitle>
+
       <select
         value={value}
         disabled={disabled}
+        size={10}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+        className="h-[180px] w-full border border-[#c9d1db] bg-white px-1 text-[12px] font-bold disabled:bg-[#eeeeee] disabled:text-[#999999]"
       >
         <option value="">{emptyLabel}</option>
         {options.map((item) => {
           const value = optionValue(item);
+
           return (
-            <option key={`${label}-${value}`} value={value}>
+            <option key={`${title}-${value}`} value={value}>
               {optionLabel(item)} {item.count ? `— ${formatNumber(item.count)}` : ""}
             </option>
           );
         })}
       </select>
-    </label>
+    </div>
   );
 }
 
-function SelectNative({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<[string, string]>;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500"
-      >
-        {options.map(([optionValue, label]) => (
-          <option key={optionValue || "empty"} value={optionValue}>
-            {label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function TextField({
-  label,
-  value,
-  placeholder,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  placeholder: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <input
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500"
-      />
-    </label>
-  );
-}
-
-function FilterGroup({
+function AfaCheckList({
   title,
   items,
   active,
@@ -934,15 +793,12 @@ function FilterGroup({
   active: string;
   onPick: (value: string) => void;
 }) {
-  if (!items.length) return null;
-
   return (
-    <div>
-      <div className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-        {title}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item) => {
+    <div className="min-w-0">
+      <AfaTitle>{title}</AfaTitle>
+
+      <div className="grid gap-[5px]">
+        {items.slice(0, 7).map((item) => {
           const selected = active === item.value;
 
           return (
@@ -950,13 +806,14 @@ function FilterGroup({
               key={`${title}-${item.value}`}
               type="button"
               onClick={() => onPick(item.value)}
-              className={`rounded-xl px-3 py-2 text-xs font-black ring-1 ${
-                selected
-                  ? "bg-[#07152f] text-white ring-[#07152f]"
-                  : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-100"
-              }`}
+              className="flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px]"
             >
-              {item.label}
+              <span
+                className={`h-[7px] w-[7px] shrink-0 border border-[#8fa0b3] ${
+                  selected ? "bg-[#2f80ed]" : "bg-white"
+                }`}
+              />
+              <span className="truncate">{item.label}</span>
             </button>
           );
         })}
@@ -965,7 +822,7 @@ function FilterGroup({
   );
 }
 
-function Pagination({
+function AfaPager({
   page,
   pages,
   loading,
@@ -977,23 +834,25 @@ function Pagination({
   setPage: (value: number | ((current: number) => number)) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-[4px] text-[12px]">
       <button
+        type="button"
         disabled={page <= 1 || loading}
         onClick={() => setPage((current) => Math.max(1, current - 1))}
-        className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200 disabled:opacity-40"
+        className="h-[24px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40"
       >
         ←
       </button>
 
-      <div className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200">
-        стр. {page} из {formatNumber(pages)}
+      <div className="h-[24px] rounded-sm bg-[#eef2f6] px-4 py-[4px] font-bold">
+        List A · стр. {page} из {formatNumber(pages)}
       </div>
 
       <button
+        type="button"
         disabled={page >= pages || loading}
         onClick={() => setPage((current) => Math.min(pages, current + 1))}
-        className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200 disabled:opacity-40"
+        className="h-[24px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40"
       >
         →
       </button>
@@ -1001,18 +860,18 @@ function Pagination({
   );
 }
 
-function Th({ children }: { children: ReactNode }) {
+function AfaTitle({ children }: { children: ReactNode }) {
   return (
-    <th className="border-b border-slate-200 px-3 py-3 text-left font-black">
+    <div className="mb-[5px] text-[11px] font-bold uppercase tracking-[0.35em] text-[#d8001f]">
       {children}
-    </th>
+    </div>
   );
 }
 
-function Badge({ children }: { children: ReactNode }) {
+function AfaTh({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+    <th className="border-b border-[#d9dfe7] px-2 py-[6px] text-center text-[11px] font-bold">
       {children}
-    </span>
+    </th>
   );
 }
