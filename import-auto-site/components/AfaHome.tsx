@@ -157,6 +157,57 @@ function RateChip({ currency }: { currency?: CbrCurrency }) {
   );
 }
 
+
+function CountryFlag({ type }: { type: "jp" | "kr" | "cn" | "fix" | "stats" }) {
+  if (type === "jp") {
+    return (
+      <div className="relative flex h-16 w-24 items-center justify-center rounded-2xl bg-white shadow-lg ring-1 ring-white/30">
+        <div className="h-8 w-8 rounded-full bg-[#bc002d]" />
+      </div>
+    );
+  }
+
+  if (type === "kr") {
+    return (
+      <div className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-white/30">
+        <div className="absolute left-3 top-3 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
+        <div className="absolute left-3 top-6 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
+        <div className="absolute right-3 bottom-3 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
+        <div className="absolute right-3 bottom-6 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
+        <div className="relative h-9 w-9 overflow-hidden rounded-full">
+          <div className="absolute inset-x-0 top-0 h-1/2 bg-[#cd2e3a]" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[#0047a0]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "cn") {
+    return (
+      <div className="relative h-16 w-24 overflow-hidden rounded-2xl bg-[#de2910] shadow-lg ring-1 ring-white/30">
+        <div className="absolute left-4 top-3 text-xl leading-none text-[#ffde00]">★</div>
+        <div className="absolute left-10 top-3 text-[10px] leading-none text-[#ffde00]">★</div>
+        <div className="absolute left-12 top-6 text-[10px] leading-none text-[#ffde00]">★</div>
+        <div className="absolute left-10 top-9 text-[10px] leading-none text-[#ffde00]">★</div>
+      </div>
+    );
+  }
+
+  if (type === "fix") {
+    return (
+      <div className="flex h-16 w-24 items-center justify-center rounded-2xl bg-white/92 text-3xl shadow-lg ring-1 ring-white/30">
+        🏷️
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-16 w-24 items-center justify-center rounded-2xl bg-white/92 text-3xl shadow-lg ring-1 ring-white/30">
+      📊
+    </div>
+  );
+}
+
 export default function AfaHome() {
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
   const [total, setTotal] = useState(0);
@@ -233,7 +284,7 @@ export default function AfaHome() {
       href: "/catalog",
       active: true,
       accent: "from-blue-600 to-slate-900",
-      image: "🚙",
+      flag: "jp",
     },
     {
       title: "Статистика продаж",
@@ -242,7 +293,7 @@ export default function AfaHome() {
       href: "#soon",
       active: false,
       accent: "from-slate-700 to-slate-950",
-      image: "📊",
+      flag: "stats",
     },
     {
       title: "Авто по фикс. цене",
@@ -251,7 +302,7 @@ export default function AfaHome() {
       href: "#soon",
       active: false,
       accent: "from-amber-500 to-slate-950",
-      image: "🏷️",
+      flag: "fix",
     },
     {
       title: "Автомобили из Кореи",
@@ -260,7 +311,7 @@ export default function AfaHome() {
       href: "#soon",
       active: false,
       accent: "from-red-600 to-slate-950",
-      image: "🇰🇷",
+      flag: "kr",
     },
     {
       title: "Автомобили из Китая",
@@ -269,7 +320,7 @@ export default function AfaHome() {
       href: "#soon",
       active: false,
       accent: "from-yellow-500 to-slate-950",
-      image: "🇨🇳",
+      flag: "cn",
     },
   ];
 
@@ -332,8 +383,7 @@ export default function AfaHome() {
                 )}
 
                 <div className="flex h-24 items-center justify-between">
-                  <div className="text-6xl drop-shadow-md">{section.image}</div>
-                  <div className="h-16 w-24 rounded-2xl bg-white/12 ring-1 ring-white/10" />
+                  <CountryFlag type={section.flag as "jp" | "kr" | "cn" | "fix" | "stats"} />
                 </div>
 
                 <h2 className="mt-4 min-h-[56px] text-xl font-black uppercase leading-tight tracking-[-0.04em]">
