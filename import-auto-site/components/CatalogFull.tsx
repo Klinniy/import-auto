@@ -461,9 +461,9 @@ export default function CatalogFull() {
         <div className="min-w-0 flex-1">
           <form
             onSubmit={submitSearch}
-            className="rounded-lg border border-slate-200 bg-[#f8fafc] p-2 shadow-sm"
+            className="rounded-md border border-slate-200 bg-[#f7f8fa] p-2 shadow-sm"
           >
-            <div className="grid gap-2 xl:grid-cols-[300px_300px_210px_1fr]">
+            <div className="grid gap-2 xl:grid-cols-[260px_260px_200px_1fr]">
               <div>
                 <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#d8001f]">
                   Марка
@@ -473,7 +473,7 @@ export default function CatalogFull() {
                   disabled={loadingFilters}
                   size={12}
                   onChange={(event) => setFilter(() => setBrand(event.target.value))}
-                  className="h-[252px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500"
+                  className="h-[232px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500"
                 >
                   <option value="">Любая</option>
                   {brands.map((item) => {
@@ -496,7 +496,7 @@ export default function CatalogFull() {
                   disabled={!brand || models.length === 0}
                   size={12}
                   onChange={(event) => setFilter(() => setModel(event.target.value))}
-                  className="h-[252px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500 disabled:opacity-45"
+                  className="h-[232px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500 disabled:opacity-45"
                 >
                   <option value="">Любая</option>
                   {models.map((item) => {
@@ -634,15 +634,16 @@ export default function CatalogFull() {
             </div>
           </form>
 
-          <div className="my-2 h-7 bg-[#fff5cc] px-4 py-1.5 text-[12px] font-black uppercase text-[#9a1b1b]">
+          <div className="my-2 h-6 bg-[#fff5cc] px-4 py-1 text-[12px] font-black uppercase text-[#9a1b1b]">
             Войдите, чтобы видеть всю информацию по лоту
           </div>
 
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[15px] font-black">
-              <span className="text-lime-700">{cars.length}</span>{" "}
-              {brand || "Автомобили"}
-              {model ? ` ${model}` : ""}
+              <span className="text-lime-700">{formatNumber(total)}</span>{" "}
+              найдено
+              {brand ? ` · ${brand}` : " · все марки"}
+              {model ? ` · ${model}` : ""}
             </div>
 
             <div className="flex items-center gap-1 text-[12px]">
@@ -690,7 +691,7 @@ export default function CatalogFull() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1300px] border-collapse text-[12px]">
+              <table className="w-full min-w-[1300px] border-collapse text-[11px]">
                 <thead>
                   <tr className="bg-gradient-to-b from-white to-slate-100 text-slate-600">
                     <Th>Фото</Th>
@@ -713,7 +714,7 @@ export default function CatalogFull() {
                     return (
                       <tr
                         key={car.id || `${car.lot}-${title}`}
-                        className={index % 2 === 0 ? "bg-white" : "bg-[#f1f1f1]"}
+                        className={index % 2 === 0 ? "bg-white hover:bg-blue-50/40" : "bg-[#f1f1f1] hover:bg-blue-50/40"}
                       >
                         <td className="border-b border-white p-1 align-top">
                           <Link href={`/catalog/${car.id}`} className="flex gap-1">
@@ -722,7 +723,7 @@ export default function CatalogFull() {
                                 key={image}
                                 src={image}
                                 alt={title}
-                                className="h-[72px] w-[86px] rounded object-cover"
+                                className="h-[62px] w-[78px] rounded object-cover"
                                 loading="lazy"
                                 onError={(event) => {
                                   event.currentTarget.src = "/mosaic/car-placeholder.png";
@@ -732,19 +733,19 @@ export default function CatalogFull() {
                           </Link>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top">
-                          <Link href={`/catalog/${car.id}`} className="inline-block rounded border border-slate-300 bg-white px-4 py-2 text-base font-black text-[#b24a1b] shadow-sm">
+                        <td className="border-b border-white p-1.5 align-top">
+                          <Link href={`/catalog/${car.id}`} className="inline-block rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-black text-[#b24a1b] shadow-sm">
                             {car.lot || "—"}
                           </Link>
                           <div className="mt-1 text-[11px] text-slate-400">☆ ☆ ☆ ☆ ☆</div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top text-center">
+                        <td className="border-b border-white p-1.5 align-top text-center">
                           <div>{car.auctionDate || "—"}</div>
                           <div className="font-black">{car.auction || "—"}</div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top">
+                        <td className="border-b border-white p-1.5 align-top">
                           <div>
                             <span className="font-black text-[#c83a1a]">{car.year || "—"}</span>{" "}
                             {cleanText(car.body) || "—"}
@@ -752,7 +753,7 @@ export default function CatalogFull() {
                           <div className="mt-1 font-black">{title}</div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top">
+                        <td className="border-b border-white p-1.5 align-top">
                           <div>
                             <span className="font-black text-[#c83a1a]">{car.transmission || "—"}</span>{" "}
                             {formatNumber(car.engineVolume)} cc
@@ -762,14 +763,14 @@ export default function CatalogFull() {
                           </div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top text-center">
+                        <td className="border-b border-white p-1.5 align-top text-center">
                           <div>{formatNumber(car.mileage)} km</div>
                           <div className="mt-1 font-black text-[#b88718]">
                             ▲ {rate || "—"}
                           </div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top text-right">
+                        <td className="border-b border-white p-1.5 align-top text-right">
                           <div>{formatPrice(car.startPrice)}</div>
                           <div className="mt-1">{formatPrice(car.finishPrice)}</div>
                           <div className="text-[11px] text-slate-500">
@@ -777,13 +778,13 @@ export default function CatalogFull() {
                           </div>
                         </td>
 
-                        <td className="border-b border-white p-2 align-top text-right">
+                        <td className="border-b border-white p-1.5 align-top text-right">
                           <div className="font-black text-green-700">
                             {formatPrice(car.averagePrice)}
                           </div>
                           <Link
                             href={`/catalog/${car.id}`}
-                            className="mt-2 inline-block rounded bg-[#07152f] px-4 py-2 text-[12px] font-black text-white hover:bg-[#d8001f]"
+                            className="mt-2 inline-block rounded bg-[#07152f] px-3 py-1.5 text-[11px] font-black text-white hover:bg-[#d8001f]"
                           >
                             открыть
                           </Link>
@@ -803,7 +804,7 @@ export default function CatalogFull() {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="border-b border-slate-200 px-2 py-2 text-center text-[12px] font-bold">
+    <th className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-100 px-2 py-1.5 text-center text-[11px] font-bold text-slate-600">
       {children}
       <span className="ml-1 text-slate-300">↕</span>
     </th>
