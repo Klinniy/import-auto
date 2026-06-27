@@ -565,6 +565,20 @@ export default function CatalogFull() {
     setPage(1);
   }
 
+  function resetOnlyFilters() {
+    setAuction("");
+    setRateFrom("");
+    setTransmission("");
+    setDrive("");
+    setColor("");
+    setStatus("");
+    setBody("");
+    setSanction("");
+    setLeftHandDrive("");
+    setSort("");
+    setPage(1);
+  }
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[12px] text-black">
       <div className="border-b border-[#d9d9d9] bg-[#f7f7f7]">
@@ -699,6 +713,14 @@ export default function CatalogFull() {
                   className="text-left text-[12px] font-bold uppercase tracking-[0.16em] text-[#d96f13]"
                 >
                   Расширенный поиск
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetOnlyFilters}
+                  className="mt-[4px] text-left text-[12px] font-bold uppercase tracking-[0.12em] text-[#2f6fad]"
+                >
+                  Сброс фильтров
                 </button>
               </div>
 
@@ -957,7 +979,9 @@ function AfaCheckList({
           onPick(item.value);
           setOpen(false);
         }}
-        className="flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px]"
+        className={`flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px] ${
+          selected ? "font-bold text-[#0b5cad]" : ""
+        }`}
       >
         <span
           className={`h-[7px] w-[7px] shrink-0 border border-[#8fa0b3] ${
@@ -971,21 +995,7 @@ function AfaCheckList({
 
   return (
     <div className="relative min-w-0">
-      <div className="mb-[5px] flex items-center justify-between gap-1">
-        <div className="text-[10.5px] font-bold uppercase tracking-[0.28em] text-[#d8001f]">
-          {title}
-        </div>
-
-        {active && (
-          <button
-            type="button"
-            onClick={() => onPick(active)}
-            className="text-[10px] font-bold text-[#777] hover:text-[#d8001f]"
-          >
-            сброс
-          </button>
-        )}
-      </div>
+      <AfaTitle>{title}</AfaTitle>
 
       <div className="grid gap-[5px]">
         {visible.map(renderItem)}
