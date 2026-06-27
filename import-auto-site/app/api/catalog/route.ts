@@ -34,8 +34,19 @@ async function getFields() {
 }
 
 function pickField(fields: Set<string>, aliases: string[]) {
+  /*
+    AJES возвращает имена колонок в верхнем регистре:
+    MARKA_NAME, MODEL_NAME, YEAR, MILEAGE и т.д.
+
+    Поэтому ищем поле без учета регистра, но возвращаем реальное имя поля
+    из ответа API, чтобы SQL строился корректно.
+  */
   for (const alias of aliases) {
-    if (fields.has(alias)) return alias;
+    for (const field of fields) {
+      if (field.toLowerCase() === alias.toLowerCase()) {
+        return field;
+      }
+    }
   }
 
   return "";
