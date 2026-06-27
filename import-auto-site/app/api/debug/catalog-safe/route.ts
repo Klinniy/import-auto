@@ -46,7 +46,14 @@ export async function GET() {
     rate: await check(`${baseUrl}/api/catalog?rateFrom=4&page=1&limit=5&debug=1`),
     auction: await check(`${baseUrl}/api/catalog?auction=Aux%20Mobility&page=1&limit=5&debug=1`),
     transmission: await check(`${baseUrl}/api/catalog?transmission=AT&page=1&limit=5&debug=1`),
-    sort: await check(`${baseUrl}/api/catalog?sort=year_desc&page=1&limit=5&debug=1`),
+    color: await check(`${baseUrl}/api/catalog?color=black&page=1&limit=5&debug=1`),
+    body: await check(`${baseUrl}/api/catalog?body=FE0&page=1&limit=5&debug=1`),
+    drive: await check(`${baseUrl}/api/catalog?drive=FF&page=1&limit=5&debug=1`),
+    statusSold: await check(`${baseUrl}/api/catalog?status=sold&page=1&limit=5&debug=1`),
+    sanction: await check(`${baseUrl}/api/catalog?sanction=1&page=1&limit=5&debug=1`),
+    leftHandDrive: await check(`${baseUrl}/api/catalog?leftHandDrive=1&page=1&limit=5&debug=1`),
+    sortYear: await check(`${baseUrl}/api/catalog?sort=year_desc&page=1&limit=5&debug=1`),
+    sortMileage: await check(`${baseUrl}/api/catalog?sort=mileage_asc&page=1&limit=5&debug=1`),
   };
 
   const checks = Object.fromEntries(
@@ -55,7 +62,7 @@ export async function GET() {
 
   return NextResponse.json({
     ok: Object.values(checks).every(Boolean),
-    version: "CATALOG SAFE FILTERS V1",
+    version: "CATALOG SAFE FILTERS V2",
     checkedAt: new Date().toISOString(),
     checks,
     tests,

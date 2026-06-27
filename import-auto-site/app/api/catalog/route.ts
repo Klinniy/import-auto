@@ -108,7 +108,7 @@ async function buildWhere(params: URLSearchParams) {
     start: pickField(fields, ["start", "start_price"]),
     finish: pickField(fields, ["finish", "finish_price"]),
     sanction: pickField(fields, ["sanction"]),
-    leftHandDrive: pickField(fields, ["lhd", "left_hand_drive"]),
+    leftHandDrive: pickField(fields, ["LHDRIVE", "lhd", "left_hand_drive"]),
   };
 
   const brand = clean(params.get("brand") || params.get("marka"));
