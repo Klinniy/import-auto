@@ -72,6 +72,25 @@ type FilterButton = {
   value: string;
 };
 
+type FacetItem = {
+  value: string;
+  label: string;
+  count?: number;
+};
+
+type FacetsPayload = {
+  ok?: boolean;
+  facets?: {
+    bodies?: FacetItem[];
+    rates?: FacetItem[];
+    auctions?: FacetItem[];
+    colors?: FacetItem[];
+    statuses?: FacetItem[];
+    transmissions?: FacetItem[];
+    drives?: FacetItem[];
+  };
+};
+
 function getArray<T>(payload: unknown): T[] {
   if (Array.isArray(payload)) return payload as T[];
 
@@ -208,10 +227,28 @@ function optionButtons(options: Option[], limit = 8): FilterButton[] {
     .slice(0, limit);
 }
 
+function facetButtons(items?: FacetItem[], limit = 8): FilterButton[] {
+  return (items || [])
+    .map((item) => {
+      const value = cleanText(item.value);
+      const label = cleanText(item.label || item.value);
+      const count = Number(item.count || 0);
+
+      return {
+        value,
+        label: count > 0 ? `${label} — ${formatNumber(count)}` : label,
+      };
+    })
+    .filter((item) => item.label && item.value)
+    .filter((item) => !badFilterValue(item.label) && !badFilterValue(item.value))
+    .slice(0, limit);
+}
+
 export default function CatalogFull() {
   const [initialized, setInitialized] = useState(false);
 
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
+  const [facets, setFacets] = useState<FacetsPayload | null>(null);
   const [models, setModels] = useState<Option[]>([]);
   const [cars, setCars] = useState<Car[]>([]);
 
@@ -259,6 +296,13 @@ export default function CatalogFull() {
   const auctions = useMemo(() => optionButtons(filters?.filters?.auctions || [], 8), [filters]);
   const colors = useMemo(() => optionButtons(filters?.filters?.colors || [], 8), [filters]);
   const drives = useMemo(() => optionButtons(filters?.filters?.drives || [], 6), [filters]);
+
+  const facetBodies = useMemo(() => facetButtons(facets?.facets?.bodies, 7), [facets]);
+  const facetRates = useMemo(() => facetButtons(facets?.facets?.rates, 7), [facets]);
+  const facetAuctions = useMemo(() => facetButtons(facets?.facets?.auctions, 7), [facets]);
+  const facetColors = useMemo(() => facetButtons(facets?.facets?.colors, 7), [facets]);
+  const facetStatuses = useMemo(() => facetButtons(facets?.facets?.statuses, 5), [facets]);
+  const facetTransmissions = useMemo(() => facetButtons(facets?.facets?.transmissions, 7), [facets]);
 
   const bodyOptions: FilterButton[] = [
     { label: "GJ2", value: "GJ2" },
@@ -400,6 +444,50 @@ export default function CatalogFull() {
     leftHandDrive,
     sort,
     page,
+  ]);
+
+  useEffect(() => {
+    if (!initialized) return;
+
+    const params = new URLSearchParams();
+
+    if (brand) params.set("brand", brand);
+    if (model) params.set("model", model);
+    if (q) params.set("q", q);
+    if (yearFrom) params.set("yearFrom", yearFrom);
+    if (yearTo) params.set("yearTo", yearTo);
+    if (mileageTo) params.set("mileageTo", mileageTo);
+    if (auction) params.set("auction", auction);
+    if (rateFrom) params.set("rateFrom", rateFrom);
+    if (transmission) params.set("transmission", transmission);
+    if (drive) params.set("drive", drive);
+    if (color) params.set("color", color);
+    if (status) params.set("status", status);
+    if (body) params.set("body", body);
+    if (sanction) params.set("sanction", sanction);
+    if (leftHandDrive) params.set("leftHandDrive", leftHandDrive);
+
+    fetch(`/api/catalog/facets?${params.toString()}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload: FacetsPayload) => setFacets(payload?.ok ? payload : null))
+      .catch(() => setFacets(null));
+  }, [
+    initialized,
+    brand,
+    model,
+    q,
+    yearFrom,
+    yearTo,
+    mileageTo,
+    auction,
+    rateFrom,
+    transmission,
+    drive,
+    color,
+    status,
+    body,
+    sanction,
+    leftHandDrive,
   ]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -572,15 +660,15 @@ export default function CatalogFull() {
                 </button>
               </div>
 
-              <AfaCheckList title="Кузов" items={bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
-              <AfaCheckList title="Оценка" items={rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
-              <AfaCheckList title="Аукцион" items={auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
-              <AfaCheckList title="Цвета" items={colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
-              <AfaCheckList title="Статус" items={[
+              <AfaCheckList title="Кузов" items={facetBodies.length ? facetBodies : bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
+              <AfaCheckList title="Оценка" items={facetRates.length ? facetRates : rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
+              <AfaCheckList title="Аукцион" items={facetAuctions.length ? facetAuctions : auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
+              <AfaCheckList title="Цвета" items={facetColors.length ? facetColors : colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
+              <AfaCheckList title="Статус" items={facetStatuses.length ? facetStatuses : [
                 { label: "не продан", value: "not_sold" },
                 { label: "продан", value: "sold" },
               ]} active={status} onPick={(value) => toggle(status, value, setStatus)} />
-              <AfaCheckList title="КПП" items={transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
+              <AfaCheckList title="КПП" items={facetTransmissions.length ? facetTransmissions : transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
             </div>
           </form>
 
