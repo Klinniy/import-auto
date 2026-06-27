@@ -38,6 +38,17 @@ function pickField(fields: Set<string>, aliases: string[]) {
   return "";
 }
 
+function normalizeStatusValue(value: string) {
+  const v = String(value || "").toLowerCase().trim();
+
+  if (v === "sold" || v === "продан") return "Sold";
+  if (v === "not_sold" || v === "not sold" || v === "не продан") return "Not Sold";
+  if (v === "removed" || v === "снят") return "removed";
+  if (v === "cancelled" || v === "canceled" || v === "отменен") return "Cancelled";
+
+  return value;
+}
+
 function like(value: string) {
   return sqlValue(`%${value}%`);
 }
@@ -127,7 +138,7 @@ async function buildWhere(params: URLSearchParams) {
   }
   if (transmission && field.transmission) where.push(`${field.transmission}=${sqlValue(transmission)}`);
   if (drive && field.drive) where.push(`${field.drive}=${sqlValue(drive)}`);
-  if (status && field.status) where.push(`${field.status}=${sqlValue(status === "sold" ? "Sold" : "Not Sold")}`);
+  if (status && field.status) where.push(`${field.status}=${sqlValue(normalizeStatusValue(status))}`);
   if (sanction && field.sanction) where.push(`${field.sanction}=${Number(sanction)}`);
   if (leftHandDrive && field.leftHandDrive) where.push(`${field.leftHandDrive}=${Number(leftHandDrive)}`);
 

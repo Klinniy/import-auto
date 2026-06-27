@@ -965,8 +965,12 @@ function AfaCheckList({
   onPick: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const visible = items.slice(0, 6);
-  const hiddenCount = Math.max(0, items.length - visible.length);
+  const normalizedItems = active && !items.some((item) => String(item.value).toLowerCase() === String(active).toLowerCase())
+    ? [{ value: active, label: active === "removed" ? "снят" : active === "cancelled" ? "отменен" : active }, ...items]
+    : items;
+
+  const visible = normalizedItems.slice(0, 6);
+  const hiddenCount = Math.max(0, normalizedItems.length - visible.length);
 
   function renderItem(item: FilterButton) {
     const selected = String(active).toLowerCase() === String(item.value).toLowerCase();
@@ -1029,7 +1033,7 @@ function AfaCheckList({
           </div>
 
           <div className="grid gap-[6px]">
-            {items.map(renderItem)}
+            {normalizedItems.map(renderItem)}
           </div>
         </div>
       )}
