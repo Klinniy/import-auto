@@ -220,6 +220,27 @@ export default function CatalogFull() {
       .sort((a, b) => optionLabel(a).localeCompare(optionLabel(b), "en"));
   }, [filters]);
 
+  const popularBrands = useMemo(() => {
+    const wanted = [
+      "TOYOTA",
+      "NISSAN",
+      "HONDA",
+      "MAZDA",
+      "MITSUBISHI",
+      "SUBARU",
+      "SUZUKI",
+      "DAIHATSU",
+      "LEXUS",
+      "BMW",
+      "AUDI",
+      "MERCEDES BENZ",
+    ];
+
+    const map = new Map(brands.map((item) => [optionLabel(item).toUpperCase(), item]));
+
+    return wanted.map((name) => map.get(name)).filter(Boolean) as Option[];
+  }, [brands]);
+
   const years = useMemo(() => {
     return (filters?.filters?.years || [])
       .filter((item) => {
@@ -345,263 +366,279 @@ export default function CatalogFull() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-[#111827]">
-      <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4 px-3 py-2">
-          <div className="flex items-center gap-3">
+    <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
+      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
+          <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="rounded bg-slate-100 px-2.5 py-1.5 text-[12px] font-black uppercase text-slate-600 hover:bg-[#111827] hover:text-white"
+              className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-black uppercase text-slate-600 transition hover:bg-[#07152f] hover:text-white"
             >
               Начало
             </Link>
 
-            <div className="hidden items-center gap-2 text-[13px] font-black text-slate-500 md:flex">
+            <div className="hidden items-center gap-2 text-sm font-black text-slate-500 md:flex">
               <span>TOKYO</span>
-              <span className="text-[#111827]">{tokyoTime()}</span>
+              <span className="text-[#07152f]">{tokyoTime()}</span>
             </div>
 
-            <div className="text-[13px] font-black text-blue-700">
+            <div className="text-sm font-black text-blue-700">
               {formatNumber(total)} авто из Японии
             </div>
           </div>
 
           <div className="hidden items-center gap-2 xl:flex">
-            <div className="rounded bg-slate-50 px-3 py-1.5 text-[12px] font-black ring-1 ring-slate-100">
+            <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black ring-1 ring-slate-100">
               ЦБ · 100 JPY: {formatRate(rates?.currencies?.JPY?.value)} ₽
             </div>
-            <div className="rounded bg-slate-50 px-3 py-1.5 text-[12px] font-black ring-1 ring-slate-100">
+            <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black ring-1 ring-slate-100">
               ЦБ · 1 CNY: {formatRate(rates?.currencies?.CNY?.value)} ₽
             </div>
           </div>
 
           <Link
             href="/"
-            className="rounded-lg bg-[#07152f] px-4 py-2 text-[12px] font-black text-white hover:bg-[#d8001f]"
+            className="rounded-2xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
           >
             На главную
           </Link>
         </div>
       </header>
 
-      <section className="mx-auto flex max-w-[1800px] gap-3 px-3 py-3">
-        <aside className="hidden w-9 shrink-0 border-r border-slate-100 pr-2 text-[11px] font-black text-slate-500 lg:block">
-          {["CS", "BC", "ПП", "BT", "CP", "100", "LHD"].map((item, index) => (
-            <div
-              key={item}
-              className={`mb-2 flex h-7 items-center justify-center rounded ${
-                index === 5 ? "bg-lime-100 text-lime-700" : "bg-slate-50"
-              }`}
-            >
-              {item}
+      <section className="mx-auto max-w-[1500px] px-4 py-5 lg:px-6">
+        <form
+          onSubmit={submitSearch}
+          className="rounded-[2rem] bg-white p-5 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200"
+        >
+          <div className="mb-5 flex flex-col justify-between gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end">
+            <div>
+              <div className="text-sm font-black uppercase tracking-[0.24em] text-[#ff2d3d]">
+                японские аукционы
+              </div>
+              <h1 className="mt-2 text-4xl font-black tracking-[-0.06em]">
+                Поиск автомобилей
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-slate-500">
+                Выберите марку и модель как на AFA, но в современном интерфейсе MosaicAuto.
+              </p>
             </div>
-          ))}
-        </aside>
 
-        <div className="min-w-0 flex-1">
-          <form
-            onSubmit={submitSearch}
-            className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm"
-          >
-            <div className="grid gap-3 lg:grid-cols-[280px_280px_260px_1fr]">
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
-                  Марка
-                </div>
+            <div className="flex flex-wrap gap-2">
+              {popularBrands.slice(0, 8).map((item) => {
+                const value = optionValue(item);
+                const active = brand === value;
 
-                <select
-                  value={brand}
-                  disabled={loadingFilters}
-                  size={10}
-                  onChange={(event) => setFilter(() => setBrand(event.target.value))}
-                  className="h-[220px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] font-black outline-none focus:border-blue-400"
-                >
-                  <option value="">Любая</option>
-                  {brands.map((item) => {
-                    const value = optionValue(item);
-
-                    return (
-                      <option key={value} value={value}>
-                        {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
-                  Модель
-                </div>
-
-                <select
-                  value={model}
-                  disabled={!brand || models.length === 0}
-                  size={10}
-                  onChange={(event) => setFilter(() => setModel(event.target.value))}
-                  className="h-[220px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] font-black outline-none focus:border-blue-400 disabled:opacity-45"
-                >
-                  <option value="">Любая</option>
-                  {models.map((item) => {
-                    const value = optionValue(item);
-
-                    return (
-                      <option key={value} value={value}>
-                        {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
-                  Параметры
-                </div>
-
-                <div className="grid gap-2">
-                  <input
-                    value={qDraft}
-                    onChange={(event) => setQDraft(event.target.value)}
-                    placeholder="Номер лота / текст"
-                    className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-black outline-none focus:border-blue-400"
-                  />
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={yearFrom}
-                      onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
-                      className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
-                    >
-                      <option value="">Год от</option>
-                      {years.map((item) => {
-                        const value = optionValue(item);
-                        return <option key={`from-${value}`} value={value}>{value}</option>;
-                      })}
-                    </select>
-
-                    <select
-                      value={yearTo}
-                      onChange={(event) => setFilter(() => setYearTo(event.target.value))}
-                      className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
-                    >
-                      <option value="">Год до</option>
-                      {years.map((item) => {
-                        const value = optionValue(item);
-                        return <option key={`to-${value}`} value={value}>{value}</option>;
-                      })}
-                    </select>
-                  </div>
-
-                  <input
-                    value={mileageTo}
-                    inputMode="numeric"
-                    onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
-                    placeholder="Пробег до, км"
-                    className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-black outline-none focus:border-blue-400"
-                  />
-
-                  <select
-                    value={auction}
-                    onChange={(event) => setFilter(() => setAuction(event.target.value))}
-                    className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
-                  >
-                    <option value="">Любой аукцион</option>
-                    {auctions.slice(0, 160).map((item) => {
-                      const value = optionValue(item);
-
-                      return (
-                        <option key={value} value={value}>
-                          {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
-
-                  <select
-                    value={rateFrom}
-                    onChange={(event) => setFilter(() => setRateFrom(event.target.value))}
-                    className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-black outline-none"
-                  >
-                    <option value="">Оценка от</option>
-                    <option value="3">3</option>
-                    <option value="3.5">3.5</option>
-                    <option value="4">4</option>
-                    <option value="4.5">4.5</option>
-                    <option value="5">5</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-between gap-3">
-                <div className="rounded-lg bg-white p-3 ring-1 ring-slate-200">
-                  <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                    быстрый поиск
-                  </div>
-                  <div className="mt-2 text-sm font-bold text-slate-600">
-                    Выберите марку, модель или введите номер лота. Результаты обновятся справа ниже.
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
+                return (
                   <button
-                    type="submit"
-                    className="h-12 rounded-lg bg-gradient-to-b from-[#5ab3ff] to-[#2f80ed] text-sm font-black uppercase tracking-[0.16em] text-white shadow"
-                  >
-                    поиск
-                  </button>
-
-                  <button
+                    key={value}
                     type="button"
-                    onClick={reset}
-                    className="h-10 rounded-lg border border-slate-300 bg-white text-[12px] font-black uppercase tracking-[0.14em] text-slate-600 hover:bg-slate-100"
+                    onClick={() => setFilter(() => setBrand(active ? "" : value))}
+                    className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+                      active
+                        ? "bg-[#ff2d3d] text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-[#07152f] hover:text-white"
+                    }`}
                   >
-                    сброс
+                    {optionLabel(item)}
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => alert("Расширенный поиск появится следующим этапом")}
-                    className="text-left text-[12px] font-black uppercase tracking-[0.14em] text-amber-600"
-                  >
-                    расширенный поиск скоро
-                  </button>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          </form>
-
-          <div className="my-3 h-8 rounded bg-[#fff5cc] px-4 py-2 text-[12px] font-black uppercase text-[#9a1b1b]">
-            Войдите, чтобы видеть всю информацию по лоту
           </div>
 
-          <div className="mb-3 flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:flex-row md:items-center">
+          <div className="grid gap-4 lg:grid-cols-[280px_280px_1fr]">
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <div className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                Марка
+              </div>
+              <select
+                value={brand}
+                disabled={loadingFilters}
+                size={9}
+                onChange={(event) => setFilter(() => setBrand(event.target.value))}
+                className="h-[238px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black outline-none focus:border-blue-400"
+              >
+                <option value="">Любая</option>
+                {brands.map((item) => {
+                  const value = optionValue(item);
+
+                  return (
+                    <option key={value} value={value}>
+                      {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                Модель
+              </div>
+              <select
+                value={model}
+                disabled={!brand || models.length === 0}
+                size={9}
+                onChange={(event) => setFilter(() => setModel(event.target.value))}
+                className="h-[238px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black outline-none focus:border-blue-400 disabled:opacity-45"
+              >
+                <option value="">Любая</option>
+                {models.map((item) => {
+                  const value = optionValue(item);
+
+                  return (
+                    <option key={value} value={value}>
+                      {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="grid content-start gap-3">
+              <div className="rounded-[1.4rem] bg-[#07152f] p-4 text-white">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-red-200">
+                  быстрый поиск
+                </div>
+                <p className="mt-2 text-sm font-bold leading-6 text-white/65">
+                  Введите номер лота, кузов или текст. Можно искать только по марке,
+                  либо уточнить модель, год, аукцион и оценку.
+                </p>
+              </div>
+
+              <input
+                value={qDraft}
+                onChange={(event) => setQDraft(event.target.value)}
+                placeholder="Номер лота / кузов / текст"
+                className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-blue-400"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={yearFrom}
+                  onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none"
+                >
+                  <option value="">Год от</option>
+                  {years.map((item) => {
+                    const value = optionValue(item);
+                    return <option key={`from-${value}`} value={value}>{value}</option>;
+                  })}
+                </select>
+
+                <select
+                  value={yearTo}
+                  onChange={(event) => setFilter(() => setYearTo(event.target.value))}
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none"
+                >
+                  <option value="">Год до</option>
+                  {years.map((item) => {
+                    const value = optionValue(item);
+                    return <option key={`to-${value}`} value={value}>{value}</option>;
+                  })}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  value={mileageTo}
+                  inputMode="numeric"
+                  onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
+                  placeholder="Пробег до, км"
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-blue-400"
+                />
+
+                <select
+                  value={rateFrom}
+                  onChange={(event) => setFilter(() => setRateFrom(event.target.value))}
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none"
+                >
+                  <option value="">Оценка от</option>
+                  <option value="3">3</option>
+                  <option value="3.5">3.5</option>
+                  <option value="4">4</option>
+                  <option value="4.5">4.5</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+
+              <select
+                value={auction}
+                onChange={(event) => setFilter(() => setAuction(event.target.value))}
+                className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none"
+              >
+                <option value="">Любой аукцион</option>
+                {auctions.slice(0, 160).map((item) => {
+                  const value = optionValue(item);
+
+                  return (
+                    <option key={value} value={value}>
+                      {optionLabel(item)} {item.count ? `— ${item.count}` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <div className="grid grid-cols-[1fr_auto] gap-3">
+                <button
+                  type="submit"
+                  className="h-13 rounded-2xl bg-[#2f80ed] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-100 transition hover:bg-[#1f6fd8]"
+                >
+                  поиск
+                </button>
+
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="h-13 rounded-2xl bg-slate-100 px-6 py-4 text-sm font-black uppercase tracking-[0.12em] text-slate-600 transition hover:bg-[#ff2d3d] hover:text-white"
+                >
+                  сброс
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => alert("Расширенный поиск появится следующим этапом")}
+                className="text-left text-xs font-black uppercase tracking-[0.18em] text-amber-600"
+              >
+                расширенный поиск скоро
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div className="mt-4 rounded-2xl bg-[#fff5cc] px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[#9a1b1b]">
+          Войдите, чтобы видеть всю информацию по лоту
+        </div>
+
+        <section className="mt-4">
+          <div className="mb-4 flex flex-col justify-between gap-3 rounded-[2rem] bg-white p-5 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 md:flex-row md:items-center">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                 найдено
               </div>
-              <h1 className="text-2xl font-black tracking-[-0.04em]">
+              <h2 className="mt-1 text-4xl font-black tracking-[-0.05em]">
                 {formatNumber(total)} авто
-              </h1>
+              </h2>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="h-9 rounded-lg bg-slate-100 px-4 text-sm font-black hover:bg-[#07152f] hover:text-white disabled:opacity-40"
+                className="h-11 rounded-2xl bg-slate-100 px-4 text-sm font-black transition hover:bg-[#07152f] hover:text-white disabled:opacity-40"
               >
                 ←
               </button>
 
-              <div className="rounded-lg bg-slate-100 px-5 py-2 text-sm font-black">
+              <div className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black">
                 стр. {page} из {formatNumber(pages)}
               </div>
 
               <button
                 disabled={page >= pages || loading}
                 onClick={() => setPage((current) => Math.min(pages, current + 1))}
-                className="h-9 rounded-lg bg-slate-100 px-4 text-sm font-black hover:bg-[#07152f] hover:text-white disabled:opacity-40"
+                className="h-11 rounded-2xl bg-slate-100 px-4 text-sm font-black transition hover:bg-[#07152f] hover:text-white disabled:opacity-40"
               >
                 →
               </button>
@@ -609,33 +646,33 @@ export default function CatalogFull() {
           </div>
 
           {error && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="grid gap-3">
-              {Array.from({ length: 10 }).map((_, index) => (
+            <div className="grid gap-4">
+              {Array.from({ length: 8 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-[170px] animate-pulse rounded-xl border border-slate-200 bg-white"
+                  className="h-[190px] animate-pulse rounded-[2rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200"
                 />
               ))}
             </div>
           ) : cars.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
+            <div className="rounded-[2rem] bg-white p-10 text-center shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
               <div className="text-2xl font-black">Лоты не найдены</div>
               <p className="mt-2 text-slate-500">Попробуйте изменить параметры поиска.</p>
               <button
                 onClick={reset}
-                className="mt-5 rounded-lg bg-[#d8001f] px-6 py-3 font-black text-white"
+                className="mt-5 rounded-2xl bg-[#ff2d3d] px-6 py-3 font-black text-white"
               >
                 Сбросить
               </button>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-4">
               {cars.map((car) => {
                 const image = carImage(car);
                 const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
@@ -645,9 +682,9 @@ export default function CatalogFull() {
                   <Link
                     key={car.id || `${car.lot}-${title}`}
                     href={`/catalog/${car.id}`}
-                    className="group grid overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-md md:grid-cols-[230px_1fr]"
+                    className="group grid overflow-hidden rounded-[2rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-2xl md:grid-cols-[250px_1fr]"
                   >
-                    <div className="relative h-44 bg-slate-100 md:h-full">
+                    <div className="relative h-56 bg-slate-100 md:h-full">
                       <img
                         src={image}
                         alt={title}
@@ -658,71 +695,71 @@ export default function CatalogFull() {
                         }}
                       />
 
-                      <div className="absolute left-2 top-2 rounded bg-white/92 px-2 py-1 text-[11px] font-black shadow-sm">
+                      <div className="absolute left-3 top-3 rounded-full bg-white/92 px-3 py-1 text-[11px] font-black shadow-sm">
                         LOT {car.lot || "—"}
                       </div>
 
                       {rate && (
-                        <div className="absolute bottom-2 left-2 rounded bg-[#d8001f] px-2 py-1 text-[11px] font-black text-white">
+                        <div className="absolute bottom-3 left-3 rounded-full bg-[#ff2d3d] px-3 py-1 text-[11px] font-black text-white">
                           {rate}
                         </div>
                       )}
 
                       {isSanction(car) && (
-                        <div className="absolute right-2 top-2 rounded bg-yellow-400 px-2 py-1 text-[11px] font-black">
+                        <div className="absolute right-3 top-3 rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-black">
                           санкц.
                         </div>
                       )}
                     </div>
 
-                    <div className="p-4">
-                      <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+                    <div className="p-5">
+                      <div className="grid gap-4 lg:grid-cols-[1fr_240px]">
                         <div>
-                          <h2 className="text-xl font-black uppercase tracking-[-0.04em]">
+                          <h2 className="text-2xl font-black uppercase tracking-[-0.04em]">
                             {title}
                           </h2>
 
-                          <div className="mt-1 text-[12px] font-black uppercase tracking-[0.12em] text-slate-400">
+                          <div className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-slate-400">
                             {car.year || "—"} · {car.auction || "Аукцион"} · {car.auctionDate || "дата не указана"}
                           </div>
 
-                          <div className="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
-                            <div className="rounded-lg bg-slate-50 p-3">
-                              <div className="text-[11px] font-bold text-slate-400">Пробег</div>
+                          <div className="mt-5 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                              <div className="text-xs font-bold text-slate-400">Пробег</div>
                               <b>{formatNumber(car.mileage)} км</b>
                             </div>
 
-                            <div className="rounded-lg bg-slate-50 p-3">
-                              <div className="text-[11px] font-bold text-slate-400">Объем</div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                              <div className="text-xs font-bold text-slate-400">Объем</div>
                               <b>{formatNumber(car.engineVolume)} см³</b>
                             </div>
 
-                            <div className="rounded-lg bg-slate-50 p-3">
-                              <div className="text-[11px] font-bold text-slate-400">КПП</div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                              <div className="text-xs font-bold text-slate-400">КПП</div>
                               <b>{car.transmission || "—"}</b>
                             </div>
 
-                            <div className="rounded-lg bg-slate-50 p-3">
-                              <div className="text-[11px] font-bold text-slate-400">Привод</div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                              <div className="text-xs font-bold text-slate-400">Привод</div>
                               <b>{car.drive || "—"}</b>
                             </div>
                           </div>
                         </div>
 
-                        <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="rounded-[1.4rem] bg-slate-50 p-4">
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                              <div className="text-[11px] font-bold text-slate-400">Старт</div>
+                              <div className="text-xs font-bold text-slate-400">Старт</div>
                               <div className="font-black">{formatPrice(car.startPrice)}</div>
                             </div>
 
                             <div>
-                              <div className="text-[11px] font-bold text-slate-400">Финиш</div>
+                              <div className="text-xs font-bold text-slate-400">Финиш</div>
                               <div className="font-black">{formatPrice(car.finishPrice)}</div>
                             </div>
                           </div>
 
-                          <div className="mt-3 rounded-lg bg-[#07152f] px-4 py-3 text-center text-sm font-black text-white group-hover:bg-[#d8001f]">
+                          <div className="mt-4 rounded-2xl bg-[#07152f] px-4 py-3 text-center text-sm font-black text-white transition group-hover:bg-[#ff2d3d]">
                             Подробнее
                           </div>
                         </div>
@@ -733,7 +770,7 @@ export default function CatalogFull() {
               })}
             </div>
           )}
-        </div>
+        </section>
       </section>
     </main>
   );
