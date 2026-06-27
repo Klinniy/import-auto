@@ -178,11 +178,24 @@ export async function GET(req: NextRequest) {
 
     const selectFields = Array.from(new Set(wantedFields)).join(",");
 
-    const rows = selectFields
-      ? await ajesSql<Array<Record<string, string>>>(
-          `select ${selectFields} from main${whereSql} limit 0,5000`
-        )
-      : [];
+    const rows: Array<Record<string, string>> = [];
+
+    if (selectFields) {
+      const chunkSize = 500;
+      const maxRows = 10000;
+
+      for (let offset = 0; offset < maxRows; offset += chunkSize) {
+        const chunk = await ajesSql<Array<Record<string, string>>>(
+          `select ${selectFields} from main${whereSql} limit ${offset},${chunkSize}`
+        );
+
+        if (!chunk.length) break;
+
+        rows.push(...chunk);
+
+        if (chunk.length < chunkSize) break;
+      }
+    }
 
     return NextResponse.json({
       ok: true,
