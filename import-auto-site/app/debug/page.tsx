@@ -66,6 +66,7 @@ export default function DebugPage() {
           <button style={btn} onClick={() => load("/api/debug/image-quality")}>Image Quality</button>
           <button style={btn} onClick={() => load("/api/debug/detail")}>Detail Scan</button>
           <button style={btn} onClick={() => load("/api/debug/ui")}>UI Scan</button>
+          <button style={btn} onClick={() => load("/api/debug/catalog-safe")}>Catalog Safe</button>
           <button style={btn} onClick={copy}>Copy JSON</button>
         </div>
 
