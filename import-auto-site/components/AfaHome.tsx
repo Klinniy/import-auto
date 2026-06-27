@@ -19,6 +19,29 @@ type FiltersResponse = {
   };
 };
 
+type CbrCurrency = {
+  code: "JPY" | "CNY";
+  title: string;
+  nominalLabel: string;
+  value: number;
+  diff: number;
+  diffPercent: number;
+  history: Array<{
+    date: string;
+    value: number;
+    perOne: number;
+  }>;
+};
+
+type CbrResponse = {
+  ok?: boolean;
+  checkedAt?: string;
+  currencies?: {
+    JPY?: CbrCurrency;
+    CNY?: CbrCurrency;
+  };
+};
+
 type CatalogResponse = {
   ok?: boolean;
   total?: number;
@@ -56,10 +79,89 @@ function clockLabel() {
   }).format(now);
 }
 
+function formatRate(value?: number | null) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n)) return "—";
+
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(n);
+}
+
+function MiniRateChart({ currency }: { currency?: CbrCurrency }) {
+  const history = currency?.history || [];
+
+  if (history.length < 2) {
+    return <div className="h-6 w-20 rounded bg-slate-100" />;
+  }
+
+  const values = history.map((item) => item.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = max - min || 1;
+
+  const points = values
+    .map((value, index) => {
+      const x = (index / Math.max(1, values.length - 1)) * 100;
+      const y = 28 - ((value - min) / spread) * 24;
+
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const positive = Number(currency?.diff || 0) >= 0;
+
+  return (
+    <svg viewBox="0 0 100 32" className="h-8 w-24 overflow-visible">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={positive ? "#16a34a" : "#ef4444"}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function RateChip({ currency }: { currency?: CbrCurrency }) {
+  if (!currency) {
+    return (
+      <div className="hidden items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-400 ring-1 ring-slate-100 lg:flex">
+        курс загружается
+      </div>
+    );
+  }
+
+  const positive = Number(currency.diff || 0) >= 0;
+
+  return (
+    <div className="hidden items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100 lg:flex">
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+          ЦБ РФ · {currency.nominalLabel}
+        </div>
+        <div className="text-sm font-black text-[#07152f]">
+          {formatRate(currency.value)} ₽
+          <span className={positive ? "ml-2 text-green-600" : "ml-2 text-red-500"}>
+            {positive ? "▲" : "▼"} {formatRate(Math.abs(currency.diff))}
+          </span>
+        </div>
+      </div>
+
+      <MiniRateChart currency={currency} />
+    </div>
+  );
+}
+
 export default function AfaHome() {
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
   const [total, setTotal] = useState(0);
   const [tokyoTime, setTokyoTime] = useState("");
+  const [rates, setRates] = useState<CbrResponse | null>(null);
 
   const brands = useMemo(() => {
     return (filters?.filters?.brands || [])
@@ -114,6 +216,11 @@ export default function AfaHome() {
       .then((res) => res.json())
       .then((payload: CatalogResponse) => setTotal(Number(payload.total || 0)))
       .catch(() => setTotal(0));
+
+    fetch("/api/cbr", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload: CbrResponse) => setRates(payload))
+      .catch(() => setRates(null));
 
     return () => clearInterval(timer);
   }, []);
@@ -197,12 +304,17 @@ export default function AfaHome() {
             </div>
           </div>
 
-          <Link
-            href="/catalog"
-            className="rounded-xl bg-[#07152f] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
-          >
-            Вход / Каталог
-          </Link>
+          <div className="flex items-center gap-2">
+            <RateChip currency={rates?.currencies?.JPY} />
+            <RateChip currency={rates?.currencies?.CNY} />
+
+            <Link
+              href="/catalog"
+              className="rounded-xl bg-[#07152f] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
+            >
+              Вход / Каталог
+            </Link>
+          </div>
         </div>
       </header>
 
