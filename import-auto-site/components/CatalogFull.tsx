@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 type Option = {
   value?: string;
@@ -17,10 +17,10 @@ type FiltersResponse = {
     brands?: Option[];
     years?: Option[];
     auctions?: Option[];
-    rates?: Option[];
     colors?: Option[];
     transmissions?: Option[];
     drives?: Option[];
+    rates?: Option[];
   };
 };
 
@@ -47,6 +47,7 @@ type Car = {
   drive?: string;
   color?: string;
   sanction?: boolean | string | number;
+  leftHandDrive?: boolean;
   startPrice?: number | string | null;
   finishPrice?: number | string | null;
   averagePrice?: number | string | null;
@@ -63,20 +64,20 @@ type CatalogPayload = {
   results?: Car[];
   total?: number;
   pages?: number;
-  page?: number;
   error?: string;
-};
-
-type CbrCurrency = {
-  value: number;
 };
 
 type CbrResponse = {
   ok?: boolean;
   currencies?: {
-    JPY?: CbrCurrency;
-    CNY?: CbrCurrency;
+    JPY?: { value: number };
+    CNY?: { value: number };
   };
+};
+
+type FilterButton = {
+  label: string;
+  value: string;
 };
 
 function getArray<T>(payload: unknown): T[] {
@@ -105,6 +106,29 @@ function optionLabel(option: Option) {
   return String(option.label || option.name || option.value || "").trim();
 }
 
+function cleanText(value: unknown) {
+  return String(value ?? "")
+    .replace(/&amp;/g, "&")
+    .replace(/&#\d+;/g, "")
+    .replace(/&[a-zA-Z]+;/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isBadFilterValue(value: unknown) {
+  const text = String(value ?? "").toLowerCase().trim();
+
+  return (
+    !text ||
+    text.includes("actual vehicle") ||
+    text.includes("vehicle") ||
+    text.includes("http") ||
+    text.includes("&#") ||
+    text.includes("{") ||
+    text.length > 32
+  );
+}
+
 function formatNumber(value?: number | string | null) {
   if (value === undefined || value === null || value === "") return "—";
 
@@ -127,6 +151,7 @@ function formatRateValue(value?: number | null) {
 function formatPrice(value?: number | string | null) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return "—";
+
   return `${formatNumber(n)} ¥`;
 }
 
@@ -168,42 +193,15 @@ function isSanction(car: Car) {
   return false;
 }
 
-function cleanBadge(value: unknown) {
-  const text = String(value ?? "").trim();
+function statusLabel(value?: string) {
+  const text = String(value || "").toLowerCase().trim();
 
-  if (!text || text === "-" || text === "—") return "";
+  if (!text) return "—";
+  if (text === "sold" || text.includes("sold by")) return "продан";
+  if (text === "not sold") return "не продан";
+  if (text === "removed") return "снят";
 
-  if (
-    text.length > 10 ||
-    text.includes("http") ||
-    text.includes("{") ||
-    text.includes("[") ||
-    text.includes("#") ||
-    text.includes("&w=") ||
-    text.includes("&h=")
-  ) {
-    return "";
-  }
-
-  return text;
-}
-
-function cleanFilterLabel(value: unknown) {
-  return String(value ?? "")
-    .replace(/&amp;/g, "&")
-    .replace(/&#\d+;/g, "")
-    .replace(/&[a-zA-Z]+;/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function cleanText(value: unknown) {
-  return String(value ?? "")
-    .replace(/&amp;/g, "&")
-    .replace(/&#\d+;/g, "")
-    .replace(/&[a-zA-Z]+;/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return cleanText(value);
 }
 
 function tokyoTime() {
@@ -217,8 +215,21 @@ function tokyoTime() {
   }).format(new Date());
 }
 
+function optionButtons(options: Option[], limit = 12): FilterButton[] {
+  return options
+    .map((item) => ({
+      label: cleanText(optionLabel(item)),
+      value: cleanText(optionValue(item)),
+    }))
+    .filter((item) => item.label && item.value)
+    .filter((item) => !isBadFilterValue(item.label) && !isBadFilterValue(item.value))
+    .slice(0, limit);
+}
+
 export default function CatalogFull() {
   const [initialized, setInitialized] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
   const [models, setModels] = useState<Option[]>([]);
   const [cars, setCars] = useState<Car[]>([]);
@@ -237,9 +248,13 @@ export default function CatalogFull() {
   const [auction, setAuction] = useState("");
   const [rateFrom, setRateFrom] = useState("");
   const [transmission, setTransmission] = useState("");
+  const [drive, setDrive] = useState("");
   const [color, setColor] = useState("");
   const [status, setStatus] = useState("");
   const [body, setBody] = useState("");
+  const [sanction, setSanction] = useState("");
+  const [leftHandDrive, setLeftHandDrive] = useState("");
+  const [sort, setSort] = useState("");
   const [page, setPage] = useState(1);
 
   const [loading, setLoading] = useState(false);
@@ -261,13 +276,51 @@ export default function CatalogFull() {
       .slice(0, 45);
   }, [filters]);
 
-  const auctions = filters?.filters?.auctions || [];
-  const transmissions = filters?.filters?.transmissions || [];
-  const colors = filters?.filters?.colors || [];
+  const auctions = useMemo(() => optionButtons(filters?.filters?.auctions || [], 16), [filters]);
+  const colors = useMemo(() => optionButtons(filters?.filters?.colors || [], 16), [filters]);
+  const drives = useMemo(() => optionButtons(filters?.filters?.drives || [], 10), [filters]);
 
-  const bodyOptions = ["FE0", "SNFE0", "NCP", "ZVW", "ANH", "ATH", "AHR", "GRS"];
-  const statusOptions = ["не продан", "продан", "не состоялся"];
-  const rateOptions = ["3", "3.5", "4", "4.5", "5", "R"];
+  const bodyOptions: FilterButton[] = [
+    { label: "FE0", value: "FE0" },
+    { label: "SNFE0", value: "SNFE0" },
+    { label: "NCP", value: "NCP" },
+    { label: "ZVW", value: "ZVW" },
+    { label: "ANH", value: "ANH" },
+    { label: "ATH", value: "ATH" },
+    { label: "AHR", value: "AHR" },
+  ];
+
+  const rateOptions: FilterButton[] = [
+    { label: "3", value: "3" },
+    { label: "3.5", value: "3.5" },
+    { label: "4", value: "4" },
+    { label: "4.5", value: "4.5" },
+    { label: "5", value: "5" },
+    { label: "R", value: "R" },
+  ];
+
+  const transmissionOptions: FilterButton[] = [
+    { label: "AT", value: "AT" },
+    { label: "FAT", value: "FAT" },
+    { label: "IAT", value: "IAT" },
+    { label: "CVT", value: "CVT" },
+    { label: "MT", value: "MT" },
+  ];
+
+  const statusOptions: FilterButton[] = [
+    { label: "продан", value: "sold" },
+    { label: "не продан", value: "not_sold" },
+  ];
+
+  const sanctionOptions: FilterButton[] = [
+    { label: "санкционный", value: "1" },
+    { label: "без санкций", value: "0" },
+  ];
+
+  const handDriveOptions: FilterButton[] = [
+    { label: "LHD", value: "1" },
+    { label: "RHD", value: "0" },
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -282,10 +335,16 @@ export default function CatalogFull() {
     setAuction(params.get("auction") || "");
     setRateFrom(params.get("rateFrom") || "");
     setTransmission(params.get("transmission") || "");
+    setDrive(params.get("drive") || "");
     setColor(params.get("color") || "");
     setStatus(params.get("status") || "");
     setBody(params.get("body") || "");
+    setSanction(params.get("sanction") || "");
+    setLeftHandDrive(params.get("leftHandDrive") || "");
+    setSort(params.get("sort") || "");
     setPage(Number(params.get("page") || 1) || 1);
+    setAdvancedOpen(Boolean(params.get("auction") || params.get("rateFrom") || params.get("color") || params.get("body")));
+
     setInitialized(true);
   }, []);
 
@@ -331,20 +390,24 @@ export default function CatalogFull() {
     if (auction) params.set("auction", auction);
     if (rateFrom) params.set("rateFrom", rateFrom);
     if (transmission) params.set("transmission", transmission);
+    if (drive) params.set("drive", drive);
     if (color) params.set("color", color);
     if (status) params.set("status", status);
     if (body) params.set("body", body);
+    if (sanction) params.set("sanction", sanction);
+    if (leftHandDrive) params.set("leftHandDrive", leftHandDrive);
+    if (sort) params.set("sort", sort);
 
     params.set("page", String(page));
     params.set("limit", "24");
 
-    const qs = params.toString();
-    window.history.replaceState(null, "", `/catalog?${qs}`);
+    const query = params.toString();
+    window.history.replaceState(null, "", `/catalog?${query}`);
 
     setLoading(true);
     setError("");
 
-    fetch(`/api/catalog?${qs}`, { cache: "no-store" })
+    fetch(`/api/catalog?${query}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload: CatalogPayload) => {
         if (payload?.ok === false) {
@@ -375,9 +438,13 @@ export default function CatalogFull() {
     auction,
     rateFrom,
     transmission,
+    drive,
     color,
     status,
     body,
+    sanction,
+    leftHandDrive,
+    sort,
     page,
   ]);
 
@@ -385,6 +452,15 @@ export default function CatalogFull() {
     event.preventDefault();
     setPage(1);
     setQ(qDraft.trim());
+  }
+
+  function setFilter(action: () => void) {
+    setPage(1);
+    action();
+  }
+
+  function toggle(current: string, value: string, setter: (next: string) => void) {
+    setFilter(() => setter(current === value ? "" : value));
   }
 
   function reset() {
@@ -398,468 +474,545 @@ export default function CatalogFull() {
     setAuction("");
     setRateFrom("");
     setTransmission("");
+    setDrive("");
     setColor("");
     setStatus("");
     setBody("");
+    setSanction("");
+    setLeftHandDrive("");
+    setSort("");
     setPage(1);
+    setAdvancedOpen(false);
   }
 
-  function setFilter(action: () => void) {
-    setPage(1);
-    action();
-  }
-
-  function toggleValue(current: string, value: string, setter: (value: string) => void) {
-    setFilter(() => setter(current === value ? "" : value));
-  }
+  const activeFiltersCount = [
+    brand,
+    model,
+    q,
+    yearFrom,
+    yearTo,
+    mileageTo,
+    auction,
+    rateFrom,
+    transmission,
+    drive,
+    color,
+    status,
+    body,
+    sanction,
+    leftHandDrive,
+    sort,
+  ].filter(Boolean).length;
 
   return (
-    <main className="min-h-screen bg-white text-[#111827]">
-      <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-none items-center justify-between gap-4 px-3 py-1.5">
-          <div className="flex items-center gap-3">
+    <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              className="rounded bg-slate-100 px-2.5 py-1 text-[12px] font-black uppercase text-slate-600 hover:bg-[#111827] hover:text-white"
+              className="rounded-xl bg-[#07152f] px-4 py-2 text-sm font-black uppercase text-white hover:bg-[#d8001f]"
             >
               Начало
             </Link>
 
-            <div className="hidden items-center gap-2 text-[13px] font-black text-slate-500 md:flex">
-              <span>TOKYO</span>
-              <span className="text-[#111827]">{tokyoTime()}</span>
+            <div className="hidden text-sm font-black text-slate-500 md:block">
+              TOKYO <span className="text-slate-950">{tokyoTime()}</span>
             </div>
 
-            <div className="text-[13px] font-black text-blue-700">
+            <div className="truncate text-sm font-black text-blue-700">
               {formatNumber(total)} авто из Японии
             </div>
           </div>
 
           <div className="hidden items-center gap-2 xl:flex">
-            <div className="rounded bg-slate-50 px-3 py-1 text-[12px] font-black ring-1 ring-slate-100">
+            <div className="rounded-xl bg-slate-50 px-4 py-2 text-sm font-black ring-1 ring-slate-100">
               ЦБ · 100 JPY {formatRateValue(rates?.currencies?.JPY?.value)} ₽
             </div>
-            <div className="rounded bg-slate-50 px-3 py-1 text-[12px] font-black ring-1 ring-slate-100">
+            <div className="rounded-xl bg-slate-50 px-4 py-2 text-sm font-black ring-1 ring-slate-100">
               ЦБ · 1 CNY {formatRateValue(rates?.currencies?.CNY?.value)} ₽
             </div>
           </div>
 
           <Link
             href="/"
-            className="rounded bg-[#07152f] px-4 py-1.5 text-[12px] font-black text-white hover:bg-[#d8001f]"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-black text-[#07152f] ring-1 ring-slate-200 hover:bg-slate-50"
           >
             На главную
           </Link>
         </div>
       </header>
 
-      <section className="flex max-w-none gap-2 px-3 py-2">
-        <aside className="hidden w-8 shrink-0 text-[10px] font-black text-slate-500 lg:block">
-          {["CS", "BC", "ПП", "BT", "CP", "☝", "100", "LHD"].map((item, index) => (
-            <div
-              key={item}
-              className={`mb-1 flex h-7 items-center justify-center rounded ${
-                index === 6 ? "bg-lime-100 text-lime-700" : "bg-slate-50"
-              }`}
+      <section className="mx-auto max-w-[1800px] px-4 py-4">
+        <form
+          onSubmit={submitSearch}
+          className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_150px_130px_130px_150px_160px_120px]">
+            <SelectField
+              label="Марка"
+              value={brand}
+              disabled={loadingFilters}
+              onChange={(value) => setFilter(() => setBrand(value))}
+              options={brands}
+              emptyLabel="Любая марка"
+            />
+
+            <SelectField
+              label="Модель"
+              value={model}
+              disabled={!brand || models.length === 0}
+              onChange={(value) => setFilter(() => setModel(value))}
+              options={models}
+              emptyLabel="Любая модель"
+            />
+
+            <TextField
+              label="Номер лота"
+              value={qDraft}
+              placeholder="Напр. 60246"
+              onChange={setQDraft}
+            />
+
+            <SelectField
+              label="Год от"
+              value={yearFrom}
+              onChange={(value) => setFilter(() => setYearFrom(value))}
+              options={years}
+              emptyLabel="От"
+              compact
+            />
+
+            <SelectField
+              label="Год до"
+              value={yearTo}
+              onChange={(value) => setFilter(() => setYearTo(value))}
+              options={years}
+              emptyLabel="До"
+              compact
+            />
+
+            <TextField
+              label="Пробег до"
+              value={mileageTo}
+              placeholder="км"
+              onChange={(value) => setFilter(() => setMileageTo(value.replace(/\D/g, "")))}
+            />
+
+            <SelectNative
+              label="Сортировка"
+              value={sort}
+              onChange={(value) => setFilter(() => setSort(value))}
+              options={[
+                ["", "По дате аукциона"],
+                ["year_desc", "Год ↓"],
+                ["year_asc", "Год ↑"],
+                ["mileage_asc", "Пробег ↑"],
+                ["mileage_desc", "Пробег ↓"],
+                ["price_asc", "Цена ↑"],
+                ["price_desc", "Цена ↓"],
+              ]}
+            />
+
+            <div className="flex items-end">
+              <button
+                type="submit"
+                className="h-11 w-full rounded-2xl bg-gradient-to-b from-[#61b7ff] to-[#2f80ed] text-sm font-black uppercase tracking-[0.14em] text-white shadow-sm hover:brightness-105"
+              >
+                Поиск
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((value) => !value)}
+                className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
+              >
+                {advancedOpen ? "Скрыть фильтры" : "Расширенные фильтры"}
+              </button>
+
+              {activeFiltersCount > 0 && (
+                <div className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-black text-blue-700">
+                  Активно: {activeFiltersCount}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-2xl bg-white px-4 py-2 text-sm font-black text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             >
-              {item}
-            </div>
-          ))}
-        </aside>
-
-        <div className="min-w-0 flex-1">
-          <form
-            onSubmit={submitSearch}
-            className="rounded-md border border-slate-200 bg-[#f7f8fa] p-2 shadow-sm"
-          >
-            <div className="grid gap-2 xl:grid-cols-[260px_260px_200px_1fr]">
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#d8001f]">
-                  Марка
-                </div>
-                <select
-                  value={brand}
-                  disabled={loadingFilters}
-                  size={12}
-                  onChange={(event) => setFilter(() => setBrand(event.target.value))}
-                  className="h-[232px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500"
-                >
-                  <option value="">Любая</option>
-                  {brands.map((item) => {
-                    const value = optionValue(item);
-                    return (
-                      <option key={value} value={value}>
-                        {optionLabel(item)} {item.count ? `— ${formatNumber(item.count)}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#d8001f]">
-                  Модель
-                </div>
-                <select
-                  value={model}
-                  disabled={!brand || models.length === 0}
-                  size={12}
-                  onChange={(event) => setFilter(() => setModel(event.target.value))}
-                  className="h-[232px] w-full rounded border border-slate-300 bg-white px-2 py-1 text-[13px] font-bold outline-none focus:border-blue-500 disabled:opacity-45"
-                >
-                  <option value="">Любая</option>
-                  {models.map((item) => {
-                    const value = optionValue(item);
-                    return (
-                      <option key={value} value={value}>
-                        {optionLabel(item)} {item.count ? `— ${formatNumber(item.count)}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#d8001f]">
-                  Параметры
-                </div>
-
-                <div className="grid gap-1.5">
-                  <input
-                    value={qDraft}
-                    onChange={(event) => setQDraft(event.target.value)}
-                    placeholder="Номер лота"
-                    className="h-8 rounded border border-slate-300 bg-white px-2 text-[12px] font-bold outline-none"
-                  />
-
-                  <div className="grid grid-cols-2 gap-1.5 text-[12px]">
-                    <select
-                      value={yearFrom}
-                      onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
-                      className="h-8 rounded border border-slate-300 bg-white px-1 font-bold outline-none"
-                    >
-                      <option value="">Год от</option>
-                      {years.map((item) => {
-                        const value = optionValue(item);
-                        return <option key={`from-${value}`} value={value}>{value}</option>;
-                      })}
-                    </select>
-
-                    <select
-                      value={yearTo}
-                      onChange={(event) => setFilter(() => setYearTo(event.target.value))}
-                      className="h-8 rounded border border-slate-300 bg-white px-1 font-bold outline-none"
-                    >
-                      <option value="">Год до</option>
-                      {years.map((item) => {
-                        const value = optionValue(item);
-                        return <option key={`to-${value}`} value={value}>{value}</option>;
-                      })}
-                    </select>
-                  </div>
-
-                  <input
-                    value={mileageTo}
-                    inputMode="numeric"
-                    onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
-                    placeholder="Пробег до, км"
-                    className="h-8 rounded border border-slate-300 bg-white px-2 text-[12px] font-bold outline-none"
-                  />
-
-                  <input
-                    disabled
-                    placeholder="Объем от / до"
-                    className="h-8 rounded border border-slate-200 bg-slate-100 px-2 text-[12px] font-bold text-slate-400 outline-none"
-                  />
-
-                  <button
-                    type="submit"
-                    className="mt-1 h-9 rounded bg-gradient-to-b from-[#68b8ff] to-[#2f80ed] text-[12px] font-black uppercase tracking-[0.16em] text-white shadow"
-                  >
-                    Поиск
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="h-8 rounded border border-slate-300 bg-white text-[11px] font-black uppercase tracking-[0.14em] text-slate-600 hover:bg-slate-100"
-                  >
-                    Сброс
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => alert("Расширенный поиск появится следующим этапом")}
-                    className="text-left text-[11px] font-black uppercase tracking-[0.16em] text-amber-600"
-                  >
-                    Расширенный поиск скоро
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid gap-x-5 gap-y-2 md:grid-cols-3 xl:grid-cols-6">
-                <FilterColumn
-                  title="Кузов"
-                  items={bodyOptions}
-                  active={body}
-                  onPick={(value) => toggleValue(body, value, setBody)}
-                />
-
-                <FilterColumn
-                  title="Оценка"
-                  items={rateOptions}
-                  active={rateFrom}
-                  onPick={(value) => toggleValue(rateFrom, value, setRateFrom)}
-                />
-
-                <FilterColumn
-                  title="Аукцион"
-                  items={auctions.slice(0, 7).map(optionLabel)}
-                  active={auction}
-                  onPick={(value) => toggleValue(auction, value, setAuction)}
-                />
-
-                <FilterColumn
-                  title="Цвета"
-                  items={(colors.length ? colors.map(optionLabel).map(cleanFilterLabel).filter(Boolean).slice(0, 7) : ["белый", "жемчужный", "серебристый", "черный"])}
-                  active={color}
-                  onPick={(value) => toggleValue(color, value, setColor)}
-                />
-
-                <FilterColumn
-                  title="Статус"
-                  items={statusOptions}
-                  active={status}
-                  onPick={(value) => toggleValue(status, value, setStatus)}
-                />
-
-                <FilterColumn
-                  title="КПП"
-                  items={["AT", "FAT", "IAT", "CVT", "MT"]}
-                  active={transmission}
-                  onPick={(value) => toggleValue(transmission, value, setTransmission)}
-                />
-              </div>
-            </div>
-          </form>
-
-          <div className="my-2 h-6 bg-[#fff5cc] px-4 py-1 text-[12px] font-black uppercase text-[#9a1b1b]">
-            Войдите, чтобы видеть всю информацию по лоту
+              Сбросить всё
+            </button>
           </div>
 
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-[15px] font-black">
-              <span className="text-lime-700">{formatNumber(total)}</span>{" "}
-              найдено · {formatNumber(total)}
-              {brand ? ` · ${brand}` : " · все марки"}
-              {model ? ` · ${model}` : ""}
-            </div>
-
-            <div className="flex items-center gap-1 text-[12px]">
-              <button
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="rounded bg-slate-100 px-3 py-1 font-black disabled:opacity-40"
-              >
-                ←
-              </button>
-              <span className="rounded bg-slate-100 px-3 py-1 font-black">
-                List A · стр. {page} из {formatNumber(pages)}
-              </span>
-              <button
-                disabled={page >= pages || loading}
-                onClick={() => setPage((current) => Math.min(pages, current + 1))}
-                className="rounded bg-slate-100 px-3 py-1 font-black disabled:opacity-40"
-              >
-                →
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="mb-2 rounded border border-red-200 bg-red-50 p-3 text-sm font-black text-red-700">
-              {error}
+          {advancedOpen && (
+            <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 lg:grid-cols-2 xl:grid-cols-4">
+              <FilterGroup title="Кузов" items={bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
+              <FilterGroup title="Оценка" items={rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
+              <FilterGroup title="КПП" items={transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
+              <FilterGroup title="Статус" items={statusOptions} active={status} onPick={(value) => toggle(status, value, setStatus)} />
+              <FilterGroup title="Аукцион" items={auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
+              <FilterGroup title="Цвет" items={colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
+              <FilterGroup title="Привод" items={drives.length ? drives : [{ label: "FF", value: "FF" }, { label: "FR", value: "FR" }, { label: "4WD", value: "4WD" }]} active={drive} onPick={(value) => toggle(drive, value, setDrive)} />
+              <FilterGroup title="Санкции" items={sanctionOptions} active={sanction} onPick={(value) => toggle(sanction, value, setSanction)} />
+              <FilterGroup title="Руль" items={handDriveOptions} active={leftHandDrive} onPick={(value) => toggle(leftHandDrive, value, setLeftHandDrive)} />
             </div>
           )}
+        </form>
 
-          {loading ? (
-            <div className="grid gap-1">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <div key={index} className="h-[92px] animate-pulse bg-slate-100" />
-              ))}
-            </div>
-          ) : cars.length === 0 ? (
-            <div className="rounded bg-slate-50 p-10 text-center">
-              <div className="text-2xl font-black">Лоты не найдены</div>
-              <button
-                onClick={reset}
-                className="mt-4 rounded bg-[#d8001f] px-5 py-2 font-black text-white"
-              >
-                Сбросить
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1300px] border-collapse text-[11px]">
-                <thead>
-                  <tr className="bg-gradient-to-b from-white to-slate-100 text-slate-600">
-                    <Th>Фото</Th>
-                    <Th>Номер лота</Th>
-                    <Th>Дата аукцион / Аукцион</Th>
-                    <Th>Год / Кузов</Th>
-                    <Th>Объем, см³ / Комплектация</Th>
-                    <Th>Пробег / Оценка</Th>
-                    <Th>Начальная / Продано за</Th>
-                    <Th>Средняя цена</Th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {cars.map((car, index) => {
-                    const images = carImages(car).slice(0, 3);
-                    const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
-                    const rate = cleanBadge(car.rate || car.grade);
-
-                    return (
-                      <tr
-                        key={car.id || `${car.lot}-${title}`}
-                        className={index % 2 === 0 ? "bg-white hover:bg-blue-50/40" : "bg-[#f1f1f1] hover:bg-blue-50/40"}
-                      >
-                        <td className="border-b border-white p-1 align-top">
-                          <Link href={`/catalog/${car.id}`} className="flex gap-1">
-                            {(images.length ? images : [firstImage(car)]).map((image) => (
-                              <img
-                                key={image}
-                                src={image}
-                                alt={title}
-                                className="h-[60px] w-[78px] rounded object-cover ring-1 ring-slate-200"
-                                loading="lazy"
-                                onError={(event) => {
-                                  event.currentTarget.src = "/mosaic/car-placeholder.png";
-                                }}
-                              />
-                            ))}
-                          </Link>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top">
-                          <Link href={`/catalog/${car.id}`} className="inline-block rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-black text-[#b24a1b] shadow-sm">
-                            {car.lot || "—"}
-                          </Link>
-                          <div className="mt-1 text-[11px] text-slate-400">☆ ☆ ☆ ☆ ☆</div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top text-center">
-                          <div>{car.auctionDate || "—"}</div>
-                          <div className="font-black">{car.auction || "—"}</div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top">
-                          <div>
-                            <span className="font-black text-[#c83a1a]">{car.year || "—"}</span>{" "}
-                            {cleanText(car.body) || "—"}
-                          </div>
-                          <div className="mt-1 font-black">{title}</div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top">
-                          <div>
-                            <span className="font-black text-[#c83a1a]">{car.transmission || "—"}</span>{" "}
-                            {formatNumber(car.engineVolume)} cc
-                          </div>
-                          <div className="mt-1 text-slate-500">
-                            {car.color || "—"} {car.drive || ""}
-                          </div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top text-center">
-                          <div>{formatNumber(car.mileage)} km</div>
-                          <div className="mt-1 font-black text-[#b88718]">
-                            ▲ {rate || "—"}
-                          </div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top text-right">
-                          <div>{formatPrice(car.startPrice)}</div>
-                          <div className="mt-1">{formatPrice(car.finishPrice)}</div>
-                          <div className="text-[11px] text-slate-500">
-                            {isSanction(car) ? "санкц." : car.status || ""}
-                          </div>
-                        </td>
-
-                        <td className="border-b border-white p-1.5 align-top text-right">
-                          <div className="font-black text-green-700">
-                            {formatPrice(car.averagePrice)}
-                          </div>
-                          <Link
-                            href={`/catalog/${car.id}`}
-                            className="mt-2 inline-block rounded border border-[#07152f] bg-white px-3 py-1.5 text-[11px] font-black text-[#07152f] hover:bg-[#07152f] hover:text-white"
-                          >
-                            открыть
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="mt-4 rounded-2xl bg-[#fff5cc] px-4 py-3 text-sm font-black uppercase tracking-[0.04em] text-[#9a1b1b]">
+          Войдите, чтобы видеть всю информацию по лоту
         </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-2xl font-black text-slate-950">
+              {formatNumber(total)} найдено
+            </div>
+            <div className="mt-1 text-sm font-bold text-slate-500">
+              {brand || "все марки"}{model ? ` · ${model}` : ""}
+            </div>
+          </div>
+
+          <Pagination page={page} pages={pages} loading={loading} setPage={setPage} />
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="mt-4 grid gap-2">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="h-28 animate-pulse rounded-2xl bg-white" />
+            ))}
+          </div>
+        ) : cars.length === 0 ? (
+          <div className="mt-4 rounded-3xl bg-white p-12 text-center shadow-sm">
+            <div className="text-2xl font-black">Лоты не найдены</div>
+            <button
+              type="button"
+              onClick={reset}
+              className="mt-4 rounded-2xl bg-[#d8001f] px-5 py-3 font-black text-white"
+            >
+              Сбросить фильтры
+            </button>
+          </div>
+        ) : (
+          <CatalogTable cars={cars} />
+        )}
       </section>
     </main>
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function CatalogTable({ cars }: { cars: Car[] }) {
   return (
-    <th className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-100 px-2 py-1.5 text-center text-[11px] font-bold text-slate-600">
-      {children}
-      <span className="ml-1 text-slate-300">↕</span>
-    </th>
+    <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1280px] border-collapse text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
+              <Th>Фото</Th>
+              <Th>Лот</Th>
+              <Th>Аукцион</Th>
+              <Th>Автомобиль</Th>
+              <Th>Характеристики</Th>
+              <Th>Пробег / Оценка</Th>
+              <Th>Цены</Th>
+              <Th>Действие</Th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {cars.map((car, index) => {
+              const images = carImages(car).slice(0, 3);
+              const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
+
+              return (
+                <tr
+                  key={car.id || `${car.lot}-${index}`}
+                  className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}
+                >
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <Link href={`/catalog/${car.id}`} className="flex gap-2">
+                      {(images.length ? images : [firstImage(car)]).map((image) => (
+                        <img
+                          key={image}
+                          src={image}
+                          alt={title}
+                          className="h-20 w-28 rounded-xl object-cover ring-1 ring-slate-200"
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.src = "/mosaic/car-placeholder.png";
+                          }}
+                        />
+                      ))}
+                    </Link>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <Link
+                      href={`/catalog/${car.id}`}
+                      className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-lg font-black text-[#b24a1b] shadow-sm hover:border-[#d8001f]"
+                    >
+                      {car.lot || "—"}
+                    </Link>
+                    <div className="mt-2 text-xs text-slate-400">☆ ☆ ☆ ☆ ☆</div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <div className="font-bold text-slate-900">{car.auctionDate || "—"}</div>
+                    <div className="mt-1 font-black text-slate-950">{car.auction || "—"}</div>
+                    <div className="mt-2 text-xs font-bold text-slate-500">{statusLabel(car.status)}</div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <div className="font-black text-slate-950">
+                      <span className="text-[#d8001f]">{car.year || "—"}</span>{" "}
+                      {cleanText(car.body) || "—"}
+                    </div>
+                    <div className="mt-1 text-base font-black text-slate-950">{title}</div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {isSanction(car) && <Badge>санкц.</Badge>}
+                      {car.leftHandDrive && <Badge>LHD</Badge>}
+                    </div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <div>
+                      <span className="font-black text-[#d8001f]">{cleanText(car.transmission) || "—"}</span>{" "}
+                      {formatNumber(car.engineVolume)} cc
+                    </div>
+                    <div className="mt-1 text-slate-500">
+                      {cleanText(car.color) || "—"} {cleanText(car.drive)}
+                    </div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top">
+                    <div className="font-bold">{formatNumber(car.mileage)} км</div>
+                    <div className="mt-1 font-black text-amber-600">▲ {cleanText(car.rate || car.grade) || "—"}</div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top text-right">
+                    <div className="text-slate-500">Старт: {formatPrice(car.startPrice)}</div>
+                    <div className="mt-1 text-slate-950">Продано: {formatPrice(car.finishPrice)}</div>
+                    <div className="mt-2 text-lg font-black text-green-700">{formatPrice(car.averagePrice)}</div>
+                  </td>
+
+                  <td className="border-t border-slate-100 p-3 align-top text-right">
+                    <Link
+                      href={`/catalog/${car.id}`}
+                      className="inline-flex rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white hover:bg-[#d8001f]"
+                    >
+                      Открыть
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
-function FilterColumn({
+function SelectField({
+  label,
+  value,
+  disabled,
+  onChange,
+  options,
+  emptyLabel,
+}: {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  options: Option[];
+  emptyLabel: string;
+  compact?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+      >
+        <option value="">{emptyLabel}</option>
+        {options.map((item) => {
+          const value = optionValue(item);
+          return (
+            <option key={`${label}-${value}`} value={value}>
+              {optionLabel(item)} {item.count ? `— ${formatNumber(item.count)}` : ""}
+            </option>
+          );
+        })}
+      </select>
+    </label>
+  );
+}
+
+function SelectNative({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<[string, string]>;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500"
+      >
+        {options.map(([optionValue, label]) => (
+          <option key={optionValue || "empty"} value={optionValue}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-blue-500"
+      />
+    </label>
+  );
+}
+
+function FilterGroup({
   title,
   items,
   active,
   onPick,
 }: {
   title: string;
-  items: string[];
+  items: FilterButton[];
   active: string;
   onPick: (value: string) => void;
 }) {
+  if (!items.length) return null;
+
   return (
-    <div className="min-w-[120px]">
-      <div className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700">
+    <div>
+      <div className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
         {title}
       </div>
-
-      <div className="grid gap-1">
-        {items.filter(Boolean).map(cleanFilterLabel).filter(Boolean).slice(0, 7).map((item) => {
-          const selected = active === item;
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => {
+          const selected = active === item.value;
 
           return (
             <button
-              key={item}
+              key={`${title}-${item.value}`}
               type="button"
-              onClick={() => onPick(item)}
-              className={`flex items-center gap-1 text-left text-[12px] font-bold leading-4 ${
-                selected ? "text-[#d8001f]" : "text-[#111827]"
+              onClick={() => onPick(item.value)}
+              className={`rounded-xl px-3 py-2 text-xs font-black ring-1 ${
+                selected
+                  ? "bg-[#07152f] text-white ring-[#07152f]"
+                  : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-100"
               }`}
             >
-              <span
-                className={`h-2 w-2 border ${
-                  selected ? "border-[#d8001f] bg-[#d8001f]" : "border-slate-400 bg-white"
-                }`}
-              />
-              {item}
+              {item.label}
             </button>
           );
         })}
       </div>
     </div>
+  );
+}
+
+function Pagination({
+  page,
+  pages,
+  loading,
+  setPage,
+}: {
+  page: number;
+  pages: number;
+  loading: boolean;
+  setPage: (value: number | ((current: number) => number)) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        disabled={page <= 1 || loading}
+        onClick={() => setPage((current) => Math.max(1, current - 1))}
+        className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200 disabled:opacity-40"
+      >
+        ←
+      </button>
+
+      <div className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200">
+        стр. {page} из {formatNumber(pages)}
+      </div>
+
+      <button
+        disabled={page >= pages || loading}
+        onClick={() => setPage((current) => Math.min(pages, current + 1))}
+        className="rounded-2xl bg-white px-4 py-2 font-black ring-1 ring-slate-200 disabled:opacity-40"
+      >
+        →
+      </button>
+    </div>
+  );
+}
+
+function Th({ children }: { children: ReactNode }) {
+  return (
+    <th className="border-b border-slate-200 px-3 py-3 text-left font-black">
+      {children}
+    </th>
+  );
+}
+
+function Badge({ children }: { children: ReactNode }) {
+  return (
+    <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+      {children}
+    </span>
   );
 }
