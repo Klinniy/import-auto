@@ -72,6 +72,8 @@ type FilterButton = {
   value: string;
 };
 
+const ANY_VALUE = "__any__";
+
 type FacetItem = {
   value: string;
   label: string;
@@ -326,11 +328,16 @@ export default function CatalogFull() {
     { label: "MT", value: "MT" },
   ];
 
+  const canSearch = Boolean(brand && model);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    setBrand(params.get("brand") || "");
-    setModel(params.get("model") || "");
+    const initialBrand = params.get("brand") || "";
+    const initialModel = params.get("model") || (initialBrand ? ANY_VALUE : "");
+
+    setBrand(initialBrand);
+    setModel(initialModel);
     setQ(params.get("q") || "");
     setQDraft(params.get("q") || "");
     setYearFrom(params.get("yearFrom") || "");
@@ -368,6 +375,12 @@ export default function CatalogFull() {
       return;
     }
 
+    if (brand === ANY_VALUE) {
+      setModels([]);
+      setModel(ANY_VALUE);
+      return;
+    }
+
     fetch(`/api/models?brand=${encodeURIComponent(brand)}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload) => setModels(getArray<Option>(payload)))
@@ -399,13 +412,29 @@ export default function CatalogFull() {
     params.set("page", String(page));
     params.set("limit", "24");
 
+    const apiParams = new URLSearchParams(params);
+
+    if (apiParams.get("brand") === ANY_VALUE) apiParams.delete("brand");
+    if (apiParams.get("model") === ANY_VALUE) apiParams.delete("model");
+
     const query = params.toString();
+    const apiQuery = apiParams.toString();
+
     window.history.replaceState(null, "", `/catalog?${query}`);
+
+    if (!canSearch) {
+      setCars([]);
+      setTotal(0);
+      setPages(1);
+      setLoading(false);
+      setError("");
+      return;
+    }
 
     setLoading(true);
     setError("");
 
-    fetch(`/api/catalog?${query}`, { cache: "no-store" })
+    fetch(`/api/catalog?${apiQuery}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload: CatalogPayload) => {
         if (payload?.ok === false) {
@@ -467,7 +496,17 @@ export default function CatalogFull() {
     if (sanction) params.set("sanction", sanction);
     if (leftHandDrive) params.set("leftHandDrive", leftHandDrive);
 
-    fetch(`/api/catalog/facets?${params.toString()}`, { cache: "no-store" })
+    if (!canSearch) {
+      setFacets(null);
+      return;
+    }
+
+    const apiParams = new URLSearchParams(params);
+
+    if (apiParams.get("brand") === ANY_VALUE) apiParams.delete("brand");
+    if (apiParams.get("model") === ANY_VALUE) apiParams.delete("model");
+
+    fetch(`/api/catalog/facets?${apiParams.toString()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload: FacetsPayload) => setFacets(payload?.ok ? payload : null))
       .catch(() => setFacets(null));
@@ -581,16 +620,19 @@ export default function CatalogFull() {
                 value={brand}
                 disabled={loadingFilters}
                 options={brands}
-                emptyLabel="Любая"
-                onChange={(value) => setFilter(() => setBrand(value))}
+                emptyLabel="Выберите"
+                onChange={(value) => setFilter(() => {
+                  setBrand(value);
+                  setModel(value === ANY_VALUE ? ANY_VALUE : "");
+                })}
               />
 
               <AfaSelectList
                 title="Модель"
                 value={model}
-                disabled={!brand || models.length === 0}
+                disabled={!brand}
                 options={models}
-                emptyLabel="Любая"
+                emptyLabel="Выберите"
                 onChange={(value) => setFilter(() => setModel(value))}
               />
 
@@ -705,7 +747,11 @@ export default function CatalogFull() {
             </div>
           )}
 
-          {loading ? (
+          {!canSearch ? (
+            <div className="mx-2 mt-3 bg-[#f3f3f3] p-8 text-center text-[14px] font-bold">
+              Выберите марку и модель. Для полного поиска выберите «Любая» в марке и модели.
+            </div>
+          ) : loading ? (
             <div className="mx-2 mt-3 text-center text-[14px] font-bold">
               Загружаем лоты...
             </div>
@@ -870,6 +916,7 @@ function AfaSelectList({
         className="h-[158px] w-full border border-[#c9d1db] bg-white px-1 text-[12px] font-bold disabled:bg-[#eeeeee] disabled:text-[#999999]"
       >
         <option value="">{emptyLabel}</option>
+        <option value={ANY_VALUE}>Любая</option>
         {options.map((item) => {
           const value = optionValue(item);
 
@@ -924,7 +971,21 @@ function AfaCheckList({
 
   return (
     <div className="relative min-w-0">
-      <AfaTitle>{title}</AfaTitle>
+      <div className="mb-[5px] flex items-center justify-between gap-1">
+        <div className="text-[10.5px] font-bold uppercase tracking-[0.28em] text-[#d8001f]">
+          {title}
+        </div>
+
+        {active && (
+          <button
+            type="button"
+            onClick={() => onPick(active)}
+            className="text-[10px] font-bold text-[#777] hover:text-[#d8001f]"
+          >
+            сброс
+          </button>
+        )}
+      </div>
 
       <div className="grid gap-[5px]">
         {visible.map(renderItem)}
