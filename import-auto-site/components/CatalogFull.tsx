@@ -126,7 +126,7 @@ function formatRateValue(value?: number | null) {
 
 function formatPrice(value?: number | string | null) {
   const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return "0 ¥";
+  if (!Number.isFinite(n) || n <= 0) return "—";
   return `${formatNumber(n)} ¥`;
 }
 
@@ -186,6 +186,15 @@ function cleanBadge(value: unknown) {
   }
 
   return text;
+}
+
+function cleanFilterLabel(value: unknown) {
+  return String(value ?? "")
+    .replace(/&amp;/g, "&")
+    .replace(/&#\d+;/g, "")
+    .replace(/&[a-zA-Z]+;/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function cleanText(value: unknown) {
@@ -257,7 +266,7 @@ export default function CatalogFull() {
   const colors = filters?.filters?.colors || [];
 
   const bodyOptions = ["FE0", "SNFE0", "NCP", "ZVW", "ANH", "ATH", "AHR", "GRS"];
-  const statusOptions = ["не продан", "Sold", "Not Sold"];
+  const statusOptions = ["не продан", "продан", "не состоялся"];
   const rateOptions = ["3", "3.5", "4", "4.5", "5", "R"];
 
   useEffect(() => {
@@ -612,7 +621,7 @@ export default function CatalogFull() {
 
                 <FilterColumn
                   title="Цвета"
-                  items={(colors.length ? colors.slice(0, 7).map(optionLabel) : ["белый", "жемчужный", "коричневый", "черный"])}
+                  items={(colors.length ? colors.map(optionLabel).map(cleanFilterLabel).filter(Boolean).slice(0, 7) : ["белый", "жемчужный", "серебристый", "черный"])}
                   active={color}
                   onPick={(value) => toggleValue(color, value, setColor)}
                 />
@@ -626,7 +635,7 @@ export default function CatalogFull() {
 
                 <FilterColumn
                   title="КПП"
-                  items={(transmissions.length ? transmissions.slice(0, 5).map(optionLabel) : ["AT", "FAT", "CVT", "MT"])}
+                  items={["AT", "FAT", "IAT", "CVT", "MT"]}
                   active={transmission}
                   onPick={(value) => toggleValue(transmission, value, setTransmission)}
                 />
@@ -641,7 +650,7 @@ export default function CatalogFull() {
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[15px] font-black">
               <span className="text-lime-700">{formatNumber(total)}</span>{" "}
-              найдено
+              найдено · {formatNumber(total)}
               {brand ? ` · ${brand}` : " · все марки"}
               {model ? ` · ${model}` : ""}
             </div>
@@ -723,7 +732,7 @@ export default function CatalogFull() {
                                 key={image}
                                 src={image}
                                 alt={title}
-                                className="h-[62px] w-[78px] rounded object-cover"
+                                className="h-[60px] w-[78px] rounded object-cover ring-1 ring-slate-200"
                                 loading="lazy"
                                 onError={(event) => {
                                   event.currentTarget.src = "/mosaic/car-placeholder.png";
@@ -784,7 +793,7 @@ export default function CatalogFull() {
                           </div>
                           <Link
                             href={`/catalog/${car.id}`}
-                            className="mt-2 inline-block rounded bg-[#07152f] px-3 py-1.5 text-[11px] font-black text-white hover:bg-[#d8001f]"
+                            className="mt-2 inline-block rounded border border-[#07152f] bg-white px-3 py-1.5 text-[11px] font-black text-[#07152f] hover:bg-[#07152f] hover:text-white"
                           >
                             открыть
                           </Link>
@@ -829,7 +838,7 @@ function FilterColumn({
       </div>
 
       <div className="grid gap-1">
-        {items.filter(Boolean).slice(0, 7).map((item) => {
+        {items.filter(Boolean).map(cleanFilterLabel).filter(Boolean).slice(0, 7).map((item) => {
           const selected = active === item;
 
           return (
