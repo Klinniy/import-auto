@@ -969,14 +969,14 @@ function AfaCheckList({
   const hiddenCount = Math.max(0, items.length - visible.length);
 
   function renderItem(item: FilterButton) {
-    const selected = active === item.value;
+    const selected = String(active).toLowerCase() === String(item.value).toLowerCase();
 
     return (
       <button
         key={`${title}-${item.value}`}
         type="button"
         onClick={() => {
-          onPick(item.value);
+          onPick(selected ? active : item.value);
           setOpen(false);
         }}
         className={`flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px] ${
@@ -988,7 +988,9 @@ function AfaCheckList({
             selected ? "bg-[#2f80ed]" : "bg-white"
           }`}
         />
-        <span className="truncate">{item.label}</span>
+        <span className="truncate">
+          {item.label}{selected ? " ×" : ""}
+        </span>
       </button>
     );
   }
