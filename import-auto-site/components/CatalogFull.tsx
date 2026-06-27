@@ -439,7 +439,7 @@ export default function CatalogFull() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-[12px] text-black">
+    <main className="min-h-screen overflow-x-hidden bg-white text-[12px] text-black">
       <div className="border-b border-[#d9d9d9] bg-[#f7f7f7]">
         <div className="flex h-[34px] items-center justify-between px-2">
           <div className="flex items-center gap-2">
@@ -485,9 +485,9 @@ export default function CatalogFull() {
         <div className="min-w-0 flex-1">
           <form
             onSubmit={submitSearch}
-            className="mx-2 mt-2 rounded-sm border border-[#d7dce3] bg-[#f6f7f9] p-2"
+            className="mx-2 mt-2 rounded-sm border border-[#d7dce3] bg-[#f6f7f9] p-1.5"
           >
-            <div className="grid grid-cols-[290px_290px_190px_120px_120px_140px_160px_130px_120px] gap-x-3">
+            <div className="grid grid-cols-[260px_260px_180px_90px_90px_125px_135px_100px_80px] gap-x-2">
               <AfaSelectList
                 title="Марка"
                 value={brand}
@@ -589,9 +589,23 @@ export default function CatalogFull() {
           </div>
 
           <div className="mx-2 mt-2 flex items-center justify-between">
-            <div className="text-[14px] font-bold">
-              <span className="text-[#498000]">{formatNumber(total)}</span>{" "}
-              найдено · {formatNumber(total)} · {brand || "все марки"}{model ? ` · ${model}` : ""}
+            <div className="flex items-center gap-3">
+              <div className="text-[14px] font-bold">
+                <span className="text-[#498000]">{formatNumber(total)}</span>{" "}
+                найдено · {brand || "все марки"}{model ? ` · ${model}` : ""}
+              </div>
+
+              <div className="flex items-center gap-[3px] text-[11px]">
+                {["List A", "B", "C", "D", "Статистика"].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="rounded-sm border border-[#d5dce6] bg-[#eef2f6] px-2 py-[2px] font-bold text-[#42628a]"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <AfaPager page={page} pages={pages} loading={loading} setPage={setPage} />
@@ -626,8 +640,8 @@ function AfaTable({ cars }: { cars: Car[] }) {
   }
 
   return (
-    <div className="mx-2 mt-2 overflow-x-auto">
-      <table className="w-full min-w-[1380px] border-collapse text-[11px]">
+    <div className="mx-2 mt-2 overflow-hidden">
+      <table className="w-full table-fixed border-collapse text-[10.5px]">
         <thead>
           <tr className="bg-gradient-to-b from-white to-[#eef2f6] text-[#314154]">
             <AfaTh>Фото ↑</AfaTh>
@@ -651,7 +665,7 @@ function AfaTable({ cars }: { cars: Car[] }) {
                 key={car.id || `${car.lot}-${index}`}
                 className={index % 2 === 0 ? "bg-white" : "bg-[#eeeeee]"}
               >
-                <td className="border-b border-white px-1 py-[5px] align-top">
+                <td className="border-b border-white px-1 py-[4px] align-top">
                   <Link href={`/catalog/${car.id}`} className="flex gap-[3px]">
                     {(images.length ? images : [firstImage(car)]).map((image) => (
                       <img
@@ -659,7 +673,7 @@ function AfaTable({ cars }: { cars: Car[] }) {
                         src={image}
                         alt={title}
                         loading="lazy"
-                        className="h-[58px] w-[78px] object-cover"
+                        className="h-[50px] w-[66px] object-cover"
                         onError={(event) => {
                           event.currentTarget.src = "/mosaic/car-placeholder.png";
                         }}
@@ -668,7 +682,7 @@ function AfaTable({ cars }: { cars: Car[] }) {
                   </Link>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <Link
                     href={`/catalog/${car.id}`}
                     className="inline-block min-w-[58px] rounded-sm border border-[#cfd6df] bg-white px-3 py-[6px] text-[14px] font-bold text-[#bf4d22]"
@@ -680,12 +694,12 @@ function AfaTable({ cars }: { cars: Car[] }) {
                   </div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <div>{car.auctionDate || "—"}</div>
                   <div className="font-bold">{car.auction || "—"}</div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] align-top">
+                <td className="border-b border-white px-1.5 py-[5px] align-top">
                   <div>
                     <span className="font-bold text-[#c52b16]">{car.year || "—"}</span>{" "}
                     {cleanText(car.body) || "—"}
@@ -693,7 +707,7 @@ function AfaTable({ cars }: { cars: Car[] }) {
                   <div className="mt-[4px] font-bold uppercase">{title}</div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] align-top">
+                <td className="border-b border-white px-1.5 py-[5px] align-top">
                   <div>
                     <span className="font-bold text-[#c52b16]">
                       {cleanText(car.transmission) || "—"}
@@ -705,14 +719,14 @@ function AfaTable({ cars }: { cars: Car[] }) {
                   </div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] text-center align-top">
+                <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <div>{formatNumber(car.mileage)} km</div>
                   <div className="mt-[4px] font-bold text-[#b78300]">
                     ▲ {cleanText(car.rate || car.grade) || "—"}
                   </div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] text-right align-top">
+                <td className="border-b border-white px-1.5 py-[5px] text-right align-top">
                   <div>{formatPrice(car.startPrice)}</div>
                   <div className="mt-[4px]">{formatPrice(car.finishPrice)}</div>
                   <div className="mt-[4px] text-[10px] text-[#4d6680]">
@@ -720,14 +734,14 @@ function AfaTable({ cars }: { cars: Car[] }) {
                   </div>
                 </td>
 
-                <td className="border-b border-white px-2 py-[6px] text-right align-top">
+                <td className="border-b border-white px-1.5 py-[5px] text-right align-top">
                   <div className="font-bold text-[#008000]">
                     {formatPrice(car.averagePrice)}
                   </div>
 
                   <Link
                     href={`/catalog/${car.id}`}
-                    className="mt-[8px] inline-block rounded-sm border border-[#07152f] bg-white px-4 py-[6px] text-[12px] font-bold text-[#07152f]"
+                    className="mt-[6px] inline-block rounded-sm border border-[#07152f] bg-white px-3 py-[5px] text-[10.5px] font-bold text-[#07152f]"
                   >
                     открыть
                   </Link>
@@ -763,9 +777,9 @@ function AfaSelectList({
       <select
         value={value}
         disabled={disabled}
-        size={10}
+        size={9}
         onChange={(event) => onChange(event.target.value)}
-        className="h-[180px] w-full border border-[#c9d1db] bg-white px-1 text-[12px] font-bold disabled:bg-[#eeeeee] disabled:text-[#999999]"
+        className="h-[158px] w-full border border-[#c9d1db] bg-white px-1 text-[12px] font-bold disabled:bg-[#eeeeee] disabled:text-[#999999]"
       >
         <option value="">{emptyLabel}</option>
         {options.map((item) => {
@@ -862,7 +876,7 @@ function AfaPager({
 
 function AfaTitle({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-[5px] text-[11px] font-bold uppercase tracking-[0.35em] text-[#d8001f]">
+    <div className="mb-[5px] text-[10.5px] font-bold uppercase tracking-[0.35em] text-[#d8001f]">
       {children}
     </div>
   );
@@ -870,7 +884,7 @@ function AfaTitle({ children }: { children: ReactNode }) {
 
 function AfaTh({ children }: { children: ReactNode }) {
   return (
-    <th className="border-b border-[#d9dfe7] px-2 py-[6px] text-center text-[11px] font-bold">
+    <th className="border-b border-[#d9dfe7] px-1.5 py-[5px] text-center text-[10.5px] font-bold">
       {children}
     </th>
   );
