@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import Image from "next/image";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 type CarImage = {
   original?: string;
@@ -9,138 +12,49 @@ type CarImage = {
 };
 
 type Car = {
-  id: string;
+  id?: string;
   lot?: string;
   brand?: string;
   model?: string;
-  year?: number | string | null;
+  year?: string | number | null;
   body?: string;
   auction?: string;
   auctionDate?: string;
-  grade?: string;
-  color?: string;
-  transmission?: string;
-  transmissionType?: number | string | null;
-  drive?: string;
+  rate?: string | number | null;
+  grade?: string | number | null;
   mileage?: number | string | null;
   engineVolume?: number | string | null;
-  horsePower?: number | string | null;
-  rate?: string | number | null;
+  transmission?: string;
+  drive?: string;
+  color?: string;
+  sanction?: boolean | string | number;
+  leftHandDrive?: boolean;
   startPrice?: number | string | null;
   finishPrice?: number | string | null;
   averagePrice?: number | string | null;
   status?: string;
-  sanction?: boolean;
-  leftHandDrive?: boolean;
   previewImage?: string;
-  images?: Array<string | CarImage>;
-  imagesCount?: number;
-  info?: string;
+  images?: Array<string | CarImage> | CarImage;
+  equipment?: string;
+  complectation?: string;
+  frame?: string;
+  frameNumber?: string;
   serial?: string;
+  comment?: string;
+  notes?: string;
+  score?: string | number | null;
 };
 
-type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-type ApiResponse = {
+type CarPayload = {
   ok?: boolean;
-  data?: Car | null;
-  car?: Car | null;
-  item?: Car | null;
+  data?: unknown;
+  item?: unknown;
+  car?: unknown;
+  result?: unknown;
   error?: string;
 };
 
-function pickCar(payload: ApiResponse | Car): Car | null {
-  /*
-    /api/car/[id] возвращает wrapper:
-    { ok: true, id: "...", data: car }
-
-    Поэтому сначала проверяем data/car/item.
-    Нельзя принимать объект только по наличию id, иначе wrapper становится "автомобилем".
-  */
-  const wrapped = payload as ApiResponse;
-
-  if (wrapped.data || wrapped.car || wrapped.item) {
-    return wrapped.data || wrapped.car || wrapped.item || null;
-  }
-
-  const maybeCar = payload as Car;
-
-  if (maybeCar.brand || maybeCar.model || maybeCar.lot) {
-    return maybeCar;
-  }
-
-  return null;
-}
-
-function siteBaseUrl() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-
-  const port = process.env.PORT || "3000";
-  return `http://127.0.0.1:${port}`;
-}
-
-async function getCar(id: string) {
-  try {
-    const res = await fetch(`${siteBaseUrl()}/api/car/${encodeURIComponent(id)}`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
-    return pickCar(await res.json());
-  } catch {
-    return null;
-  }
-}
-
-function imageList(car: Car): string[] {
-  const result: string[] = [];
-
-  if (Array.isArray(car.images)) {
-    for (const item of car.images) {
-      if (!item) continue;
-
-      if (typeof item === "string") {
-        result.push(item);
-        continue;
-      }
-
-      result.push(item.original || item.medium || item.preview || "");
-    }
-  }
-
-  if (car.previewImage) {
-    result.push(car.previewImage);
-  }
-
-  return Array.from(new Set(result.filter(Boolean)));
-}
-
-function formatNumber(value?: number | string | null) {
-  if (value === undefined || value === null || value === "") return "—";
-
-  const num = Number(value);
-
-  if (!Number.isFinite(num)) return String(value);
-
-  return new Intl.NumberFormat("ru-RU").format(num);
-}
-
-function formatPrice(value?: number | string | null) {
-  const num = Number(value);
-
-  if (!Number.isFinite(num) || num <= 0) return "—";
-
-  return `¥ ${formatNumber(num)}`;
-}
-
-function cleanHtmlText(value: unknown) {
+function cleanText(value: unknown) {
   return String(value ?? "")
     .replace(/&amp;/g, "&")
     .replace(/&#\d+;/g, "")
@@ -149,286 +63,614 @@ function cleanHtmlText(value: unknown) {
     .trim();
 }
 
-function valueText(value?: number | string | boolean | null) {
+function formatNumber(value?: number | string | null) {
   if (value === undefined || value === null || value === "") return "—";
 
-  if (typeof value === "boolean") {
-    return value ? "Да" : "Нет";
-  }
+  const n = Number(value);
 
-  return String(value);
+  if (!Number.isFinite(n)) return cleanText(value);
+
+  return new Intl.NumberFormat("ru-RU").format(n);
 }
 
-function cleanBadge(value: unknown) {
-  const text = String(value ?? "").trim();
+function formatPrice(value?: number | string | null) {
+  const n = Number(value);
 
-  if (!text || text === "-" || text === "—") return "";
+  if (!Number.isFinite(n) || n <= 0) return "—";
 
-  if (
-    text.length > 12 ||
-    text.includes("http") ||
-    text.includes("{") ||
-    text.includes("[") ||
-    text.includes("#") ||
-    text.includes("&w=") ||
-    text.includes("&h=")
-  ) {
-    return "";
-  }
-
-  return text;
+  return `${formatNumber(n)} ¥`;
 }
 
-function splitLotImages(images: string[]) {
-  /*
-    У части лотов первое изображение — аукционный лист.
-    Для пользователя в главном блоке лучше показывать фото автомобиля.
-    Поэтому при наличии нескольких фото основным делаем второе изображение,
-    а первое показываем отдельным блоком как аукционный лист.
-  */
-  if (images.length <= 1) {
+function statusLabel(value?: string) {
+  const text = String(value || "").toLowerCase().trim();
+
+  if (!text) return "—";
+  if (text === "sold" || text.includes("sold by")) return "продан";
+  if (text === "not sold") return "не продан";
+  if (text === "removed") return "снят";
+  if (text === "cancelled" || text === "canceled") return "отменен";
+
+  return cleanText(value);
+}
+
+function tokyoTime() {
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Asia/Tokyo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date());
+}
+
+function isSanction(car: Car) {
+  const value = car.sanction;
+
+  if (value === true || value === 1) return true;
+
+  if (typeof value === "string") {
+    return ["1", "true", "yes", "да", "y"].includes(value.toLowerCase());
+  }
+
+  return false;
+}
+
+function unwrapCar(payload: CarPayload): Car | null {
+  const candidates = [
+    payload?.data,
+    payload?.item,
+    payload?.car,
+    payload?.result,
+    payload,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+
+    const value = candidate as Car;
+
+    if (
+      value.id ||
+      value.lot ||
+      value.brand ||
+      value.model ||
+      value.images ||
+      value.previewImage
+    ) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function imageUrl(item: string | CarImage | undefined) {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+
+  return item.original || item.medium || item.preview || "";
+}
+
+function carImages(car: Car) {
+  const result: string[] = [];
+
+  if (Array.isArray(car.images)) {
+    for (const item of car.images) {
+      const url = imageUrl(item);
+      if (url) result.push(url);
+    }
+  } else if (car.images && typeof car.images === "object") {
+    const url = imageUrl(car.images);
+    if (url) result.push(url);
+  }
+
+  if (car.previewImage) result.push(car.previewImage);
+
+  return Array.from(new Set(result.filter(Boolean)));
+}
+
+function splitImages(car: Car) {
+  const images = carImages(car);
+
+  if (images.length >= 2) {
     return {
-      mainImage: images[0] || "",
-      auctionSheet: "",
-      galleryImages: images,
+      auctionSheet: images[0],
+      photos: images.slice(1),
+      all: images,
     };
   }
 
   return {
-    mainImage: images[1] || images[0],
-    auctionSheet: images[0],
-    galleryImages: images.slice(1),
+    auctionSheet: "",
+    photos: images,
+    all: images,
   };
 }
 
-export default async function CarPage({ params }: PageProps) {
-  const { id } = await params;
-  const car = await getCar(id);
+function carTitle(car: Car) {
+  return `${car.brand || "AUTO"} ${car.model || ""}`.trim();
+}
 
-  if (!car) notFound();
+function copyText(value: string) {
+  if (!value) return;
+  navigator.clipboard?.writeText(value).catch(() => {});
+}
 
-  const images = imageList(car);
-  const { mainImage, auctionSheet, galleryImages } = splitLotImages(images);
-  const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
-  const rate = cleanBadge(car.rate || car.grade);
+export default function LotDetailPage() {
+  const params = useParams();
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : String(rawId || "");
 
-  const mainSpecs: Array<[string, string | number | boolean | null | undefined]> = [
-    ["Год", car.year],
-    ["Кузов", cleanHtmlText(car.body)],
-    ["Пробег", car.mileage ? `${formatNumber(car.mileage)} км` : ""],
-    ["Объем", car.engineVolume ? `${formatNumber(car.engineVolume)} см³` : ""],
-    ["Мощность", car.horsePower ? `${formatNumber(car.horsePower)} л.с.` : ""],
-    ["КПП", car.transmission],
-    ["Привод", car.drive],
-    ["Цвет", car.color],
-  ];
+  const prevId = "";
+  const nextId = "";
 
-  const auctionSpecs: Array<[string, string | number | boolean | null | undefined]> = [
-    ["Лот", car.lot || car.id],
-    ["Аукцион", car.auction],
-    ["Дата торгов", car.auctionDate],
-    ["Оценка", car.rate || car.grade],
-    ["Статус", car.status],
-    ["Санкционный", car.sanction],
-    ["Левый руль", car.leftHandDrive],
-    ["Серийный номер", car.serial],
-  ];
+  const [car, setCar] = useState<Car | null>(null);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  return (
-    <main className="min-h-screen bg-[#eef3fa] text-[#07152f]">
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-5 py-4 lg:px-8">
-          <Link href="/" className="text-lg font-black tracking-[-0.04em]">
-            MOSAIC<span className="text-[#ff2d3d]">AUTO</span>
-          </Link>
+  const images = useMemo(() => splitImages(car || {}), [car]);
+  const title = car ? carTitle(car) : "Лот";
 
-          <div className="hidden rounded-full bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 md:block">
-            Лот {car.lot || car.id}
+  useEffect(() => {
+    if (!id) return;
+
+    setLoading(true);
+    setError("");
+
+    fetch(`/api/car/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload: CarPayload) => {
+        if (payload?.ok === false) {
+          throw new Error(payload.error || "Ошибка загрузки лота");
+        }
+
+        const nextCar = unwrapCar(payload);
+
+        if (!nextCar) {
+          throw new Error("Лот не найден");
+        }
+
+        setCar(nextCar);
+
+        const nextImages = splitImages(nextCar);
+        setSelectedImage(
+          nextImages.photos[0] ||
+          nextImages.auctionSheet ||
+          "/mosaic/car-placeholder.png"
+        );
+      })
+      .catch((err) => {
+        setCar(null);
+        setSelectedImage("");
+        setError(String(err));
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
+        <TopBar prevId={prevId} nextId={nextId} />
+        <div className="mx-auto max-w-[1800px] p-4">
+          <div className="rounded-3xl bg-white p-10 text-center text-lg font-black shadow-sm">
+            Загружаем лот...
           </div>
-
-          <Link
-            href="/catalog"
-            className="rounded-2xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
-          >
-            ← В каталог
-          </Link>
         </div>
-      </header>
+      </main>
+    );
+  }
 
-      <section className="mx-auto max-w-[1480px] px-5 py-8 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_430px]">
-          <div className="min-w-0">
-            <div className="mb-6 rounded-[2rem] bg-[#07152f] p-7 text-white shadow-2xl shadow-slate-300/70 lg:p-9">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-red-200">
-                  автомобиль из Японии
-                </span>
-
-                {rate && (
-                  <span className="rounded-full bg-[#ff2d3d] px-4 py-2 text-xs font-black text-white">
-                    Оценка {rate}
-                  </span>
-                )}
-
-                {car.sanction && (
-                  <span className="rounded-full bg-yellow-400 px-4 py-2 text-xs font-black text-[#07152f]">
-                    санкц.
-                  </span>
-                )}
-              </div>
-
-              <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                {title}
-              </h1>
-
-              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/65">
-                Лот {car.lot || car.id}
-                {car.auction ? ` · ${car.auction}` : ""}
-                {car.auctionDate ? ` · ${car.auctionDate}` : ""}
-              </p>
+  if (error || !car) {
+    return (
+      <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
+        <TopBar prevId={prevId} nextId={nextId} />
+        <div className="mx-auto max-w-[1800px] p-4">
+          <div className="rounded-3xl border border-red-200 bg-red-50 p-10 text-center">
+            <div className="text-2xl font-black text-red-700">
+              Не удалось открыть лот
             </div>
-
-            <div className="overflow-hidden rounded-[2rem] bg-white shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
-              <div className="relative h-[360px] bg-slate-100 md:h-[520px]">
-                {mainImage ? (
-                  <Image
-                    src={mainImage}
-                    alt={title}
-                    fill
-                    priority
-                    unoptimized
-                    sizes="(max-width: 1024px) 100vw, 65vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-8xl">
-                    🚗
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {galleryImages.length > 1 && (
-              <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-                {galleryImages.slice(1, 9).map((image) => (
-                  <div
-                    key={image}
-                    className="relative h-32 overflow-hidden rounded-[1.4rem] bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 md:h-36"
-                  >
-                    <Image
-                      src={image}
-                      alt={`${title} фото`}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {auctionSheet && (
-              <section className="mt-6 rounded-[2rem] bg-white p-7 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
-                <h2 className="text-2xl font-black tracking-[-0.03em]">
-                  Аукционный лист
-                </h2>
-
-                <div className="relative mt-5 h-[420px] overflow-hidden rounded-[1.5rem] bg-slate-100 md:h-[560px]">
-                  <Image
-                    src={auctionSheet}
-                    alt={`Аукционный лист ${title}`}
-                    fill
-                    unoptimized
-                    sizes="(max-width: 1024px) 100vw, 65vw"
-                    className="object-contain"
-                  />
-                </div>
-              </section>
-            )}
-
-            {car.info && (
-              <section className="mt-6 rounded-[2rem] bg-white p-7 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
-                <h2 className="text-2xl font-black tracking-[-0.03em]">
-                  Информация по лоту
-                </h2>
-                <p className="mt-4 whitespace-pre-wrap text-slate-600">{car.info}</p>
-              </section>
-            )}
-          </div>
-
-          <aside className="h-fit rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200 lg:sticky lg:top-24">
-            <div className="rounded-[1.5rem] bg-slate-50 p-5">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                цены аукциона
-              </div>
-
-              <div className="mt-4 grid gap-4">
-                <div>
-                  <div className="text-sm font-bold text-slate-400">Старт</div>
-                  <div className="text-2xl font-black">{formatPrice(car.startPrice)}</div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-bold text-slate-400">Финиш</div>
-                  <div className="text-2xl font-black">{formatPrice(car.finishPrice)}</div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-bold text-slate-400">Средняя цена</div>
-                  <div className="text-2xl font-black">{formatPrice(car.averagePrice)}</div>
-                </div>
-              </div>
-            </div>
-
-            <button className="mt-5 w-full rounded-2xl bg-[#ff2d3d] px-5 py-4 font-black text-white shadow-lg shadow-red-200 transition hover:bg-[#e51d2d]">
-              Получить расчет
-            </button>
-
+            <div className="mt-2 text-sm font-bold text-red-600">{error}</div>
             <Link
               href="/catalog"
-              className="mt-3 flex w-full justify-center rounded-2xl bg-[#07152f] px-5 py-4 font-black text-white transition hover:bg-slate-800"
+              className="mt-5 inline-flex rounded-2xl bg-[#07152f] px-5 py-3 font-black text-white"
             >
               Вернуться в каталог
             </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-            <section className="mt-6">
-              <h2 className="text-xl font-black tracking-[-0.03em]">
-                Характеристики
-              </h2>
+  const bodyNumber = cleanText(car.frameNumber || car.frame || car.serial || car.body || "");
+  const mileage = `${formatNumber(car.mileage)} км`;
+  const rate = cleanText(car.rate || car.grade || car.score) || "—";
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {mainSpecs.map(([label, value]) => (
-                  <div key={String(label)} className="rounded-2xl bg-slate-50 p-4">
-                    <div className="text-xs font-bold text-slate-400">{label}</div>
-                    <div className="mt-1 font-black">{valueText(value)}</div>
-                  </div>
-                ))}
+  return (
+    <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
+      <TopBar prevId={prevId} nextId={nextId} />
+
+      <section className="mx-auto max-w-[1800px] px-4 py-4">
+        <div className="mb-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="grid border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 xl:grid-cols-7">
+            <SummaryCell title="Номер лота">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black text-[#b24a1b]">
+                  {car.lot || "—"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copyText(String(car.lot || ""))}
+                  className="rounded bg-slate-100 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-200"
+                >
+                  копировать
+                </button>
               </div>
-            </section>
+              <div className="mt-1 text-xs text-slate-400">☆ ☆ ☆ ☆ ☆</div>
+            </SummaryCell>
 
-            <section className="mt-6">
-              <h2 className="text-xl font-black tracking-[-0.03em]">
-                Аукционный блок
-              </h2>
+            <SummaryCell title="Дата / Аукцион">
+              <div className="font-black">{car.auctionDate || "—"}</div>
+              <div className="mt-1 text-[#07152f]">{car.auction || "—"}</div>
+            </SummaryCell>
 
-              <div className="mt-4 grid gap-3">
-                {auctionSpecs.map(([label, value]) => (
-                  <div
-                    key={String(label)}
-                    className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 p-4"
+            <SummaryCell title="Модель / Год">
+              <div className="font-black">{title}</div>
+              <div className="mt-1">
+                <span className="font-black text-[#d8001f]">{car.year || "—"}</span>{" "}
+                {cleanText(car.color) || "—"}
+              </div>
+            </SummaryCell>
+
+            <SummaryCell title="Кузов">
+              <div className="font-black">{cleanText(car.body) || "—"}</div>
+              <div className="mt-1 text-slate-500">{bodyNumber || "—"}</div>
+            </SummaryCell>
+
+            <SummaryCell title="Объем / Комплектация">
+              <div>
+                <span className="font-black text-[#d8001f]">
+                  {cleanText(car.transmission) || "—"}
+                </span>{" "}
+                {formatNumber(car.engineVolume)} cc
+              </div>
+              <div className="mt-1 text-slate-500">
+                {cleanText(car.complectation || car.equipment) || cleanText(car.drive) || "—"}
+              </div>
+            </SummaryCell>
+
+            <SummaryCell title="Пробег / Оценка">
+              <div className="font-black">{mileage}</div>
+              <div className="mt-1 font-black text-amber-600">▲ {rate}</div>
+            </SummaryCell>
+
+            <SummaryCell title="Цена">
+              <div className="font-black text-green-700">
+                {formatPrice(car.averagePrice)}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                старт {formatPrice(car.startPrice)}
+              </div>
+              <div className="text-xs text-slate-500">
+                продано {formatPrice(car.finishPrice)}
+              </div>
+            </SummaryCell>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+            <Badge>{statusLabel(car.status)}</Badge>
+            {isSanction(car) && <Badge tone="amber">санкционный</Badge>}
+            {car.leftHandDrive && <Badge tone="blue">LHD</Badge>}
+            {cleanText(car.drive) && <Badge tone="gray">{cleanText(car.drive)}</Badge>}
+            {cleanText(car.transmission) && <Badge tone="gray">{cleanText(car.transmission)}</Badge>}
+          </div>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_360px]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-xl font-black">Фото автомобиля</div>
+                <div className="text-sm font-bold text-slate-500">
+                  {images.photos.length || images.all.length} фото по лоту
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => selectedImage && window.open(selectedImage, "_blank")}
+                className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
+              >
+                Открыть фото
+              </button>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl bg-slate-100">
+              <img
+                src={selectedImage || "/mosaic/car-placeholder.png"}
+                alt={title}
+                className="h-[520px] w-full object-contain"
+                onError={(event) => {
+                  event.currentTarget.src = "/mosaic/car-placeholder.png";
+                }}
+              />
+            </div>
+
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {(images.photos.length ? images.photos : images.all).slice(0, 15).map((image) => (
+                <button
+                  key={image}
+                  type="button"
+                  onClick={() => setSelectedImage(image)}
+                  className={`overflow-hidden rounded-xl border bg-white p-1 ${
+                    selectedImage === image ? "border-[#d8001f]" : "border-slate-200"
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={title}
+                    className="h-20 w-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="grid gap-4">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <div className="text-xl font-black">Аукционный лист</div>
+                  <div className="text-sm font-bold text-slate-500">
+                    Оригинальный лист из аукциона
+                  </div>
+                </div>
+
+                {images.auctionSheet && (
+                  <button
+                    type="button"
+                    onClick={() => window.open(images.auctionSheet, "_blank")}
+                    className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
                   >
-                    <div className="text-sm font-bold text-slate-400">{label}</div>
-                    <div className="max-w-[60%] text-right font-black">
-                      {valueText(value)}
-                    </div>
-                  </div>
-                ))}
+                    Открыть
+                  </button>
+                )}
               </div>
-            </section>
+
+              {images.auctionSheet ? (
+                <div className="overflow-hidden rounded-2xl bg-slate-100">
+                  <img
+                    src={images.auctionSheet}
+                    alt="Аукционный лист"
+                    className="max-h-[520px] w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-slate-50 p-10 text-center font-bold text-slate-500">
+                  Аукционный лист не найден
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 text-xl font-black">Определить месяц выпуска</div>
+
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input
+                  value={bodyNumber || ""}
+                  readOnly
+                  className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none"
+                />
+                <button
+                  type="button"
+                  className="rounded-2xl bg-[#2f80ed] px-5 py-2 text-sm font-black text-white"
+                >
+                  Найти
+                </button>
+              </div>
+
+              <div className="mt-2 text-xs font-bold text-slate-500">
+                Блок подготовлен под будущую интеграцию определения месяца выпуска.
+              </div>
+            </div>
+          </section>
+
+          <aside className="xl:sticky xl:top-20 xl:self-start">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="text-xl font-black">Получить расчёт</div>
+              <div className="mt-1 text-sm font-bold text-slate-500">
+                Рассчитаем стоимость авто до вашего города.
+              </div>
+
+              <div className="mt-4 grid gap-2">
+                <input
+                  placeholder="Ваше имя"
+                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                />
+                <input
+                  placeholder="Телефон"
+                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                />
+                <input
+                  placeholder="Город доставки"
+                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                />
+
+                <button className="mt-2 rounded-2xl bg-[#d8001f] px-5 py-3 text-sm font-black uppercase tracking-[0.08em] text-white hover:brightness-105">
+                  Получить расчёт
+                </button>
+              </div>
+            </div>
+
+            <InfoCard title="Цены">
+              <InfoRow label="Начальная" value={formatPrice(car.startPrice)} />
+              <InfoRow label="Продано за" value={formatPrice(car.finishPrice)} />
+              <InfoRow label="Средняя" value={formatPrice(car.averagePrice)} strong />
+            </InfoCard>
+
+            <InfoCard title="Характеристики">
+              <InfoRow label="Марка" value={car.brand || "—"} />
+              <InfoRow label="Модель" value={car.model || "—"} />
+              <InfoRow label="Год" value={String(car.year || "—")} />
+              <InfoRow label="Кузов" value={cleanText(car.body) || "—"} />
+              <InfoRow label="Объем" value={`${formatNumber(car.engineVolume)} cc`} />
+              <InfoRow label="КПП" value={cleanText(car.transmission) || "—"} />
+              <InfoRow label="Привод" value={cleanText(car.drive) || "—"} />
+              <InfoRow label="Цвет" value={cleanText(car.color) || "—"} />
+              <InfoRow label="Пробег" value={mileage} />
+              <InfoRow label="Оценка" value={rate} />
+            </InfoCard>
+
+            <InfoCard title="Аукцион">
+              <InfoRow label="Аукцион" value={car.auction || "—"} />
+              <InfoRow label="Дата" value={car.auctionDate || "—"} />
+              <InfoRow label="Статус" value={statusLabel(car.status)} />
+              <InfoRow label="Лот" value={car.lot || "—"} />
+            </InfoCard>
           </aside>
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <InfoCard title="Комментарии / примечания">
+            <div className="min-h-[80px] whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">
+              {cleanText(car.comment || car.notes) || "Дополнительные комментарии по лоту не переданы API."}
+            </div>
+          </InfoCard>
+
+          <InfoCard title="Следующий этап">
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">
+              Здесь позже можно добавить похожие автомобили, статистику продаж и расширенный расчёт стоимости.
+            </div>
+          </InfoCard>
         </div>
       </section>
     </main>
+  );
+}
+
+function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
+  return (
+    <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
+      <div className="mx-auto flex h-12 max-w-[1800px] items-center justify-between gap-3 px-4">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/catalog"
+            className="rounded bg-slate-100 px-3 py-1.5 text-sm font-black text-slate-700 hover:bg-[#07152f] hover:text-white"
+          >
+            Назад в каталог
+          </Link>
+
+          {prevId ? (
+            <Link
+              href={`/catalog/${prevId}`}
+              className="rounded bg-[#e6ad87] px-3 py-1.5 text-sm font-black text-white"
+            >
+              Предыдущий
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="rounded bg-slate-200 px-3 py-1.5 text-sm font-black text-slate-400"
+            >
+              Предыдущий
+            </button>
+          )}
+
+          {nextId ? (
+            <Link
+              href={`/catalog/${nextId}`}
+              className="rounded bg-[#e6ad87] px-3 py-1.5 text-sm font-black text-white"
+            >
+              Следующий
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="rounded bg-slate-200 px-3 py-1.5 text-sm font-black text-slate-400"
+            >
+              Следующий
+            </button>
+          )}
+
+          <div className="ml-2 hidden text-lg font-black text-slate-600 md:block">
+            TOKYO <span className="text-[#497b00]">{tokyoTime()}</span>
+          </div>
+        </div>
+
+        <Link
+          href="/"
+          className="rounded bg-[#07152f] px-4 py-2 text-sm font-black text-white hover:bg-[#d8001f]"
+        >
+          На главную
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function SummaryCell({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="min-h-[92px] border-r border-slate-100 px-4 py-3">
+      <div className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        {title}
+      </div>
+      <div className="text-sm font-bold">{children}</div>
+    </div>
+  );
+}
+
+function InfoCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm first:mt-0">
+      <div className="mb-3 text-xl font-black">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  strong,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-slate-100 py-2 first:border-t-0">
+      <div className="text-sm font-bold text-slate-500">{label}</div>
+      <div
+        className={`text-right text-sm ${
+          strong ? "font-black text-green-700" : "font-bold text-slate-950"
+        }`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function Badge({
+  children,
+  tone = "gray",
+}: {
+  children: ReactNode;
+  tone?: "gray" | "amber" | "blue";
+}) {
+  const className = {
+    gray: "bg-slate-100 text-slate-700 ring-slate-200",
+    amber: "bg-amber-50 text-amber-700 ring-amber-200",
+    blue: "bg-blue-50 text-blue-700 ring-blue-200",
+  }[tone];
+
+  return (
+    <span className={`rounded-xl px-3 py-1 text-xs font-black ring-1 ${className}`}>
+      {children}
+    </span>
   );
 }
