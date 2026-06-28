@@ -1,5 +1,7 @@
 "use client";
 
+import SiteTopBar from "@/components/SiteTopBar";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -359,6 +361,7 @@ export default function LotDetailPage() {
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
+      <SiteTopBar />
       <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
 
       <section className="mx-auto max-w-[1800px] px-3 py-3">
