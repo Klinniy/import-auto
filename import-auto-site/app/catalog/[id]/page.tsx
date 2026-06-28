@@ -600,32 +600,7 @@ export default function LotDetailPage() {
           </section>
 
           <aside className="xl:sticky xl:top-20 xl:self-start">
-            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="text-base font-black">Получить расчёт</div>
-              <div className="mt-1 text-sm font-bold text-slate-500">
-                Рассчитаем стоимость авто до вашего города.
-              </div>
-
-              <div className="mt-3 grid gap-2">
-                <input
-                  placeholder="Ваше имя"
-                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
-                />
-                <input
-                  placeholder="Телефон"
-                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
-                />
-                <input
-                  placeholder="Город доставки"
-                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
-                />
-
-                <button className="mt-1 rounded-xl bg-[#d8001f] px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-white hover:brightness-105">
-                  Получить расчёт
-                </button>
-              </div>
-            </div>
-
+            {/* Блок "Получить расчёт" временно убран до этапа заявок */}
             <InfoCard title="Цены">
               <InfoRow label="Начальная" value={formatPrice(car.startPrice)} />
               <InfoRow label="Продано за" value={formatPrice(car.finishPrice)} />
