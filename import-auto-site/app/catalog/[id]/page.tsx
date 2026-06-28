@@ -327,6 +327,7 @@ export default function LotDetailPage() {
   const bodyNumber = cleanText(car.frameNumber || car.frame || car.serial || car.body || "");
   const mileage = `${formatNumber(car.mileage)} км`;
   const rate = cleanText(car.rate || car.grade || car.score) || "—";
+  const auctionImage = images.auctionSheet || images.damageMap;
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
@@ -463,16 +464,16 @@ export default function LotDetailPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="mb-2 flex items-center justify-between">
                 <div>
-                  <div className="text-base font-black">Аукционный лист</div>
+                  <div className="text-base font-black">Аукционный лист / схема повреждений</div>
                   <div className="text-sm font-bold text-slate-500">
-                    Полный аукционный лист из аукциона
+                    Документ из аукциона: лист и отметки по кузову
                   </div>
                 </div>
 
-                {images.auctionSheet && (
+                {auctionImage && (
                   <button
                     type="button"
-                    onClick={() => window.open(images.auctionSheet, "_blank")}
+                    onClick={() => window.open(auctionImage, "_blank")}
                     className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200"
                   >
                     Открыть
@@ -483,7 +484,7 @@ export default function LotDetailPage() {
               {images.auctionSheet ? (
                 <div className="overflow-hidden rounded-2xl bg-slate-100">
                   <img
-                    src={images.auctionSheet}
+                    src={auctionImage}
                     alt="Аукционный лист"
                     className="max-h-[390px] w-full object-contain"
                     loading="lazy"
@@ -491,12 +492,12 @@ export default function LotDetailPage() {
                 </div>
               ) : (
                 <div className="rounded-2xl bg-slate-50 p-10 text-center font-bold text-slate-500">
-                  Полный аукционный лист не найден
+                  Аукционный документ не найден
                 </div>
               )}
             </div>
 
-            {images.damageMap && (
+            {false && images.damageMap && (
               <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
