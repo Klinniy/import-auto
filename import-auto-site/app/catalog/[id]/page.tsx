@@ -173,15 +173,21 @@ function carImages(car: Car) {
 function splitImages(car: Car) {
   const images = carImages(car);
 
-  if (images.length >= 2) {
+  // Для detail-выдачи AFA/AVTOJP обычно:
+  // 0 — схема повреждений,
+  // середина — фото автомобиля,
+  // последний — полный аукционный лист.
+  if (images.length >= 3) {
     return {
-      auctionSheet: images[0],
-      photos: images.slice(1),
+      damageMap: images[0],
+      auctionSheet: images[images.length - 1],
+      photos: images.slice(1, -1),
       all: images,
     };
   }
 
   return {
+    damageMap: "",
     auctionSheet: "",
     photos: images,
     all: images,
@@ -425,7 +431,7 @@ export default function LotDetailPage() {
                 <div>
                   <div className="text-base font-black">Аукционный лист</div>
                   <div className="text-sm font-bold text-slate-500">
-                    Оригинальный лист из аукциона
+                    Полный аукционный лист из аукциона
                   </div>
                 </div>
 
@@ -455,6 +461,36 @@ export default function LotDetailPage() {
                 </div>
               )}
             </div>
+
+            {images.damageMap && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <div className="text-base font-black">Схема повреждений</div>
+                    <div className="text-xs font-bold text-slate-500">
+                      Отдельная схема отметок по кузову
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open(images.damageMap, "_blank")}
+                    className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200"
+                  >
+                    Открыть
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-xl bg-slate-50">
+                  <img
+                    src={images.damageMap}
+                    alt="Схема повреждений"
+                    className="max-h-[220px] w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="mb-2 text-base font-black">Определить месяц выпуска</div>
