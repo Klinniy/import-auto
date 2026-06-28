@@ -327,7 +327,7 @@ export default function LotDetailPage() {
   const bodyNumber = cleanText(car.frameNumber || car.frame || car.serial || car.body || "");
   const mileage = `${formatNumber(car.mileage)} км`;
   const rate = cleanText(car.rate || car.grade || car.score) || "—";
-  const auctionImage = images.auctionSheet || images.damageMap;
+  const auctionImage = images.auctionSheet || images.damageMap || "";
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
@@ -481,7 +481,7 @@ export default function LotDetailPage() {
                 )}
               </div>
 
-              {images.auctionSheet ? (
+              {auctionImage ? (
                 <div className="overflow-hidden rounded-2xl bg-slate-100">
                   <img
                     src={auctionImage}
