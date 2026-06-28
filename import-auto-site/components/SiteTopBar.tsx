@@ -56,12 +56,12 @@ function RateCard({
   change: string;
 }) {
   return (
-    <div className="hidden h-14 min-w-[230px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm 2xl:flex">
+    <div className="hidden h-12 min-w-[220px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm xl:flex">
       <div className="leading-none">
         <div className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
           {title}
         </div>
-        <div className="whitespace-nowrap text-base font-black text-[#07152f]">
+        <div className="whitespace-nowrap text-[15px] font-black text-[#07152f]">
           {value} <span className="text-xs font-black text-green-600">▲ {change}</span>
         </div>
       </div>
@@ -76,16 +76,16 @@ function RateCard({
 export default function SiteTopBar() {
   return (
     <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-[70px] max-w-[1800px] items-center justify-between gap-4 px-5">
+      <div className="mx-auto flex h-[64px] max-w-[1800px] items-center justify-between gap-4 px-5">
         <div className="flex min-w-0 items-center gap-5">
           <Link
             href="/"
-            className="shrink-0 rounded-xl bg-[#f3f6fb] px-5 py-3 text-sm font-black uppercase tracking-[0.10em] text-slate-500 hover:bg-white hover:text-[#07152f] hover:shadow-sm"
+            className="shrink-0 rounded-xl bg-[#f3f6fb] px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] text-slate-500 hover:bg-white hover:text-[#07152f] hover:shadow-sm"
           >
             Начало
           </Link>
 
-          <div className="hidden shrink-0 items-center gap-2 text-base font-black uppercase tracking-[0.12em] text-slate-500 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 text-[15px] font-black uppercase tracking-[0.12em] text-slate-500 md:flex">
             <span>TOKYO</span>
             <span className="whitespace-nowrap text-[#07152f]">
               <TokyoClock />
@@ -94,7 +94,7 @@ export default function SiteTopBar() {
 
           <Link
             href="/catalog"
-            className="hidden whitespace-nowrap text-base font-black text-[#2454d8] hover:text-[#d8001f] lg:block"
+            className="hidden whitespace-nowrap text-[15px] font-black text-[#2454d8] hover:text-[#d8001f] lg:block"
           >
             27 579 авто из Японии
           </Link>
@@ -106,7 +106,7 @@ export default function SiteTopBar() {
 
           <Link
             href="/catalog"
-            className="whitespace-nowrap rounded-2xl bg-[#07152f] px-7 py-3.5 text-sm font-black text-white shadow-sm hover:bg-[#d8001f]"
+            className="whitespace-nowrap rounded-2xl bg-[#07152f] px-7 py-3 text-sm font-black text-white shadow-sm hover:bg-[#d8001f]"
           >
             Вход / Каталог
           </Link>

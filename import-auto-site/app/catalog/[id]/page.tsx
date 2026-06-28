@@ -3,6 +3,7 @@
 import SiteTopBar from "@/components/SiteTopBar";
 
 
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -365,8 +366,8 @@ export default function LotDetailPage() {
       <SiteTopBar />
       <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
 
-      <section className="mx-auto max-w-[1800px] px-3 py-3">
-        <div className="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="mx-auto max-w-[1800px] px-3 py-2">
+        <div className="mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 xl:grid-cols-7">
             <SummaryCell title="Номер лота">
               <div className="flex items-center gap-2">
@@ -647,11 +648,11 @@ function TopBar({
 }) {
   return (
     <div className="border-b border-slate-200 bg-[#f6f8fc]">
-      <div className="mx-auto flex h-10 max-w-[1800px] items-center justify-between gap-3 px-5">
+      <div className="mx-auto flex h-9 max-w-[1800px] items-center justify-between gap-3 px-5">
         <div className="flex items-center gap-2">
           <Link
             href={backHref || "/catalog"}
-            className="rounded-lg bg-white px-3 py-1.5 text-xs font-black text-slate-700 shadow-sm ring-1 ring-slate-100 hover:bg-[#07152f] hover:text-white"
+            className="rounded-lg bg-white px-3 py-1 text-xs font-black text-slate-700 shadow-sm ring-1 ring-slate-100 hover:bg-[#07152f] hover:text-white"
           >
             Назад в каталог
           </Link>
@@ -659,14 +660,14 @@ function TopBar({
           {prevId ? (
             <Link
               href={`/catalog/${prevId}`}
-              className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-200"
+              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 hover:bg-slate-200"
             >
               Предыдущий
             </Link>
           ) : (
             <button
               disabled
-              className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-300"
+              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-300"
             >
               Предыдущий
             </button>
@@ -675,26 +676,19 @@ function TopBar({
           {nextId ? (
             <Link
               href={`/catalog/${nextId}`}
-              className="rounded-lg bg-[#e6ad87] px-3 py-1.5 text-xs font-black text-white hover:bg-[#d8001f]"
+              className="rounded-lg bg-[#e6ad87] px-3 py-1 text-xs font-black text-white hover:bg-[#d8001f]"
             >
               Следующий
             </Link>
           ) : (
             <button
               disabled
-              className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-300"
+              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-300"
             >
               Следующий
             </button>
           )}
         </div>
-
-        <Link
-          href="/"
-          className="rounded-lg bg-[#07152f] px-4 py-1.5 text-xs font-black text-white hover:bg-[#d8001f]"
-        >
-          На главную
-        </Link>
       </div>
     </div>
   );
