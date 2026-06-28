@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function TokyoClock() {
   const [value, setValue] = useState("");
@@ -80,7 +80,52 @@ export default function SiteTopBar() {
   const isCatalog = pathname === "/catalog";
   const isLot = pathname.startsWith("/catalog/");
 
-  const actionHref = isCatalog ? "/" : "/catalog";
+  const currentLotId = useMemo(() => {
+    if (!isLot) return "";
+    const parts = pathname.split("/").filter(Boolean);
+    return parts[1] || "";
+  }, [isLot, pathname]);
+
+  const [lotNav, setLotNav] = useState({
+    backHref: "/catalog",
+    prevId: "",
+    nextId: "",
+  });
+
+  useEffect(() => {
+    if (!isLot || typeof window === "undefined") return;
+
+    try {
+      const storedBack = window.sessionStorage.getItem("mosaicauto.catalogBackUrl") || "/catalog";
+      const storedIdsRaw = window.sessionStorage.getItem("mosaicauto.catalogIds");
+      const storedIds = storedIdsRaw ? JSON.parse(storedIdsRaw) : [];
+
+      let prevId = "";
+      let nextId = "";
+
+      if (Array.isArray(storedIds)) {
+        const ids = storedIds.map((item) => String(item || "")).filter(Boolean);
+        const index = ids.indexOf(currentLotId);
+
+        prevId = index > 0 ? ids[index - 1] : "";
+        nextId = index >= 0 && index < ids.length - 1 ? ids[index + 1] : "";
+      }
+
+      setLotNav({
+        backHref: storedBack,
+        prevId,
+        nextId,
+      });
+    } catch {
+      setLotNav({
+        backHref: "/catalog",
+        prevId: "",
+        nextId: "",
+      });
+    }
+  }, [isLot, currentLotId]);
+
+  const actionHref = isCatalog ? "/" : isLot ? lotNav.backHref || "/catalog" : "/catalog";
   const actionLabel = isCatalog ? "На главную" : isLot ? "В каталог" : "Вход / Каталог";
 
   return (
@@ -107,6 +152,43 @@ export default function SiteTopBar() {
           >
             27 579 авто из Японии
           </Link>
+
+          {isLot && (
+            <div className="hidden items-center gap-2 xl:flex">
+              <Link
+                href={lotNav.backHref || "/catalog"}
+                className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600 hover:bg-[#07152f] hover:text-white"
+              >
+                Назад в каталог
+              </Link>
+
+              {lotNav.prevId ? (
+                <Link
+                  href={`/catalog/${lotNav.prevId}`}
+                  className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-200"
+                >
+                  Предыдущий
+                </Link>
+              ) : (
+                <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-300">
+                  Предыдущий
+                </span>
+              )}
+
+              {lotNav.nextId ? (
+                <Link
+                  href={`/catalog/${lotNav.nextId}`}
+                  className="rounded-lg bg-[#e6ad87] px-3 py-1.5 text-xs font-black text-white hover:bg-[#d8001f]"
+                >
+                  Следующий
+                </Link>
+              ) : (
+                <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-300">
+                  Следующий
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
