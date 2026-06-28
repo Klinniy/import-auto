@@ -646,52 +646,11 @@ function TopBar({
   prevId: string;
   nextId: string;
 }) {
-  return (
-    <div className="border-b border-slate-200 bg-[#f6f8fc]">
-      <div className="mx-auto flex h-9 max-w-[1800px] items-center justify-between gap-3 px-5">
-        <div className="flex items-center gap-2">
-          <Link
-            href={backHref || "/catalog"}
-            className="rounded-lg bg-white px-3 py-1 text-xs font-black text-slate-700 shadow-sm ring-1 ring-slate-100 hover:bg-[#07152f] hover:text-white"
-          >
-            Назад в каталог
-          </Link>
+  void backHref;
+  void prevId;
+  void nextId;
 
-          {prevId ? (
-            <Link
-              href={`/catalog/${prevId}`}
-              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 hover:bg-slate-200"
-            >
-              Предыдущий
-            </Link>
-          ) : (
-            <button
-              disabled
-              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-300"
-            >
-              Предыдущий
-            </button>
-          )}
-
-          {nextId ? (
-            <Link
-              href={`/catalog/${nextId}`}
-              className="rounded-lg bg-[#e6ad87] px-3 py-1 text-xs font-black text-white hover:bg-[#d8001f]"
-            >
-              Следующий
-            </Link>
-          ) : (
-            <button
-              disabled
-              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-black text-slate-300"
-            >
-              Следующий
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function SummaryCell({ title, children }: { title: string; children: ReactNode }) {
