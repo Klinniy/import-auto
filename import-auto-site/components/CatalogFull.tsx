@@ -249,7 +249,7 @@ function facetButtons(items?: FacetItem[], limit = 8): FilterButton[] {
     .slice(0, limit);
 }
 
-export default function CatalogFull() {
+export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideLegacyCatalogHeader?: boolean }) {
   const [initialized, setInitialized] = useState(false);
 
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
