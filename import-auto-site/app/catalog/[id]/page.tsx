@@ -432,7 +432,7 @@ export default function LotDetailPage() {
               <img
                 src={selectedImage || "/mosaic/car-placeholder.png"}
                 alt={title}
-                className="h-[390px] w-full object-contain"
+                className="h-[360px] w-full object-contain"
                 onError={(event) => {
                   event.currentTarget.src = "/mosaic/car-placeholder.png";
                 }}
@@ -452,7 +452,7 @@ export default function LotDetailPage() {
                   <img
                     src={image}
                     alt={title}
-                    className="h-14 w-full object-cover"
+                    className="h-12 w-full object-cover"
                     loading="lazy"
                   />
                 </button>
@@ -486,12 +486,12 @@ export default function LotDetailPage() {
                   <img
                     src={auctionImage}
                     alt="Аукционный лист"
-                    className="max-h-[390px] w-full object-contain"
+                    className="h-[360px] w-full object-contain"
                     loading="lazy"
                   />
                 </div>
               ) : (
-                <div className="rounded-2xl bg-slate-50 p-10 text-center font-bold text-slate-500">
+                <div className="flex h-[360px] items-center justify-center rounded-2xl bg-slate-50 p-6 text-center text-sm font-bold text-slate-500">
                   Аукционный документ не найден
                 </div>
               )}
@@ -545,7 +545,7 @@ export default function LotDetailPage() {
               </div>
 
               <div className="mt-2 text-xs font-bold text-slate-500">
-                Блок подготовлен под будущую интеграцию определения месяца выпуска.
+                Позже подключим автоматическое определение месяца выпуска.
               </div>
             </div>
           </section>
