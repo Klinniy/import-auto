@@ -629,37 +629,40 @@ export default function LotDetailPage() {
           </aside>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <div className="text-base font-black">Дополнительно по лоту</div>
-              <div className="mt-1 text-xs font-bold text-slate-500">
-                Разделы, которые будут расширять карточку автомобиля без перегруза основной страницы.
+              <div className="text-xs font-bold text-slate-500">
+                Быстрые разделы, которые позже расширим реальными данными.
               </div>
             </div>
           </div>
 
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+          <div className="grid gap-2 md:grid-cols-3">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
+            >
               <div className="text-sm font-black text-[#07152f]">Похожие автомобили</div>
-              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
-                Позже добавим подбор похожих лотов по марке, модели, году, оценке и пробегу.
-              </div>
-            </div>
+              <div className="mt-1 text-xs font-bold text-slate-500">Подбор по модели и параметрам</div>
+            </button>
 
-            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
+            >
               <div className="text-sm font-black text-[#07152f]">Статистика продаж</div>
-              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
-                Здесь будет история средних цен и продаж по аналогичным автомобилям.
-              </div>
-            </div>
+              <div className="mt-1 text-xs font-bold text-slate-500">История цен по аналогам</div>
+            </button>
 
-            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
+            >
               <div className="text-sm font-black text-[#07152f]">Расчёт стоимости</div>
-              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
-                Вернём расчёт отдельным этапом, когда подключим нормальную логику заявки.
-              </div>
-            </div>
+              <div className="mt-1 text-xs font-bold text-slate-500">Подключим отдельным этапом</div>
+            </button>
           </div>
         </div>
       </section>
