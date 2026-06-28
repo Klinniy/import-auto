@@ -152,6 +152,18 @@ function imageUrl(item: string | CarImage | undefined) {
   return item.original || item.medium || item.preview || "";
 }
 
+function isNoPhotoImage(url: string) {
+  const value = String(url || "").toLowerCase();
+
+  return (
+    value.includes("no_photo") ||
+    value.includes("no-photo") ||
+    value.includes("nophoto") ||
+    value.includes("noimage") ||
+    value.includes("no_image")
+  );
+}
+
 function carImages(car: Car) {
   const result: string[] = [];
 
@@ -165,9 +177,15 @@ function carImages(car: Car) {
     if (url) result.push(url);
   }
 
-  if (car.previewImage) result.push(car.previewImage);
+  // previewImage — это маленькая превьюшка. Используем её только если других фото нет.
+  // Иначе она попадает в конец массива и может ошибочно стать "аукционным листом".
+  if (result.length === 0 && car.previewImage) result.push(car.previewImage);
 
-  return Array.from(new Set(result.filter(Boolean)));
+  return Array.from(
+    new Set(
+      result.filter((url) => Boolean(url) && !isNoPhotoImage(url))
+    )
+  );
 }
 
 function splitImages(car: Car) {
