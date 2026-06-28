@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ajesSql, sqlValue } from "@/lib/ajes/client";
+import { ajesSql, sqlValue, normalizeImages } from "@/lib/ajes/client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,6 +71,7 @@ async function buildWhere(params: URLSearchParams) {
     transmission: pickField(fields, ["KPP", "kpp", "transmission"]),
     drive: pickField(fields, ["PRIV", "priv", "drive"]),
     status: pickField(fields, ["STATUS", "status"]),
+    images: pickField(fields, ["IMAGES", "images"]),
     sanction: pickField(fields, ["SANCTION", "sanction"]),
     leftHandDrive: pickField(fields, ["LHDRIVE", "lhd", "left_hand_drive"]),
   };
@@ -218,10 +219,25 @@ function normalizeFacet(fieldName: string, raw: string) {
   return { value, label: value };
 }
 
-function buildFacet(rows: Array<Record<string, string>>, fieldName: string, limit = 12) {
+function firstPreviewImage(raw: unknown) {
+  const images = normalizeImages(typeof raw === "string" ? raw : String(raw || ""));
+
+  const first = images[0];
+
+  if (!first) return "";
+
+  return first.preview || first.medium || first.original || "";
+}
+
+function buildFacet(
+  rows: Array<Record<string, string>>,
+  fieldName: string,
+  limit = 12,
+  imageField = ""
+) {
   if (!fieldName) return [];
 
-  const map = new Map<string, { label: string; count: number }>();
+  const map = new Map<string, { label: string; count: number; sampleImage?: string }>();
 
   for (const row of rows) {
     const raw = cleanFacetValue(row[fieldName]);
@@ -232,8 +248,13 @@ function buildFacet(rows: Array<Record<string, string>>, fieldName: string, limi
 
     if (isBadFacetValue(item.value)) continue;
 
-    const current = map.get(item.value) || { label: item.label, count: 0 };
+    const current = map.get(item.value) || { label: item.label, count: 0, sampleImage: "" };
     current.count += 1;
+
+    if (!current.sampleImage && imageField) {
+      current.sampleImage = firstPreviewImage(row[imageField]);
+    }
+
     map.set(item.value, current);
   }
 
@@ -242,6 +263,7 @@ function buildFacet(rows: Array<Record<string, string>>, fieldName: string, limi
       value,
       label: item.label,
       count: item.count,
+      sampleImage: item.sampleImage || "",
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
     .slice(0, limit);
@@ -259,6 +281,8 @@ export async function GET(req: NextRequest) {
       field.status,
       field.transmission,
       field.drive,
+      field.images,
+      field.year,
     ].filter(Boolean);
 
     const selectFields = Array.from(new Set(wantedFields)).join(",");
@@ -287,7 +311,7 @@ export async function GET(req: NextRequest) {
       whereSql,
       scannedRows: rows.length,
       facets: {
-        bodies: buildFacet(rows, field.body, 10),
+        bodies: buildFacet(rows, field.body, 10, field.images),
         rates: buildFacet(rows, field.rate, 10),
         auctions: buildFacet(rows, field.auction, 12),
         colors: buildFacet(rows, field.color, 12),

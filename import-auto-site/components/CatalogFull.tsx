@@ -70,6 +70,7 @@ type CatalogPayload = {
 type FilterButton = {
   label: string;
   value: string;
+  sampleImage?: string;
 };
 
 const ANY_VALUE = "__any__";
@@ -78,6 +79,7 @@ type FacetItem = {
   value: string;
   label: string;
   count?: number;
+  sampleImage?: string;
 };
 
 type FacetsPayload = {
@@ -239,6 +241,7 @@ function facetButtons(items?: FacetItem[], limit = 8): FilterButton[] {
       return {
         value,
         label: count > 0 ? `${label} — ${formatNumber(count)}` : label,
+        sampleImage: item.sampleImage || "",
       };
     })
     .filter((item) => item.label && item.value)
@@ -294,6 +297,22 @@ export default function CatalogFull() {
       })
       .slice(0, 45);
   }, [filters]);
+
+  const yearFromOptions = useMemo(() => {
+    const to = Number(yearTo);
+
+    if (!Number.isFinite(to) || !to) return years;
+
+    return years.filter((item) => Number(optionValue(item)) <= to);
+  }, [years, yearTo]);
+
+  const yearToOptions = useMemo(() => {
+    const from = Number(yearFrom);
+
+    if (!Number.isFinite(from) || !from) return years;
+
+    return years.filter((item) => Number(optionValue(item)) >= from);
+  }, [years, yearFrom]);
 
   const auctions = useMemo(() => optionButtons(filters?.filters?.auctions || [], 8), [filters]);
   const colors = useMemo(() => optionButtons(filters?.filters?.colors || [], 8), [filters]);
@@ -529,6 +548,16 @@ export default function CatalogFull() {
     leftHandDrive,
   ]);
 
+  // AUTO FIX YEAR RANGE
+  useEffect(() => {
+    const from = Number(yearFrom);
+    const to = Number(yearTo);
+
+    if (from && to && to < from) {
+      setYearTo(yearFrom);
+    }
+  }, [yearFrom, yearTo]);
+
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPage(1);
@@ -663,11 +692,18 @@ export default function CatalogFull() {
                 <div className="mb-[5px] grid grid-cols-2 gap-1">
                   <select
                     value={yearFrom}
-                    onChange={(event) => setFilter(() => setYearFrom(event.target.value))}
+                    onChange={(event) => setFilter(() => {
+                      const next = event.target.value;
+                      setYearFrom(next);
+
+                      if (next && yearTo && Number(yearTo) < Number(next)) {
+                        setYearTo(next);
+                      }
+                    })}
                     className="h-[25px] border border-[#c7d0da] text-[12px]"
                   >
                     <option value="">Год от</option>
-                    {years.map((item) => {
+                    {yearFromOptions.map((item) => {
                       const value = optionValue(item);
                       return <option key={`yf-${value}`} value={value}>{value}</option>;
                     })}
@@ -675,11 +711,18 @@ export default function CatalogFull() {
 
                   <select
                     value={yearTo}
-                    onChange={(event) => setFilter(() => setYearTo(event.target.value))}
+                    onChange={(event) => setFilter(() => {
+                      const next = event.target.value;
+                      setYearTo(next);
+
+                      if (next && yearFrom && Number(next) < Number(yearFrom)) {
+                        setYearFrom(next);
+                      }
+                    })}
                     className="h-[25px] border border-[#c7d0da] text-[12px]"
                   >
                     <option value="">Год до</option>
-                    {years.map((item) => {
+                    {yearToOptions.map((item) => {
                       const value = optionValue(item);
                       return <option key={`yt-${value}`} value={value}>{value}</option>;
                     })}
@@ -966,7 +1009,7 @@ function AfaCheckList({
 }) {
   const [open, setOpen] = useState(false);
   const normalizedItems = active && !items.some((item) => String(item.value).toLowerCase() === String(active).toLowerCase())
-    ? [{ value: active, label: active === "removed" ? "снят" : active === "cancelled" ? "отменен" : active }, ...items]
+    ? [{ value: active, label: active === "removed" ? "снят" : active === "cancelled" ? "отменен" : active, sampleImage: "" }, ...items]
     : items;
 
   const visible = normalizedItems.slice(0, 6);
@@ -983,7 +1026,7 @@ function AfaCheckList({
           onPick(selected ? active : item.value);
           setOpen(false);
         }}
-        className={`flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px] ${
+        className={`group relative flex min-w-0 items-center gap-[3px] text-left text-[12px] leading-[14px] ${
           selected ? "font-bold text-[#0b5cad]" : ""
         }`}
       >
@@ -995,6 +1038,17 @@ function AfaCheckList({
         <span className="truncate">
           {item.label}{selected ? " ×" : ""}
         </span>
+
+        {title === "Кузов" && item.sampleImage && (
+          <span className="pointer-events-none absolute left-[18px] top-[18px] z-[80] hidden border border-[#777] bg-white p-[3px] shadow-xl group-hover:block">
+            <img
+              src={item.sampleImage}
+              alt={item.label}
+              className="h-[72px] w-[96px] object-cover"
+              loading="lazy"
+            />
+          </span>
+        )}
       </button>
     );
   }
