@@ -242,8 +242,9 @@ export default function LotDetailPage() {
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : String(rawId || "");
 
-  const prevId = "";
-  const nextId = "";
+  const [backHref, setBackHref] = useState("/catalog");
+  const [prevId, setPrevId] = useState("");
+  const [nextId, setNextId] = useState("");
 
   const [car, setCar] = useState<Car | null>(null);
   const [selectedImage, setSelectedImage] = useState("");
@@ -252,6 +253,33 @@ export default function LotDetailPage() {
 
   const images = useMemo(() => splitImages(car || {}), [car]);
   const title = car ? carTitle(car) : "Лот";
+
+  useEffect(() => {
+    if (!id || typeof window === "undefined") return;
+
+    try {
+      const storedBack = window.sessionStorage.getItem("mosaicauto.catalogBackUrl");
+      const storedIdsRaw = window.sessionStorage.getItem("mosaicauto.catalogIds");
+
+      if (storedBack) {
+        setBackHref(storedBack);
+      }
+
+      const storedIds = storedIdsRaw ? JSON.parse(storedIdsRaw) : [];
+
+      if (Array.isArray(storedIds)) {
+        const ids = storedIds.map((item) => String(item || "")).filter(Boolean);
+        const index = ids.indexOf(id);
+
+        setPrevId(index > 0 ? ids[index - 1] : "");
+        setNextId(index >= 0 && index < ids.length - 1 ? ids[index + 1] : "");
+      }
+    } catch {
+      setBackHref("/catalog");
+      setPrevId("");
+      setNextId("");
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -292,7 +320,7 @@ export default function LotDetailPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-        <TopBar prevId={prevId} nextId={nextId} />
+        <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
         <div className="mx-auto max-w-[1800px] p-4">
           <div className="rounded-3xl bg-white p-10 text-center text-lg font-black shadow-sm">
             Загружаем лот...
@@ -305,7 +333,7 @@ export default function LotDetailPage() {
   if (error || !car) {
     return (
       <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-        <TopBar prevId={prevId} nextId={nextId} />
+        <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
         <div className="mx-auto max-w-[1800px] p-4">
           <div className="rounded-3xl border border-red-200 bg-red-50 p-10 text-center">
             <div className="text-2xl font-black text-red-700">
@@ -331,7 +359,7 @@ export default function LotDetailPage() {
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-      <TopBar prevId={prevId} nextId={nextId} />
+      <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
 
       <section className="mx-auto max-w-[1800px] px-3 py-3">
         <div className="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -604,13 +632,13 @@ export default function LotDetailPage() {
   );
 }
 
-function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
+function TopBar({ backHref, prevId, nextId }: { backHref: string; prevId: string; nextId: string }) {
   return (
     <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
       <div className="mx-auto flex h-10 max-w-[1800px] items-center justify-between gap-2 px-3">
         <div className="flex items-center gap-2">
           <Link
-            href="/catalog"
+            href={backHref || "/catalog"}
             className="rounded bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700 hover:bg-[#07152f] hover:text-white"
           >
             Назад в каталог

@@ -608,6 +608,23 @@ export default function CatalogFull() {
     setPage(1);
   }
 
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const backUrl = `${window.location.pathname}${window.location.search}`;
+      const ids = cars
+        .map((car) => String(car?.id || ""))
+        .filter(Boolean);
+
+      window.sessionStorage.setItem("mosaicauto.catalogBackUrl", backUrl);
+      window.sessionStorage.setItem("mosaicauto.catalogIds", JSON.stringify(ids));
+    } catch {
+      // sessionStorage может быть недоступен в приватном режиме — это не критично.
+    }
+  }, [cars]);
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[12px] text-black">
       <div className="border-b border-[#d9d9d9] bg-[#f7f7f7]">
