@@ -160,7 +160,23 @@ function isNoPhotoImage(url: string) {
     value.includes("no-photo") ||
     value.includes("nophoto") ||
     value.includes("noimage") ||
-    value.includes("no_image")
+    value.includes("no_image") ||
+    value.includes("nofoto") ||
+    value.includes("no_foto") ||
+    value.includes("no-foto") ||
+    value.includes("placeholder")
+  );
+}
+
+function looksLikeAuctionSheet(url: string) {
+  const value = String(url || "").toLowerCase();
+
+  return (
+    value.includes("sheet") ||
+    value.includes("auction") ||
+    value.includes("list") ||
+    value.includes("map") ||
+    value.includes("schema")
   );
 }
 
@@ -189,25 +205,25 @@ function carImages(car: Car) {
 }
 
 function splitImages(car: Car) {
-  const images = carImages(car);
+  const images = carImages(car).filter((url) => !isNoPhotoImage(url));
 
-  // Для detail-выдачи AFA/AVTOJP обычно:
-  // 0 — схема повреждений,
-  // середина — фото автомобиля,
-  // последний — полный аукционный лист.
-  if (images.length >= 3) {
-    return {
-      damageMap: images[0],
-      auctionSheet: images[images.length - 1],
-      photos: images.slice(1, -1),
-      all: images,
-    };
-  }
+  const damageMap = images[0] || "";
+
+  // Полный аукционный лист нельзя определять просто как "последняя картинка",
+  // потому что у части лотов туда приходит NO FOTO.
+  // Пока не нашли надежный признак полного листа, не показываем фейковую заглушку.
+  const possibleSheet = images.find((url, index) => index > 0 && looksLikeAuctionSheet(url)) || "";
+
+  const photos = images.filter((url, index) => {
+    if (index === 0) return false;
+    if (possibleSheet && url === possibleSheet) return false;
+    return true;
+  });
 
   return {
-    damageMap: "",
-    auctionSheet: "",
-    photos: images,
+    damageMap,
+    auctionSheet: possibleSheet,
+    photos,
     all: images,
   };
 }
@@ -475,7 +491,7 @@ export default function LotDetailPage() {
                 </div>
               ) : (
                 <div className="rounded-2xl bg-slate-50 p-10 text-center font-bold text-slate-500">
-                  Аукционный лист не найден
+                  Полный аукционный лист не найден
                 </div>
               )}
             </div>
