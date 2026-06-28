@@ -4,15 +4,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 function isImageUrl(value: unknown) {
-  return typeof value === "string" && /^https?:\/\//i.test(value) && (
-    value.includes("/imgs/") ||
-    value.includes("image") ||
-    value.includes("photo") ||
-    value.includes(".jpg") ||
-    value.includes(".jpeg") ||
-    value.includes(".png") ||
-    value.includes(".webp")
-  );
+  return typeof value === "string" && /^https?:\/\//i.test(value);
 }
 
 function walkImages(value: unknown, path = "root", out: Array<{ path: string; value: unknown }> = []) {
@@ -53,33 +45,25 @@ function flatKeys(value: unknown, prefix = "", out: string[] = []) {
 }
 
 export async function GET(req: NextRequest) {
-  const id = req.nextUrl.searchParams.get("id");
-
-  if (!id) {
-    return NextResponse.json({
-      ok: false,
-      error: "Передай id: /api/debug/detail-lot?id=LOT_ID",
-    }, { status: 400 });
-  }
-
+  const id = req.nextUrl.searchParams.get("id") || "hDQ3x6CgmVwXC1";
   const baseUrl = `http://127.0.0.1:${process.env.PORT || 3000}`;
+
   const res = await fetch(`${baseUrl}/api/car/${encodeURIComponent(id)}`, {
     cache: "no-store",
   });
 
   const payload = await res.json();
-  const images = walkImages(payload);
-  const keys = flatKeys(payload);
 
   return NextResponse.json({
     ok: res.ok,
+    version: "DETAIL LOT DEBUG V1",
     checkedAt: new Date().toISOString(),
     id,
     status: res.status,
     topLevelKeys: Object.keys(payload || {}),
-    keys,
-    imageCount: images.length,
-    images,
+    keys: flatKeys(payload).slice(0, 300),
+    imageCount: walkImages(payload).length,
+    images: walkImages(payload),
     payloadPreview: payload,
   });
 }
