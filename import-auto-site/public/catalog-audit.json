@@ -1,0 +1,636 @@
+{
+  "ok": true,
+  "checkedAt": "2026-06-28T12:21:31.158Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "summary": {
+    "status": "good",
+    "checksTotal": 20,
+    "checksPassed": 20,
+    "checksFailed": 0,
+    "liveTestsOk": true,
+    "recommendation": "Каталог можно считать рабочей базой. Перед следующим этапом стоит закрыть пункты high/medium из missingLogic."
+  },
+  "checks": [
+    {
+      "name": "catalog-page-imports-catalog-full",
+      "ok": true,
+      "level": "critical",
+      "details": "Страница /catalog должна подключать основной компонент каталога."
+    },
+    {
+      "name": "catalog-api-exists",
+      "ok": true,
+      "level": "critical",
+      "details": "Backend /api/catalog найден."
+    },
+    {
+      "name": "facets-api-exists",
+      "ok": true,
+      "level": "critical",
+      "details": "Backend /api/catalog/facets найден."
+    },
+    {
+      "name": "catalog-ui-exists",
+      "ok": true,
+      "level": "critical",
+      "details": "Frontend CatalogFull найден."
+    },
+    {
+      "name": "brand-model-required-search",
+      "ok": true,
+      "level": "critical",
+      "details": "Поиск должен запускаться только после явного выбора марки и модели/Любая."
+    },
+    {
+      "name": "any-value-supported",
+      "ok": true,
+      "level": "critical",
+      "details": "Должен быть явный вариант Любая."
+    },
+    {
+      "name": "dynamic-facets-fetch",
+      "ok": true,
+      "level": "critical",
+      "details": "Фильтры должны обновляться от текущей выдачи."
+    },
+    {
+      "name": "common-filter-reset",
+      "ok": true,
+      "level": "important",
+      "details": "Нужен общий сброс правого блока фильтров."
+    },
+    {
+      "name": "selected-filter-toggle",
+      "ok": true,
+      "level": "important",
+      "details": "Повторный клик по выбранному фильтру должен снимать фильтр."
+    },
+    {
+      "name": "active-filter-sticky",
+      "ok": true,
+      "level": "important",
+      "details": "Выбранный фильтр не должен пропадать после пересчета фасетов."
+    },
+    {
+      "name": "year-range-options",
+      "ok": true,
+      "level": "important",
+      "details": "Год от/до должен запрещать невозможный диапазон."
+    },
+    {
+      "name": "year-range-autofix",
+      "ok": true,
+      "level": "important",
+      "details": "Если диапазон годов стал невозможным, UI должен исправлять его."
+    },
+    {
+      "name": "facets-scan-chunks",
+      "ok": true,
+      "level": "important",
+      "details": "Фасеты должны считаться не по первым 500 строкам, а пачками."
+    },
+    {
+      "name": "facets-color-normalization",
+      "ok": true,
+      "level": "important",
+      "details": "Цвета должны объединяться: black/BLACK/Black."
+    },
+    {
+      "name": "catalog-color-search-variants",
+      "ok": true,
+      "level": "important",
+      "details": "Выбор цвета должен искать все варианты написания."
+    },
+    {
+      "name": "status-normalization",
+      "ok": true,
+      "level": "important",
+      "details": "Статусы должны маппиться sold/not_sold/removed/cancelled."
+    },
+    {
+      "name": "body-hover-preview",
+      "ok": true,
+      "level": "optional",
+      "details": "При наведении на кузов должен показываться пример авто."
+    },
+    {
+      "name": "pagination-exists",
+      "ok": true,
+      "level": "important",
+      "details": "Пагинация должна быть на странице."
+    },
+    {
+      "name": "lot-open-link",
+      "ok": true,
+      "level": "critical",
+      "details": "Лот должен открываться в детальную страницу."
+    },
+    {
+      "name": "detail-page-exists",
+      "ok": true,
+      "level": "important",
+      "details": "Детальная страница/endpoint лота должны существовать."
+    }
+  ],
+  "failedChecks": [],
+  "liveTests": {
+    "catalogNissan": {
+      "ok": true,
+      "status": 200,
+      "durationMs": 97,
+      "path": "/api/catalog?brand=NISSAN&page=1&limit=5",
+      "total": 3206,
+      "pages": 642,
+      "itemsCount": 5,
+      "scannedRows": null,
+      "facets": null,
+      "error": null
+    },
+    "catalogMazdaYears": {
+      "ok": true,
+      "status": 200,
+      "durationMs": 28,
+      "path": "/api/catalog?brand=MAZDA&yearFrom=2024&yearTo=2026&page=1&limit=5",
+      "total": 38,
+      "pages": 8,
+      "itemsCount": 5,
+      "scannedRows": null,
+      "facets": null,
+      "error": null
+    },
+    "facetsNissan": {
+      "ok": true,
+      "status": 200,
+      "durationMs": 242,
+      "path": "/api/catalog/facets?brand=NISSAN",
+      "total": null,
+      "pages": null,
+      "itemsCount": null,
+      "scannedRows": 3206,
+      "facets": {
+        "bodies": [
+          {
+            "value": "E12",
+            "label": "E12",
+            "count": 181,
+            "sampleImage": "https://7.tru.ru/imgs/3b9ITl1YgJcgvbKO2zo1E3TszST9xhOvf0RqNKGWYNN1bp&h=50"
+          },
+          {
+            "value": "E13",
+            "label": "E13",
+            "count": 139,
+            "sampleImage": "https://7.tru.ru/imgs/5YqNlfT6Ks4DozbAB1jbVspF61nGzDKdoOH6Rbv3L&h=50"
+          },
+          {
+            "value": "B21A",
+            "label": "B21A",
+            "count": 135,
+            "sampleImage": "https://7.tru.ru/imgs/2WktdnE80JhbEDlHslHWJXyUHTqGN4UqnePds8NlCDCrZWyZrYF&h=50"
+          },
+          {
+            "value": "B21W",
+            "label": "B21W",
+            "count": 128,
+            "sampleImage": "https://7.tru.ru/imgs/3b9ITl1YgJcgvbKO2zo1E3TszST9xhOvdVhwPvY2oM0cGl&h=50"
+          },
+          {
+            "value": "VY12",
+            "label": "VY12",
+            "count": 128,
+            "sampleImage": "https://7.tru.ru/imgs/5YqNlfT6Ks4DozbAB1jbVspF61nGzDEUreQAwZCTa&h=50"
+          }
+        ],
+        "rates": [
+          {
+            "value": "3.5",
+            "label": "3.5",
+            "count": 1100,
+            "sampleImage": ""
+          },
+          {
+            "value": "4",
+            "label": "4",
+            "count": 725,
+            "sampleImage": ""
+          },
+          {
+            "value": "R",
+            "label": "R",
+            "count": 533,
+            "sampleImage": ""
+          },
+          {
+            "value": "3",
+            "label": "3",
+            "count": 274,
+            "sampleImage": ""
+          },
+          {
+            "value": "4.5",
+            "label": "4.5",
+            "count": 216,
+            "sampleImage": ""
+          }
+        ],
+        "auctions": [
+          {
+            "value": "JU Tokyo",
+            "label": "JU Tokyo",
+            "count": 316,
+            "sampleImage": ""
+          },
+          {
+            "value": "CAA Chubu",
+            "label": "CAA Chubu",
+            "count": 238,
+            "sampleImage": ""
+          },
+          {
+            "value": "CAA Tokyo",
+            "label": "CAA Tokyo",
+            "count": 230,
+            "sampleImage": ""
+          },
+          {
+            "value": "JU Saitama",
+            "label": "JU Saitama",
+            "count": 212,
+            "sampleImage": ""
+          },
+          {
+            "value": "TAA Kinki",
+            "label": "TAA Kinki",
+            "count": 200,
+            "sampleImage": ""
+          }
+        ],
+        "colors": [
+          {
+            "value": "white",
+            "label": "белый",
+            "count": 937,
+            "sampleImage": ""
+          },
+          {
+            "value": "silver",
+            "label": "серебристый",
+            "count": 545,
+            "sampleImage": ""
+          },
+          {
+            "value": "black",
+            "label": "черный",
+            "count": 457,
+            "sampleImage": ""
+          },
+          {
+            "value": "gray",
+            "label": "серый",
+            "count": 166,
+            "sampleImage": ""
+          },
+          {
+            "value": "blue",
+            "label": "синий",
+            "count": 142,
+            "sampleImage": ""
+          }
+        ],
+        "statuses": [
+          {
+            "value": "removed",
+            "label": "снят",
+            "count": 73,
+            "sampleImage": ""
+          },
+          {
+            "value": "cancelled",
+            "label": "отменен",
+            "count": 11,
+            "sampleImage": ""
+          }
+        ],
+        "transmissions": [
+          {
+            "value": "AT",
+            "label": "AT",
+            "count": 1175,
+            "sampleImage": ""
+          },
+          {
+            "value": "IAT",
+            "label": "IAT",
+            "count": 728,
+            "sampleImage": ""
+          },
+          {
+            "value": "FAT",
+            "label": "FAT",
+            "count": 716,
+            "sampleImage": ""
+          },
+          {
+            "value": "FA",
+            "label": "FA",
+            "count": 159,
+            "sampleImage": ""
+          },
+          {
+            "value": "DAT",
+            "label": "DAT",
+            "count": 103,
+            "sampleImage": ""
+          }
+        ],
+        "drives": [
+          {
+            "value": "FF",
+            "label": "FF",
+            "count": 1538,
+            "sampleImage": ""
+          },
+          {
+            "value": "FF,FULLTIME4WD",
+            "label": "FF,FULLTIME4WD",
+            "count": 414,
+            "sampleImage": ""
+          },
+          {
+            "value": "FULLTIME4WD",
+            "label": "FULLTIME4WD",
+            "count": 159,
+            "sampleImage": ""
+          },
+          {
+            "value": "FR",
+            "label": "FR",
+            "count": 151,
+            "sampleImage": ""
+          },
+          {
+            "value": "FR,PARTTIME4WD",
+            "label": "FR,PARTTIME4WD",
+            "count": 132,
+            "sampleImage": ""
+          }
+        ]
+      },
+      "error": null
+    },
+    "facetsMazdaAny": {
+      "ok": true,
+      "status": 200,
+      "durationMs": 95,
+      "path": "/api/catalog/facets?brand=MAZDA",
+      "total": null,
+      "pages": null,
+      "itemsCount": null,
+      "scannedRows": 1308,
+      "facets": {
+        "bodies": [
+          {
+            "value": "DJLFS",
+            "label": "DJLFS",
+            "count": 70,
+            "sampleImage": "https://7.tru.ru/imgs/5YqNlfT6Ks4DozbAB1jbVspF61nGzDgd5j1A6h3IH&h=50"
+          },
+          {
+            "value": "KFEP",
+            "label": "KFEP",
+            "count": 63,
+            "sampleImage": "https://7.tru.ru/imgs/nIZ2DnjwbHczh1Th0yRnuNFjsDYvm8qlk5WoNTP2&h=50"
+          },
+          {
+            "value": "DJ5FS",
+            "label": "DJ5FS",
+            "count": 61,
+            "sampleImage": "https://7.tru.ru/imgs/5YqNlfT6Ks4DozbAB1jbVspF61nGzDsdXoDEK1sqw&h=50"
+          },
+          {
+            "value": "KF2P",
+            "label": "KF2P",
+            "count": 60,
+            "sampleImage": "https://7.tru.ru/imgs/5YqNlfT6Ks4DozbAB1jbVspF61nGzDJFmVFWcC54U&h=50"
+          },
+          {
+            "value": "DJ3FS",
+            "label": "DJ3FS",
+            "count": 47,
+            "sampleImage": "https://7.tru.ru/imgs/27LXphaWvBNq51UO3NcPivB0744FZ8lNx5nAV9VK4uIG8Fzus1eKg&h=50"
+          }
+        ],
+        "rates": [
+          {
+            "value": "3.5",
+            "label": "3.5",
+            "count": 415,
+            "sampleImage": ""
+          },
+          {
+            "value": "4",
+            "label": "4",
+            "count": 331,
+            "sampleImage": ""
+          },
+          {
+            "value": "R",
+            "label": "R",
+            "count": 176,
+            "sampleImage": ""
+          },
+          {
+            "value": "4.5",
+            "label": "4.5",
+            "count": 137,
+            "sampleImage": ""
+          },
+          {
+            "value": "3",
+            "label": "3",
+            "count": 107,
+            "sampleImage": ""
+          }
+        ],
+        "auctions": [
+          {
+            "value": "MIRIVE Saitama",
+            "label": "MIRIVE Saitama",
+            "count": 130,
+            "sampleImage": ""
+          },
+          {
+            "value": "JU Saitama",
+            "label": "JU Saitama",
+            "count": 114,
+            "sampleImage": ""
+          },
+          {
+            "value": "CAA Chubu",
+            "label": "CAA Chubu",
+            "count": 109,
+            "sampleImage": ""
+          },
+          {
+            "value": "CAA Tokyo",
+            "label": "CAA Tokyo",
+            "count": 107,
+            "sampleImage": ""
+          },
+          {
+            "value": "BAYAUC",
+            "label": "BAYAUC",
+            "count": 92,
+            "sampleImage": ""
+          }
+        ],
+        "colors": [
+          {
+            "value": "white",
+            "label": "белый",
+            "count": 323,
+            "sampleImage": ""
+          },
+          {
+            "value": "black",
+            "label": "черный",
+            "count": 145,
+            "sampleImage": ""
+          },
+          {
+            "value": "silver",
+            "label": "серебристый",
+            "count": 140,
+            "sampleImage": ""
+          },
+          {
+            "value": "red",
+            "label": "красный",
+            "count": 139,
+            "sampleImage": ""
+          },
+          {
+            "value": "gray",
+            "label": "серый",
+            "count": 134,
+            "sampleImage": ""
+          }
+        ],
+        "statuses": [
+          {
+            "value": "removed",
+            "label": "снят",
+            "count": 25,
+            "sampleImage": ""
+          },
+          {
+            "value": "cancelled",
+            "label": "отменен",
+            "count": 3,
+            "sampleImage": ""
+          }
+        ],
+        "transmissions": [
+          {
+            "value": "FAT",
+            "label": "FAT",
+            "count": 528,
+            "sampleImage": ""
+          },
+          {
+            "value": "AT",
+            "label": "AT",
+            "count": 335,
+            "sampleImage": ""
+          },
+          {
+            "value": "IAT",
+            "label": "IAT",
+            "count": 139,
+            "sampleImage": ""
+          },
+          {
+            "value": "DAT",
+            "label": "DAT",
+            "count": 66,
+            "sampleImage": ""
+          },
+          {
+            "value": "FA",
+            "label": "FA",
+            "count": 58,
+            "sampleImage": ""
+          }
+        ],
+        "drives": [
+          {
+            "value": "FF",
+            "label": "FF",
+            "count": 315,
+            "sampleImage": ""
+          },
+          {
+            "value": "FF,FULLTIME4WD",
+            "label": "FF,FULLTIME4WD",
+            "count": 165,
+            "sampleImage": ""
+          },
+          {
+            "value": "FR",
+            "label": "FR",
+            "count": 91,
+            "sampleImage": ""
+          },
+          {
+            "value": "FULLTIME4WD",
+            "label": "FULLTIME4WD",
+            "count": 36,
+            "sampleImage": ""
+          },
+          {
+            "value": "PARTTIME4WD",
+            "label": "PARTTIME4WD",
+            "count": 15,
+            "sampleImage": ""
+          }
+        ]
+      },
+      "error": null
+    }
+  },
+  "missingLogic": [
+    {
+      "area": "Фильтры цены",
+      "priority": "medium",
+      "issue": "В UI каталога нет полноценного фильтра цены от/до.",
+      "recommendation": "Добавить поля Цена от / Цена до после стабилизации базового каталога."
+    },
+    {
+      "area": "Фильтр объёма двигателя",
+      "priority": "medium",
+      "issue": "В UI нет рабочего диапазона объёма двигателя от/до.",
+      "recommendation": "Добавить после цены, так как backend уже близко к поддержке числовых диапазонов."
+    },
+    {
+      "area": "Производительность",
+      "priority": "high",
+      "issue": "Фасеты пересчитываются при каждом изменении фильтра без debounce/cache на frontend.",
+      "recommendation": "Добавить небольшую задержку 250–400 мс или серверный cache key для фасетов."
+    },
+    {
+      "area": "Пагинация",
+      "priority": "low",
+      "issue": "Сейчас есть только стрелки назад/вперед, нет быстрого перехода на страницу.",
+      "recommendation": "Добавить поле ввода страницы или короткий список страниц."
+    }
+  ],
+  "nextStageReadiness": {
+    "canMoveNext": true,
+    "suggestedNextStage": "Детальная страница лота в том же AFA-стиле + блок заявки/расчёта стоимости.",
+    "beforeNextStageRecommended": [
+      "Проверить визуально body hover preview.",
+      "Проверить год от/до.",
+      "Проверить повторный клик по выбранному статусу/цвету.",
+      "Добавить debounce/cache фасетов, если фильтры начнут тормозить."
+    ]
+  }
+}
