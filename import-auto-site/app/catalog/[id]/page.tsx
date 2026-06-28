@@ -383,6 +383,41 @@ export default function LotDetailPage() {
                 </button>
               </div>
               <div className="mt-1 text-xs text-slate-400">☆ ☆ ☆ ☆ ☆</div>
+
+              <div className="lot-inline-nav mt-3 flex flex-wrap items-center gap-1.5">
+                <Link
+                  href={backHref || "/catalog"}
+                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-700 hover:bg-[#07152f] hover:text-white"
+                >
+                  Назад
+                </Link>
+
+                {prevId ? (
+                  <Link
+                    href={`/catalog/${prevId}`}
+                    className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600 hover:bg-slate-200"
+                  >
+                    Пред.
+                  </Link>
+                ) : (
+                  <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-300">
+                    Пред.
+                  </span>
+                )}
+
+                {nextId ? (
+                  <Link
+                    href={`/catalog/${nextId}`}
+                    className="rounded-lg bg-[#e6ad87] px-2.5 py-1 text-[11px] font-black text-white hover:bg-[#d8001f]"
+                  >
+                    След.
+                  </Link>
+                ) : (
+                  <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-300">
+                    След.
+                  </span>
+                )}
+              </div>
             </SummaryCell>
 
             <SummaryCell title="Дата / Аукцион">
