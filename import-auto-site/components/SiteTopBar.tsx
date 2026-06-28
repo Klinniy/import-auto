@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 function TokyoClock() {
@@ -74,6 +75,14 @@ function RateCard({
 }
 
 export default function SiteTopBar() {
+  const pathname = usePathname();
+
+  const isCatalog = pathname === "/catalog";
+  const isLot = pathname.startsWith("/catalog/");
+
+  const actionHref = isCatalog ? "/" : "/catalog";
+  const actionLabel = isCatalog ? "На главную" : isLot ? "В каталог" : "Вход / Каталог";
+
   return (
     <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
       <div className="mx-auto flex h-[64px] max-w-[1800px] items-center justify-between gap-4 px-5">
@@ -105,10 +114,10 @@ export default function SiteTopBar() {
           <RateCard title="ЦБ РФ · 1 CNY" value="11,3359 ₽" change="0,2919" />
 
           <Link
-            href="/catalog"
+            href={actionHref}
             className="whitespace-nowrap rounded-2xl bg-[#07152f] px-7 py-3 text-sm font-black text-white shadow-sm hover:bg-[#d8001f]"
           >
-            Вход / Каталог
+            {actionLabel}
           </Link>
         </div>
       </div>
