@@ -629,18 +629,38 @@ export default function LotDetailPage() {
           </aside>
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
-          <InfoCard title="Комментарии / примечания">
-            <div className="min-h-[60px] whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs font-bold text-slate-600">
-              {cleanText(car.comment || car.notes) || "Дополнительные комментарии по лоту не переданы API."}
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="text-base font-black">Дополнительно по лоту</div>
+              <div className="mt-1 text-xs font-bold text-slate-500">
+                Разделы, которые будут расширять карточку автомобиля без перегруза основной страницы.
+              </div>
             </div>
-          </InfoCard>
+          </div>
 
-          <InfoCard title="Следующий этап">
-            <div className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">
-              Здесь позже можно добавить похожие автомобили, статистику продаж и расширенный расчёт стоимости.
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="text-sm font-black text-[#07152f]">Похожие автомобили</div>
+              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
+                Позже добавим подбор похожих лотов по марке, модели, году, оценке и пробегу.
+              </div>
             </div>
-          </InfoCard>
+
+            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="text-sm font-black text-[#07152f]">Статистика продаж</div>
+              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
+                Здесь будет история средних цен и продаж по аналогичным автомобилям.
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="text-sm font-black text-[#07152f]">Расчёт стоимости</div>
+              <div className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
+                Вернём расчёт отдельным этапом, когда подключим нормальную логику заявки.
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
