@@ -292,8 +292,8 @@ export default function LotDetailPage() {
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
       <TopBar prevId={prevId} nextId={nextId} />
 
-      <section className="mx-auto max-w-[1800px] px-4 py-4">
-        <div className="mb-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <section className="mx-auto max-w-[1800px] px-3 py-3">
+        <div className="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 xl:grid-cols-7">
             <SummaryCell title="Номер лота">
               <div className="flex items-center gap-2">
@@ -359,7 +359,7 @@ export default function LotDetailPage() {
             </SummaryCell>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2">
             <Badge>{statusLabel(car.status)}</Badge>
             {isSanction(car) && <Badge tone="amber">санкционный</Badge>}
             {car.leftHandDrive && <Badge tone="blue">LHD</Badge>}
@@ -368,11 +368,11 @@ export default function LotDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_360px]">
-          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.95fr)_320px]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
               <div>
-                <div className="text-xl font-black">Фото автомобиля</div>
+                <div className="text-base font-black">Фото автомобиля</div>
                 <div className="text-sm font-bold text-slate-500">
                   {images.photos.length || images.all.length} фото по лоту
                 </div>
@@ -381,7 +381,7 @@ export default function LotDetailPage() {
               <button
                 type="button"
                 onClick={() => selectedImage && window.open(selectedImage, "_blank")}
-                className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
+                className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200"
               >
                 Открыть фото
               </button>
@@ -391,14 +391,14 @@ export default function LotDetailPage() {
               <img
                 src={selectedImage || "/mosaic/car-placeholder.png"}
                 alt={title}
-                className="h-[520px] w-full object-contain"
+                className="h-[390px] w-full object-contain"
                 onError={(event) => {
                   event.currentTarget.src = "/mosaic/car-placeholder.png";
                 }}
               />
             </div>
 
-            <div className="mt-3 grid grid-cols-5 gap-2">
+            <div className="mt-2 grid grid-cols-6 gap-2">
               {(images.photos.length ? images.photos : images.all).slice(0, 15).map((image) => (
                 <button
                   key={image}
@@ -411,7 +411,7 @@ export default function LotDetailPage() {
                   <img
                     src={image}
                     alt={title}
-                    className="h-20 w-full object-cover"
+                    className="h-14 w-full object-cover"
                     loading="lazy"
                   />
                 </button>
@@ -420,10 +420,10 @@ export default function LotDetailPage() {
           </section>
 
           <section className="grid gap-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
                 <div>
-                  <div className="text-xl font-black">Аукционный лист</div>
+                  <div className="text-base font-black">Аукционный лист</div>
                   <div className="text-sm font-bold text-slate-500">
                     Оригинальный лист из аукциона
                   </div>
@@ -433,7 +433,7 @@ export default function LotDetailPage() {
                   <button
                     type="button"
                     onClick={() => window.open(images.auctionSheet, "_blank")}
-                    className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-200"
+                    className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200"
                   >
                     Открыть
                   </button>
@@ -445,7 +445,7 @@ export default function LotDetailPage() {
                   <img
                     src={images.auctionSheet}
                     alt="Аукционный лист"
-                    className="max-h-[520px] w-full object-contain"
+                    className="max-h-[390px] w-full object-contain"
                     loading="lazy"
                   />
                 </div>
@@ -456,18 +456,18 @@ export default function LotDetailPage() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 text-xl font-black">Определить месяц выпуска</div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 text-base font-black">Определить месяц выпуска</div>
 
               <div className="grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={bodyNumber || ""}
                   readOnly
-                  className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none"
+                  className="h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold outline-none"
                 />
                 <button
                   type="button"
-                  className="rounded-2xl bg-[#2f80ed] px-5 py-2 text-sm font-black text-white"
+                  className="rounded-xl bg-[#2f80ed] px-4 py-2 text-xs font-black text-white"
                 >
                   Найти
                 </button>
@@ -480,27 +480,27 @@ export default function LotDetailPage() {
           </section>
 
           <aside className="xl:sticky xl:top-20 xl:self-start">
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="text-xl font-black">Получить расчёт</div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="text-base font-black">Получить расчёт</div>
               <div className="mt-1 text-sm font-bold text-slate-500">
                 Рассчитаем стоимость авто до вашего города.
               </div>
 
-              <div className="mt-4 grid gap-2">
+              <div className="mt-3 grid gap-2">
                 <input
                   placeholder="Ваше имя"
-                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
                 />
                 <input
                   placeholder="Телефон"
-                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
                 />
                 <input
                   placeholder="Город доставки"
-                  className="h-11 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#2f80ed]"
+                  className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold outline-none focus:border-[#2f80ed]"
                 />
 
-                <button className="mt-2 rounded-2xl bg-[#d8001f] px-5 py-3 text-sm font-black uppercase tracking-[0.08em] text-white hover:brightness-105">
+                <button className="mt-1 rounded-xl bg-[#d8001f] px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-white hover:brightness-105">
                   Получить расчёт
                 </button>
               </div>
@@ -536,7 +536,7 @@ export default function LotDetailPage() {
 
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <InfoCard title="Комментарии / примечания">
-            <div className="min-h-[80px] whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">
+            <div className="min-h-[60px] whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs font-bold text-slate-600">
               {cleanText(car.comment || car.notes) || "Дополнительные комментарии по лоту не переданы API."}
             </div>
           </InfoCard>
@@ -555,11 +555,11 @@ export default function LotDetailPage() {
 function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
   return (
     <header className="border-t-4 border-[#d8001f] border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-12 max-w-[1800px] items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-10 max-w-[1800px] items-center justify-between gap-2 px-3">
         <div className="flex items-center gap-2">
           <Link
             href="/catalog"
-            className="rounded bg-slate-100 px-3 py-1.5 text-sm font-black text-slate-700 hover:bg-[#07152f] hover:text-white"
+            className="rounded bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700 hover:bg-[#07152f] hover:text-white"
           >
             Назад в каталог
           </Link>
@@ -567,14 +567,14 @@ function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
           {prevId ? (
             <Link
               href={`/catalog/${prevId}`}
-              className="rounded bg-[#e6ad87] px-3 py-1.5 text-sm font-black text-white"
+              className="rounded bg-[#e6ad87] px-2.5 py-1 text-xs font-black text-white"
             >
               Предыдущий
             </Link>
           ) : (
             <button
               disabled
-              className="rounded bg-slate-200 px-3 py-1.5 text-sm font-black text-slate-400"
+              className="rounded bg-slate-200 px-2.5 py-1 text-xs font-black text-slate-400"
             >
               Предыдущий
             </button>
@@ -583,27 +583,27 @@ function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
           {nextId ? (
             <Link
               href={`/catalog/${nextId}`}
-              className="rounded bg-[#e6ad87] px-3 py-1.5 text-sm font-black text-white"
+              className="rounded bg-[#e6ad87] px-2.5 py-1 text-xs font-black text-white"
             >
               Следующий
             </Link>
           ) : (
             <button
               disabled
-              className="rounded bg-slate-200 px-3 py-1.5 text-sm font-black text-slate-400"
+              className="rounded bg-slate-200 px-2.5 py-1 text-xs font-black text-slate-400"
             >
               Следующий
             </button>
           )}
 
-          <div className="ml-2 hidden text-lg font-black text-slate-600 md:block">
+          <div className="ml-2 hidden text-sm font-black text-slate-600 md:block">
             TOKYO <span className="text-[#497b00]">{tokyoTime()}</span>
           </div>
         </div>
 
         <Link
           href="/"
-          className="rounded bg-[#07152f] px-4 py-2 text-sm font-black text-white hover:bg-[#d8001f]"
+          className="rounded bg-[#07152f] px-3 py-1.5 text-xs font-black text-white hover:bg-[#d8001f]"
         >
           На главную
         </Link>
@@ -614,19 +614,19 @@ function TopBar({ prevId, nextId }: { prevId: string; nextId: string }) {
 
 function SummaryCell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-h-[92px] border-r border-slate-100 px-4 py-3">
-      <div className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+    <div className="min-h-[72px] border-r border-slate-100 px-3 py-2">
+      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.10em] text-slate-500">
         {title}
       </div>
-      <div className="text-sm font-bold">{children}</div>
+      <div className="text-xs font-bold leading-tight">{children}</div>
     </div>
   );
 }
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm first:mt-0">
-      <div className="mb-3 text-xl font-black">{title}</div>
+    <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm first:mt-0">
+      <div className="mb-2 text-base font-black">{title}</div>
       {children}
     </div>
   );
@@ -642,10 +642,10 @@ function InfoRow({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-slate-100 py-2 first:border-t-0">
-      <div className="text-sm font-bold text-slate-500">{label}</div>
+    <div className="flex items-center justify-between gap-3 border-t border-slate-100 py-1.5 first:border-t-0">
+      <div className="text-xs font-bold text-slate-500">{label}</div>
       <div
-        className={`text-right text-sm ${
+        className={`text-right text-xs ${
           strong ? "font-black text-green-700" : "font-bold text-slate-950"
         }`}
       >
