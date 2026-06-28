@@ -627,7 +627,7 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[12px] text-black">
-      <div className="border-b border-[#d9d9d9] bg-[#f7f7f7]">
+      <div className="hidden border-b border-[#d9d9d9] bg-[#f7f7f7]">
         <div className="flex h-[34px] items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <Link
