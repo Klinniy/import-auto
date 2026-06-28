@@ -422,7 +422,7 @@ export default function LotDetailPage() {
               <button
                 type="button"
                 onClick={() => selectedImage && window.open(selectedImage, "_blank")}
-                className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200"
+                className="rounded-xl bg-[#07152f] px-3 py-1.5 text-xs font-black text-white hover:bg-[#d8001f]"
               >
                 Открыть фото
               </button>
@@ -526,28 +526,9 @@ export default function LotDetailPage() {
                 </div>
               </div>
             )}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="mb-2 text-base font-black">Определить месяц выпуска</div>
-
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <input
-                  value={bodyNumber || ""}
-                  readOnly
-                  className="h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold outline-none"
-                />
-                <button
-                  type="button"
-                  className="rounded-xl bg-[#2f80ed] px-4 py-2 text-xs font-black text-white"
-                >
-                  Найти
-                </button>
-              </div>
-
-              <div className="mt-2 text-xs font-bold text-slate-500">
-                Позже подключим автоматическое определение месяца выпуска.
-              </div>
-            </div>
+            {false && (
+              <div />
+            )}
           </section>
 
           <aside className="xl:sticky xl:top-20 xl:self-start">
