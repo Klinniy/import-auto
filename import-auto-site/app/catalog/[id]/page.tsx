@@ -324,7 +324,7 @@ export default function LotDetailPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-        {false && <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />}
+        <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
         <div className="mx-auto max-w-[1800px] p-4">
           <div className="rounded-3xl bg-white p-10 text-center text-lg font-black shadow-sm">
             Загружаем лот...
@@ -337,7 +337,7 @@ export default function LotDetailPage() {
   if (error || !car) {
     return (
       <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
-        {false && <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />}
+        <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
         <div className="mx-auto max-w-[1800px] p-4">
           <div className="rounded-3xl border border-red-200 bg-red-50 p-10 text-center">
             <div className="text-2xl font-black text-red-700">
@@ -364,7 +364,7 @@ export default function LotDetailPage() {
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
       <SiteTopBar />
-      {false && <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />}
+      <TopBar backHref={backHref} prevId={prevId} nextId={nextId} />
 
       <section className="mx-auto max-w-[1800px] px-3 py-2">
         <div className="mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
