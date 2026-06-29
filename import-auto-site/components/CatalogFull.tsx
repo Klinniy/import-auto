@@ -20,6 +20,19 @@ function getCatalogFacetsApiBase() {
 }
 
 
+function getCatalogItemHref(car: any) {
+  const id = String(car?.id || "").trim();
+  const lot = String(car?.lot || "").trim();
+
+  if (isChinaCatalogRuntime()) {
+    return `/china/${encodeURIComponent(lot || id)}`;
+  }
+
+  return `/catalog/${encodeURIComponent(id || lot)}`;
+}
+
+
+
 function getModelsApiBase() {
   return isChinaCatalogRuntime() ? "/api/china/models" : "/api/models";
 }
@@ -945,7 +958,7 @@ function AfaTable({
                 className={index % 2 === 0 ? "bg-white" : "bg-[#eeeeee]"}
               >
                 <td className="border-b border-white px-1 py-[4px] align-top">
-                  <Link href={`${getCatalogBasePath()}/${car.id}`} className="flex gap-[3px]">
+                  <Link href={getCatalogItemHref(car)} className="flex gap-[3px]">
                     {(images.length ? images : [firstImage(car)]).map((image) => (
                       <img
                         key={image}
@@ -963,7 +976,7 @@ function AfaTable({
 
                 <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <Link
-                    href={`${getCatalogBasePath()}/${car.id}`}
+                    href={getCatalogItemHref(car)}
                     className="inline-block min-w-[58px] rounded-sm border border-[#cfd6df] bg-white px-3 py-[6px] text-[14px] font-bold text-[#bf4d22]"
                   >
                     {car.lot || "—"}
@@ -1019,7 +1032,7 @@ function AfaTable({
                   </div>
 
                   <Link
-                    href={`${getCatalogBasePath()}/${car.id}`}
+                    href={getCatalogItemHref(car)}
                     className="mt-[6px] inline-block rounded-sm border border-[#07152f] bg-white px-3 py-[5px] text-[10.5px] font-bold text-[#07152f]"
                   >
                     открыть
