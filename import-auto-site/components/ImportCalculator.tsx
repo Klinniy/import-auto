@@ -88,11 +88,20 @@ function fmtRub(value: number) {
 }
 
 function getRates(payload: any): CurrencyRates {
+  const source =
+    payload?.currency ||
+    payload?.rates ||
+    payload?.data?.currency ||
+    payload?.data?.rates ||
+    payload?.result?.currency ||
+    payload?.result?.rates ||
+    {};
+
   return {
-    usd: n(payload?.currency?.usd) || 0,
-    eur: n(payload?.currency?.eur) || 0,
-    jpy: n(payload?.currency?.jpy) || 0,
-    cny: n(payload?.currency?.cny) || 0,
+    usd: n(source?.usd || source?.USD || payload?.usd || payload?.USD) || 0,
+    eur: n(source?.eur || source?.EUR || payload?.eur || payload?.EUR) || 0,
+    jpy: n(source?.jpy || source?.JPY || payload?.jpy || payload?.JPY) || 0,
+    cny: n(source?.cny || source?.CNY || payload?.cny || payload?.CNY) || 0,
   };
 }
 
@@ -424,6 +433,89 @@ function parseResult(raw: string, title: string, rates: CurrencyRates): ParsedRe
   return parsed;
 }
 
+
+function cleanRubText(value: unknown) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.replace(/\s*₽\s*$/i, " руб").replace(/\s*руб\.?\s*$/i, " руб");
+}
+
+function rateBadges(rates: CurrencyRates) {
+  return [
+    rates.jpy ? `100 JPY = ${String(Math.round(rates.jpy * 10000) / 100).replace(".", ",")} руб` : "",
+    rates.usd ? `1 USD = ${String(rates.usd).replace(".", ",")} руб` : "",
+    rates.eur ? `1 EUR = ${String(rates.eur).replace(".", ",")} руб` : "",
+    rates.cny ? `1 CNY = ${String(rates.cny).replace(".", ",")} руб` : "",
+  ].filter(Boolean);
+}
+
+function structuredParsedResult(source: any, title: string, rates: CurrencyRates, fallbackText: string): ParsedResult | null {
+  if (!source || typeof source === "string") return null;
+
+  const sourceLines = Array.isArray(source?.lines)
+    ? source.lines
+    : Array.isArray(source?.items)
+      ? source.items
+      : Array.isArray(source?.details)
+        ? source.details
+        : [];
+
+  const totalRub =
+    n(source?.totalRub) ||
+    n(source?.total) ||
+    n(source?.cityRub) ||
+    n(source?.parsed?.totalRub) ||
+    0;
+
+  const totalUsd =
+    n(source?.totalUsd) ||
+    n(source?.usd) ||
+    n(source?.parsed?.totalUsd) ||
+    0;
+
+  if (!totalRub && !sourceLines.length) return null;
+
+  const rows = sourceLines
+    .map((line: any) => {
+      const label = String(line?.label || line?.name || line?.title || line?.key || "").trim();
+      const value = n(line?.value || line?.amount || line?.rub || line?.total);
+      const formatted = cleanRubText(line?.formatted || line?.valueFormatted || line?.text) || (value ? `${fmt(value)} руб` : "—");
+
+      return [label || "Расход", formatted];
+    })
+    .filter((row: string[]) => row[0]);
+
+  if (totalRub) {
+    rows.push(["Итого", `${fmt(totalRub)} руб`]);
+  }
+
+  const text =
+    typeof source?.text === "string" && source.text.trim()
+      ? source.text
+      : fallbackText;
+
+  return {
+    totalUsd,
+    totalRub,
+    cityRub: totalRub ? fmt(totalRub) : "",
+    cityUsd: totalUsd ? fmt(totalUsd) : "",
+    sections: rows.length
+      ? [
+          {
+            title: "Детализация расходов",
+            columns: ["Сумма"],
+            rows,
+          },
+        ]
+      : [],
+    rates: rateBadges(rates),
+    notes: [
+      "Расчёт ориентировочный. Итоговая стоимость зависит от курса валют, логистики, таможенных платежей и параметров конкретного автомобиля.",
+    ],
+    text,
+  };
+}
+
 function normalizeResponse(payload: any, responseText: string) {
   const rates = getRates(payload);
   const fullText = getPayloadText(payload, responseText);
@@ -450,14 +542,19 @@ function normalizeResponse(payload: any, responseText: string) {
   const physicalRaw = getPayloadText(physicalSource, fullText);
   const juridicalRaw = getPayloadText(juridicalSource, fullText);
 
-  const physicalParsed = parseResult(physicalRaw, "Физическое лицо", rates);
-  const juridicalParsed = parseResult(juridicalRaw, "Юридическое лицо", rates);
+  const physicalParsed =
+    structuredParsedResult(physicalSource, "Физическое лицо", rates, physicalRaw) ||
+    parseResult(physicalRaw, "Физическое лицо", rates);
+
+  const juridicalParsed =
+    structuredParsedResult(juridicalSource, "Юридическое лицо", rates, juridicalRaw) ||
+    parseResult(juridicalRaw, "Юридическое лицо", rates);
 
   const physicalDutyUsd = n(physicalSource?.dutyUsd);
   const juridicalDutyUsd = n(juridicalSource?.dutyUsd);
 
-  if (physicalDutyUsd) physicalParsed.totalUsd = physicalDutyUsd;
-  if (juridicalDutyUsd) juridicalParsed.totalUsd = juridicalDutyUsd;
+  if (!physicalParsed.totalUsd && physicalDutyUsd) physicalParsed.totalUsd = physicalDutyUsd;
+  if (!juridicalParsed.totalUsd && juridicalDutyUsd) juridicalParsed.totalUsd = juridicalDutyUsd;
 
   if (!physicalParsed.totalRub && physicalDutyUsd) {
     physicalParsed.totalRub = moneyToRub(String(physicalDutyUsd), "USD", rates);
