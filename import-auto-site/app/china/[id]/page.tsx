@@ -65,10 +65,10 @@ export default async function ChinaLotPage({
             </div>
 
             <div className="rounded-2xl bg-[#07152f] p-5 text-white">
-              <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-300">цена</div>
+              <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-300">цена в Китае</div>
               <div className="mt-2 text-4xl font-black">{formatCny(car.priceCny)}</div>
               <div className="mt-2 text-sm font-bold text-slate-300">
-                Цена из поля FINISH таблицы china. Расчёт в рублях подключим следующим этапом.
+                Ориентировочная стоимость автомобиля в Китае. Итоговую цену с доставкой, таможней и оформлением рассчитываем отдельно.
               </div>
             </div>
           </div>
@@ -110,22 +110,21 @@ export default async function ChinaLotPage({
                 {row("Комплектация", car.grade)}
                 {row("Цвет", car.color)}
                 {row("Кузов", car.body)}
-                {row("Объём", formatNum(car.engineVolume, " см³"))}
+                {row("Объём", car.engineVolume ? `${formatNum(car.engineVolume)} см³` : "—")}
                 {row("Мощность", car.power ? `${car.power} л.с.` : "—")}
                 {row("КПП", car.transmission)}
                 {row("Привод", car.drive)}
-                {row("Пробег", formatNum(car.mileage, " км"))}
+                {row("Пробег", car.mileage ? `${formatNum(car.mileage)} км` : "—")}
               </div>
             </section>
 
             <section className="rounded-[1.5rem] bg-white p-5 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200">
-              <h2 className="text-xl font-black">Данные лота</h2>
+              <h2 className="text-xl font-black">Информация по лоту</h2>
               <div className="mt-3">
-                {row("ID", car.id)}
                 {row("Лот", car.lot)}
                 {row("Источник", "Китай")}
                 {row("Дата", car.auctionDate === "0000-00-00 00:00:00" ? "—" : car.auctionDate)}
-                {row("Цена", formatCny(car.priceCny))}
+                {row("Цена в Китае", formatCny(car.priceCny))}
               </div>
             </section>
           </aside>
