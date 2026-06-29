@@ -277,6 +277,23 @@ function optionButtons(options: Option[], limit = 8): FilterButton[] {
     .slice(0, limit);
 }
 
+
+function visibleFilterValue(value: string) {
+  const text = String(value || "").trim();
+
+  if (
+    !text ||
+    text === "__any__" ||
+    text === "_any_" ||
+    text.toLowerCase() === "any" ||
+    text.toLowerCase() === "all"
+  ) {
+    return "";
+  }
+
+  return text;
+}
+
 function facetButtons(items?: FacetItem[], limit = 8): FilterButton[] {
   return (items || [])
     .map((item) => {
@@ -296,6 +313,7 @@ function facetButtons(items?: FacetItem[], limit = 8): FilterButton[] {
 }
 
 export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideLegacyCatalogHeader?: boolean }) {
+  const isChinaCatalogPage = isChinaCatalogRuntime();
   const [initialized, setInitialized] = useState(false);
 
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
@@ -836,7 +854,9 @@ if (auction) params.set("auction", auction);
 
               <AfaCheckList title="Кузов" items={facetBodies.length ? facetBodies : bodyOptions} active={body} onPick={(value) => toggle(body, value, setBody)} />
               <AfaCheckList title="Оценка" items={facetRates.length ? facetRates : rateOptions} active={rateFrom} onPick={(value) => toggle(rateFrom, value, setRateFrom)} />
-              <AfaCheckList title="Аукцион" items={facetAuctions.length ? facetAuctions : auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
+              {!isChinaCatalogPage && (
+                <AfaCheckList title="Аукцион" items={facetAuctions.length ? facetAuctions : auctions} active={auction} onPick={(value) => toggle(auction, value, setAuction)} />
+              )}
               <AfaCheckList title="Цвета" items={facetColors.length ? facetColors : colors} active={color} onPick={(value) => toggle(color, value, setColor)} />
               <AfaCheckList title="Статус" items={facetStatuses.length ? facetStatuses : [
                 { label: "не продан", value: "not_sold" },
@@ -846,15 +866,17 @@ if (auction) params.set("auction", auction);
             </div>
           </form>
 
-          <div className="mx-2 mt-2 bg-[#fff6c9] px-3 py-[5px] text-[12px] font-bold uppercase tracking-[0.08em] text-[#9d1b1b]">
-            Войдите, чтобы видеть всю информацию по лоту
-          </div>
+          {!isChinaCatalogPage && (
+            <div className="mx-2 mt-2 bg-[#fff6c9] px-3 py-[5px] text-[12px] font-bold uppercase tracking-[0.08em] text-[#9d1b1b]">
+              Войдите, чтобы видеть всю информацию по лоту
+            </div>
+          )}
 
           <div className="mx-2 mt-2 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-[14px] font-bold">
                 <span className="text-[#498000]">{formatNumber(total)}</span>{" "}
-                найдено · {brand || "все марки"}{model ? ` · ${model}` : ""}
+                найдено{visibleFilterValue(brand) ? ` · ${visibleFilterValue(brand)}` : ""}{visibleFilterValue(model) ? ` · ${visibleFilterValue(model)}` : ""}
               </div>
 
               <div className="flex items-center gap-[3px] text-[11px]">
