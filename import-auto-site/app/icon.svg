@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 190 914 850">
+  <defs>
+    <style>
+      .navy { fill: #020B1F; }
+      .red { fill: #FF2D3D; }
+      .white { fill: #FFFFFF; }
+    </style>
+  </defs>
+
+  <!-- MosaicAuto symbol: mosaic M + converging road + car silhouette -->
+  <g shape-rendering="geometricPrecision">
+    <!-- Upper mosaic wings -->
+    <path class="navy" d="M199 215 L237 415 L618 645 L618 538 L452 365 Z"/>
+    <path class="navy" d="M1054 215 L804 363 L636 537 L635 645 L1016 416 Z"/>
+
+    <!-- Middle mosaic panels -->
+    <path class="navy" d="M242 441 L273 602 L469 710 L431 552 Z"/>
+    <path class="navy" d="M1012 440 L822 552 L784 710 L980 602 Z"/>
+
+    <!-- Red accent route panels -->
+    <path class="red" d="M277 626 L328 873 L485 741 Z"/>
+    <path class="red" d="M976 626 L769 741 L926 873 Z"/>
+
+    <!-- Lower converging road panels -->
+    <path class="navy" d="M609 662 L326 903 L263 1009 L324 1009 Z"/>
+    <path class="navy" d="M645 662 L929 1009 L991 1009 L926 901 Z"/>
+
+    <!-- Road center dashed perspective line -->
+    <path class="navy" d="M627 660 L630 678 L625 678 Z"/>
+    <path class="navy" d="M630 683 L623 684 L621 704 L633 704 Z"/>
+    <path class="navy" d="M619 714 L614 748 L640 748 L635 714 Z"/>
+    <path class="navy" d="M611 763 L603 822 L651 822 L642 763 Z"/>
+
+    <!-- Car front silhouette -->
+    <path class="navy" d="M458 943 L458 1006 L796 1006 L793 935 L783 923 L752 912 L757 907 L776 905 L778 897 L773 892 L751 890 L742 908 L706 856 L661 850 L608 849 L544 857 L511 908 L505 891 L480 892 L475 898 L478 905 L497 907 L501 912 L469 924 Z"/>
+
+    <!-- White negative-space details on the car -->
+    <path class="white" d="M473 943 L525 957 L544 970 L483 965 L475 957 Z"/>
+    <path class="white" d="M781 943 L778 957 L771 965 L710 970 L728 957 Z"/>
+    <path class="white" d="M512 908 L536 877 L537 879 L526 899 L592 896 L657 896 L727 899 L717 880 L718 878 L741 908 Z"/>
+  </g>
+</svg>

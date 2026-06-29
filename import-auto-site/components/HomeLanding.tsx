@@ -78,18 +78,21 @@ export default function HomeLanding() {
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
       <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#07152f] text-xl font-black text-white shadow-lg">
-              M
-            </div>
-            <div>
-              <div className="text-xl font-black tracking-[-0.04em]">
+          <Link href="/" className="flex items-center gap-3" aria-label="MosaicAuto">
+            <img
+              src="/brand/mosaicauto-logo.svg"
+              alt=""
+              className="h-16 w-16 shrink-0 object-contain"
+            />
+
+            <span className="leading-none">
+              <span className="block text-[22px] font-black tracking-[-0.05em] text-[#020b1f]">
                 Mosaic<span className="text-[#ff2d3d]">Auto</span>
-              </div>
-              <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">
+              </span>
+              <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.34em] text-slate-400">
                 импорт автомобилей
-              </div>
-            </div>
+              </span>
+            </span>
           </Link>
 
           <Link
