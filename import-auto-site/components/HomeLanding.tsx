@@ -118,12 +118,6 @@ export default function HomeLanding() {
                 направления.
               </p>
             </div>
-
-            <div className="rounded-3xl bg-white/10 p-5 text-sm leading-7 text-white/75 ring-1 ring-white/10">
-              Сейчас полностью рабочий раздел — Япония. Китай и Корея заведены
-              отдельными страницами, чтобы дальше подключать их без смешивания
-              данных на главной.
-            </div>
           </div>
         </div>
 
