@@ -5,6 +5,7 @@ const markets = [
   {
     title: "Япония",
     badge: "JP",
+    href: "/catalog",
     image: "/mosaic/market-japan.png",
     color: "from-[#082045]/95 to-[#173d6b]/78",
     status: "",
@@ -14,6 +15,7 @@ const markets = [
   {
     title: "Корея",
     badge: "KR",
+    href: "/korea",
     image: "/mosaic/market-korea.png",
     color: "from-[#14396c]/92 to-[#2b68a5]/72",
     status: "В разработке",
@@ -23,11 +25,12 @@ const markets = [
   {
     title: "Китай",
     badge: "CN",
+    href: "/china",
     image: "/mosaic/market-china.png",
     color: "from-[#008b88]/88 to-[#0f766e]/72",
-    status: "В разработке",
-    items: ["Новые авто", "Электромобили", "Под заказ", "Прямые поставки"],
-    cta: "Скоро в работе",
+    status: "",
+    items: ["Каталог авто из Китая", "Новые авто", "Электромобили", "Прямые поставки"],
+    cta: "Перейти в каталог",
   },
 ];
 
@@ -51,8 +54,9 @@ export default function Markets() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {markets.map((market) => (
-            <article
+            <Link
               key={market.title}
+              href={market.href}
               className="group relative min-h-[440px] overflow-hidden rounded-[2rem] bg-[#07152f] shadow-2xl shadow-slate-300/50"
             >
               <Image
@@ -86,11 +90,11 @@ export default function Markets() {
                   </ul>
                 </div>
 
-                <button className="w-fit rounded-2xl bg-white px-7 py-4 font-black text-[#07152f] shadow-xl transition hover:bg-[#ff2d3d] hover:text-white">
+                <span className="w-fit rounded-2xl bg-white px-7 py-4 font-black text-[#07152f] shadow-xl transition group-hover:bg-[#ff2d3d] group-hover:text-white">
                   {market.cta} →
-                </button>
+                </span>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </div>
