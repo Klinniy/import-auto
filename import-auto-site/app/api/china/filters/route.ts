@@ -97,17 +97,73 @@ export async function GET(req: NextRequest) {
 
       sortOptions: [
         { value: "", label: "По умолчанию" },
-        { value: "dateDesc", label: "Дата ↓" },
-        { value: "dateAsc", label: "Дата ↑" },
-        { value: "lotAsc", label: "Номер лота ↑" },
-        { value: "lotDesc", label: "Номер лота ↓" },
-        { value: "yearDesc", label: "Год ↓" },
-        { value: "yearAsc", label: "Год ↑" },
-        { value: "mileageAsc", label: "Пробег ↑" },
-        { value: "mileageDesc", label: "Пробег ↓" },
-        { value: "priceAsc", label: "Цена ↑" },
-        { value: "priceDesc", label: "Цена ↓" }
+        { value: "date_desc", label: "Дата ↓" },
+        { value: "date_asc", label: "Дата ↑" },
+        { value: "lot_asc", label: "Номер лота ↑" },
+        { value: "lot_desc", label: "Номер лота ↓" },
+        { value: "year_desc", label: "Год ↓" },
+        { value: "year_asc", label: "Год ↑" },
+        { value: "mileage_asc", label: "Пробег ↑" },
+        { value: "mileage_desc", label: "Пробег ↓" },
+        { value: "finish_asc", label: "Цена ↑" },
+        { value: "finish_desc", label: "Цена ↓" }
       ],
+
+      facets: {
+        brands,
+        brand: brands,
+        makes: brands,
+        marka: brands,
+        markas: brands,
+
+        models,
+        model: models,
+
+        bodies,
+        body: bodies,
+        kuzov: bodies,
+        kuzovs: bodies,
+
+        colors,
+        color: colors,
+        colours: colors,
+
+        transmissions,
+        transmission: transmissions,
+        kpp: transmissions,
+        kpps: transmissions,
+
+        drives,
+        drive: drives,
+        priv: drives,
+
+        grades,
+        grade: grades,
+        rates: grades,
+        rating: grades,
+        ratings: grades,
+        scores: grades,
+
+        auctions,
+        auction: auctions,
+
+        statuses,
+        status: statuses,
+      },
+
+      filters: {
+        brands,
+        models,
+        years: [],
+        bodies,
+        colors,
+        transmissions,
+        drives,
+        grades,
+        rates: grades,
+        auctions,
+        statuses,
+      },
 
       debugCounts: {
         brands: brands.length,

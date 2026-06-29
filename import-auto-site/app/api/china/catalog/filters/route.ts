@@ -109,6 +109,62 @@ export async function GET(req: NextRequest) {
         { value: "priceDesc", label: "Цена ↓" }
       ],
 
+      facets: {
+        brands,
+        brand: brands,
+        makes: brands,
+        marka: brands,
+        markas: brands,
+
+        models,
+        model: models,
+
+        bodies,
+        body: bodies,
+        kuzov: bodies,
+        kuzovs: bodies,
+
+        colors,
+        color: colors,
+        colours: colors,
+
+        transmissions,
+        transmission: transmissions,
+        kpp: transmissions,
+        kpps: transmissions,
+
+        drives,
+        drive: drives,
+        priv: drives,
+
+        grades,
+        grade: grades,
+        rates: grades,
+        rating: grades,
+        ratings: grades,
+        scores: grades,
+
+        auctions,
+        auction: auctions,
+
+        statuses,
+        status: statuses,
+      },
+
+      filters: {
+        brands,
+        models,
+        years: [],
+        bodies,
+        colors,
+        transmissions,
+        drives,
+        grades,
+        rates: grades,
+        auctions,
+        statuses,
+      },
+
       debugCounts: {
         brands: brands.length,
         models: models.length,

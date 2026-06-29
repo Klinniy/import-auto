@@ -1,5 +1,36 @@
 "use client";
 
+function isChinaCatalogRuntime() {
+  if (typeof window === "undefined") return false;
+
+  const pathname = window.location.pathname;
+  return pathname === "/china" || pathname.startsWith("/china/");
+}
+
+function getCatalogBasePath() {
+  return isChinaCatalogRuntime() ? "/china" : "/catalog";
+}
+
+function getCatalogApiBase() {
+  return isChinaCatalogRuntime() ? "/api/china/catalog" : "/api/catalog";
+}
+
+function getCatalogFacetsApiBase() {
+  return isChinaCatalogRuntime() ? "/api/china/catalog/facets" : "/api/catalog/facets";
+}
+
+
+function getModelsApiBase() {
+  return isChinaCatalogRuntime() ? "/api/china/models" : "/api/models";
+}
+
+function getFiltersApiBase() {
+  return isChinaCatalogRuntime() ? "/api/china/filters" : "/api/filters";
+}
+
+
+
+
 import { MosaicDualRange, MosaicSingleRange } from "@/components/MosaicRangeFilters";
 
 import Link from "next/link";
@@ -386,7 +417,7 @@ const [auction, setAuction] = useState("");
   useEffect(() => {
     setLoadingFilters(true);
 
-    fetch("/api/filters", { cache: "no-store" })
+    fetch(getFiltersApiBase(), { cache: "no-store" })
       .then((res) => res.json())
       .then((payload) => setFilters(payload))
       .catch(() => setFilters(null))
@@ -406,7 +437,7 @@ const [auction, setAuction] = useState("");
       return;
     }
 
-    fetch(`/api/models?brand=${encodeURIComponent(brand)}`, { cache: "no-store" })
+    fetch(`${getModelsApiBase()}?brand=${encodeURIComponent(brand)}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload) => setModels(getArray<Option>(payload)))
       .catch(() => setModels([]));
@@ -449,7 +480,7 @@ if (auction) params.set("auction", auction);
     const query = params.toString();
     const apiQuery = apiParams.toString();
 
-    window.history.replaceState(null, "", `/catalog?${query}`);
+    window.history.replaceState(null, "", `${getCatalogBasePath()}?${query}`);
 
     if (!canSearch) {
       setCars([]);
@@ -463,7 +494,7 @@ if (auction) params.set("auction", auction);
     setLoading(true);
     setError("");
 
-    fetch(`/api/catalog?${apiQuery}`, { cache: "no-store" })
+    fetch(`${getCatalogApiBase()}?${apiQuery}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload: CatalogPayload) => {
         if (payload?.ok === false) {
@@ -535,7 +566,7 @@ if (auction) params.set("auction", auction);
     if (apiParams.get("brand") === ANY_VALUE) apiParams.delete("brand");
     if (apiParams.get("model") === ANY_VALUE) apiParams.delete("model");
 
-    fetch(`/api/catalog/facets?${apiParams.toString()}`, { cache: "no-store" })
+    fetch(`${getCatalogFacetsApiBase()}?${apiParams.toString()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((payload: FacetsPayload) => setFacets(payload?.ok ? payload : null))
       .catch(() => setFacets(null));
@@ -914,7 +945,7 @@ function AfaTable({
                 className={index % 2 === 0 ? "bg-white" : "bg-[#eeeeee]"}
               >
                 <td className="border-b border-white px-1 py-[4px] align-top">
-                  <Link href={`/catalog/${car.id}`} className="flex gap-[3px]">
+                  <Link href={`${getCatalogBasePath()}/${car.id}`} className="flex gap-[3px]">
                     {(images.length ? images : [firstImage(car)]).map((image) => (
                       <img
                         key={image}
@@ -932,7 +963,7 @@ function AfaTable({
 
                 <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <Link
-                    href={`/catalog/${car.id}`}
+                    href={`${getCatalogBasePath()}/${car.id}`}
                     className="inline-block min-w-[58px] rounded-sm border border-[#cfd6df] bg-white px-3 py-[6px] text-[14px] font-bold text-[#bf4d22]"
                   >
                     {car.lot || "—"}
@@ -988,7 +1019,7 @@ function AfaTable({
                   </div>
 
                   <Link
-                    href={`/catalog/${car.id}`}
+                    href={`${getCatalogBasePath()}/${car.id}`}
                     className="mt-[6px] inline-block rounded-sm border border-[#07152f] bg-white px-3 py-[5px] text-[10.5px] font-bold text-[#07152f]"
                   >
                     открыть

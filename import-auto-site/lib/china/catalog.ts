@@ -7,6 +7,7 @@ export type ChinaCatalogParams = {
   limit?: number;
   brand?: string;
   model?: string;
+  q?: string;
   lot?: string;
   yearFrom?: string;
   yearTo?: string;
@@ -19,11 +20,41 @@ export type ChinaCatalogParams = {
   color?: string;
   transmission?: string;
   drive?: string;
+  auction?: string;
+  status?: string;
   sort?: string;
+};
+
+type ChinaFilterOption = {
+  id: string;
+  name: string;
+  label: string;
+  value: string;
+  count: number;
 };
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
+}
+
+function isAny(value: unknown) {
+  const text = clean(value).toLowerCase();
+
+  return (
+    !text ||
+    text === "__any__" ||
+    text === "_any_" ||
+    text === "any" ||
+    text === "all" ||
+    text === "undefined" ||
+    text === "null" ||
+    text === "любая" ||
+    text === "любая марка" ||
+    text === "любая модель" ||
+    text === "все" ||
+    text === "все марки" ||
+    text === "все модели"
+  );
 }
 
 function toInt(value: unknown, fallback = 0) {
@@ -62,18 +93,12 @@ function imageObject(url: string) {
   const base = stripSize(url);
   if (!base) return null;
 
-  if (base.includes("/imgs/")) {
-    return {
-      original: base,
-      preview: `${base}&h=80`,
-      medium: `${base}&w=320`,
-    };
-  }
+  const separator = base.includes("?") ? "&" : "?";
 
   return {
     original: base,
-    preview: base,
-    medium: base,
+    preview: `${base}${separator}h=80`,
+    medium: `${base}${separator}w=320`,
   };
 }
 
@@ -98,6 +123,10 @@ function parseImages(value: unknown) {
   return result;
 }
 
+function sqlLike(value: string) {
+  return sqlValue(`%${value.replace(/[%_]/g, "")}%`);
+}
+
 function numberFilter(field: string, from?: string, to?: string) {
   const result: string[] = [];
 
@@ -111,23 +140,31 @@ function numberFilter(field: string, from?: string, to?: string) {
 }
 
 function exactFilter(field: string, value?: string) {
-  const text = clean(value);
-  if (!text || text === "__any__") return "";
-  return `${field}=${sqlValue(text)}`;
+  if (isAny(value)) return "";
+  return `${field}=${sqlValue(clean(value))}`;
 }
 
 function buildWhere(params: ChinaCatalogParams) {
   const where: string[] = [];
 
-  const brand = clean(params.brand);
-  const model = clean(params.model);
+  if (!isAny(params.brand)) {
+    where.push(`MARKA_NAME=${sqlValue(clean(params.brand))}`);
+  }
+
+  if (!isAny(params.model)) {
+    where.push(`MODEL_NAME=${sqlValue(clean(params.model))}`);
+  }
+
   const lot = clean(params.lot);
-
-  if (brand && brand !== "__any__") where.push(`MARKA_NAME=${sqlValue(brand)}`);
-  if (model && model !== "__any__") where.push(`MODEL_NAME=${sqlValue(model)}`);
-
   if (lot) {
     where.push(`(LOT=${sqlValue(lot)} or ID=${sqlValue(lot)})`);
+  }
+
+  const q = clean(params.q);
+  if (q) {
+    where.push(
+      `(MARKA_NAME like ${sqlLike(q)} or MODEL_NAME like ${sqlLike(q)} or GRADE like ${sqlLike(q)} or LOT=${sqlValue(q)} or ID=${sqlValue(q)})`
+    );
   }
 
   where.push(...numberFilter("YEAR", params.yearFrom, params.yearTo));
@@ -140,6 +177,8 @@ function buildWhere(params: ChinaCatalogParams) {
     exactFilter("COLOR", params.color),
     exactFilter("KPP", params.transmission),
     exactFilter("PRIV", params.drive),
+    exactFilter("AUCTION", params.auction),
+    exactFilter("STATUS", params.status),
   ]
     .filter(Boolean)
     .forEach((item) => where.push(item));
@@ -148,27 +187,50 @@ function buildWhere(params: ChinaCatalogParams) {
 }
 
 function sortSql(sort?: string) {
-  switch (clean(sort)) {
-    case "priceAsc":
-      return " order by FINISH asc";
-    case "priceDesc":
-      return " order by FINISH desc";
-    case "yearAsc":
-      return " order by YEAR asc";
-    case "yearDesc":
-      return " order by YEAR desc";
-    case "mileageAsc":
-      return " order by MILEAGE asc";
-    case "mileageDesc":
-      return " order by MILEAGE desc";
-    case "engineAsc":
-      return " order by ENG_V asc";
-    case "engineDesc":
-      return " order by ENG_V desc";
-    case "lotAsc":
+  const key = clean(sort).toLowerCase().replace(/[-_\s]/g, "");
+
+  switch (key) {
+    case "lotasc":
       return " order by LOT asc";
-    case "lotDesc":
+    case "lotdesc":
       return " order by LOT desc";
+
+    case "dateasc":
+    case "auctiondateasc":
+      return " order by AUCTION_DATE asc";
+    case "datedesc":
+    case "auctiondatedesc":
+      return " order by AUCTION_DATE desc";
+
+    case "yearasc":
+      return " order by YEAR asc";
+    case "yeardesc":
+      return " order by YEAR desc";
+
+    case "engineasc":
+      return " order by ENG_V asc";
+    case "enginedesc":
+      return " order by ENG_V desc";
+
+    case "mileageasc":
+      return " order by MILEAGE asc";
+    case "mileagedesc":
+      return " order by MILEAGE desc";
+
+    case "finishasc":
+    case "priceasc":
+      return " order by FINISH asc";
+    case "finishdesc":
+    case "pricedesc":
+      return " order by FINISH desc";
+
+    case "averageasc":
+    case "avgasc":
+      return " order by AVG_PRICE asc";
+    case "averagedesc":
+    case "avgdesc":
+      return " order by AVG_PRICE desc";
+
     default:
       return " order by FINISH desc";
   }
@@ -183,14 +245,18 @@ function mapChinaRow(row: Row) {
   const lot = clean(pick(row, ["LOT", "lot"]));
   const id = clean(pick(row, ["ID", "id"])) || lot;
 
-  const startPrice = toInt(pick(row, ["START", "start"]));
-  const finishPrice = toInt(pick(row, ["FINISH", "finish"]));
-  const priceCny = finishPrice || startPrice;
+  const startPrice = toInt(pick(row, ["START", "start", "startPrice"]));
+  const finishPrice = toInt(pick(row, ["FINISH", "finish", "finishPrice", "price"]));
+  const averagePrice = toInt(pick(row, ["AVG_PRICE", "avgPrice", "averagePrice"]));
+  const priceCny = finishPrice || startPrice || averagePrice;
+
+  const previewImage = firstImage?.medium || firstImage?.preview || "";
 
   return {
     id,
     source: "china",
     market: "china",
+    country: "Китай",
 
     lot,
     brand,
@@ -198,12 +264,14 @@ function mapChinaRow(row: Row) {
     marka: brand,
     model,
     modelName: model,
+    title: [brand, model].filter(Boolean).join(" "),
 
     year: toInt(pick(row, ["YEAR", "year"])),
     engineVolume: toInt(pick(row, ["ENG_V", "engineVolume", "volume"])),
     power: clean(pick(row, ["PW", "power"])),
     body: clean(pick(row, ["KUZOV", "body"])),
     grade: decodeHtml(pick(row, ["GRADE", "grade"])),
+    rate: decodeHtml(pick(row, ["RATE", "RAT", "rating", "score"])),
     color: clean(pick(row, ["COLOR", "color"])),
     transmission: clean(pick(row, ["KPP", "transmission"])),
     transmissionType: clean(pick(row, ["KPP_TYPE", "transmissionType"])),
@@ -212,8 +280,15 @@ function mapChinaRow(row: Row) {
 
     startPrice,
     finishPrice,
+    averagePrice,
+    avgPrice: averagePrice,
+    currentPrice: finishPrice,
+    price: priceCny,
+    foreignPrice: priceCny,
     priceCny,
-    avgPrice: toInt(pick(row, ["AVG_PRICE", "avgPrice"])),
+    currency: "CNY",
+    priceCurrency: "CNY",
+
     status: clean(pick(row, ["STATUS", "status"])),
     time: clean(pick(row, ["TIME", "time"])),
 
@@ -222,8 +297,8 @@ function mapChinaRow(row: Row) {
 
     images,
     photos: images,
-    previewImage: firstImage?.medium || firstImage?.preview || "",
-    image: firstImage?.medium || firstImage?.preview || "",
+    previewImage,
+    image: previewImage,
 
     raw: row,
   };
@@ -234,6 +309,86 @@ async function countSql(sql: string) {
   const first = Array.isArray(rows) ? rows[0] : null;
 
   return toInt(first?.TAG0 ?? first?.["COUNT(*)"] ?? first?.count ?? first?.CNT ?? 0);
+}
+
+function normalizeOption(name: string, count: number): ChinaFilterOption | null {
+  const text = clean(name);
+  if (!text || text === "0" || text === "-") return null;
+
+  return {
+    id: text,
+    name: text,
+    label: text,
+    value: text,
+    count,
+  };
+}
+
+
+
+const chinaFacetCache = new Map<string, { expires: number; items: ChinaFilterOption[] }>();
+
+async function getFacet(field: string, params: ChinaCatalogParams = {}, limit = 500) {
+  const safeLimit = clamp(toInt(limit, 500), 1, 1000);
+  const whereSql = buildWhere(params);
+  const cacheKey = JSON.stringify({ field, params, safeLimit });
+  const cached = chinaFacetCache.get(cacheKey);
+
+  if (cached && cached.expires > Date.now()) {
+    return cached.items;
+  }
+
+  const sampleLimit =
+    field === "MARKA_NAME"
+      ? 8000
+      : field === "MODEL_NAME"
+        ? 8000
+        : 3000;
+
+  const queries = [
+    `select * from china${whereSql} order by YEAR desc limit 0,${sampleLimit}`,
+    `select * from china${whereSql} order by FINISH desc limit 0,${sampleLimit}`,
+    `select * from china${whereSql} limit 0,${sampleLimit}`,
+  ];
+
+  const map = new Map<string, number>();
+
+  for (const sql of queries) {
+    try {
+      const rows = await ajesSql<Row[]>(sql);
+
+      if (!Array.isArray(rows)) continue;
+
+      for (const row of rows) {
+        const name = clean(pick(row, [field]));
+        if (!name || name === "0" || name === "-") continue;
+
+        map.set(name, (map.get(name) || 0) + 1);
+      }
+
+      if (map.size >= safeLimit) break;
+    } catch {
+      // Китайский источник иногда не принимает сложные SQL-агрегации.
+      // Для публичных фильтров не падаем, а пробуем следующую простую выборку.
+    }
+  }
+
+  const items = Array.from(map.entries())
+    .map(([name, count]) => normalizeOption(name, count))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const byCount = (b?.count || 0) - (a?.count || 0);
+      if (byCount) return byCount;
+      return String(a?.name || "").localeCompare(String(b?.name || ""));
+    })
+    .slice(0, safeLimit) as ChinaFilterOption[];
+
+  chinaFacetCache.set(cacheKey, {
+    expires: Date.now() + 5 * 60 * 1000,
+    items,
+  });
+
+  return items;
 }
 
 export async function getChinaCatalog(params: ChinaCatalogParams = {}) {
@@ -254,11 +409,14 @@ export async function getChinaCatalog(params: ChinaCatalogParams = {}) {
   return {
     ok: true,
     source: "china",
+    market: "china",
     page,
     limit,
     total,
     pages: Math.max(1, Math.ceil(total / limit)),
     items,
+    data: items,
+    cars: items,
     sql: {
       where: whereSql,
       order: orderSql,
@@ -266,253 +424,47 @@ export async function getChinaCatalog(params: ChinaCatalogParams = {}) {
   };
 }
 
-async function getFacet(field: string, whereSql = "", limit = 12) {
-  try {
-    const rows = await ajesSql<Row[]>(
-      `select ${field}, count(*) CNT from china${whereSql} group by ${field} order by CNT desc limit 0,${clamp(limit, 1, 200)}`
-    );
-
-    return Array.isArray(rows)
-      ? rows
-          .map((row) => ({
-            name: clean(row[field] ?? pick(row, [field])),
-            count: toInt(row.CNT ?? row.TAG0),
-          }))
-          .filter((item) => item.name && item.name !== "0" && item.name !== "-")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-// ===== China catalog filter helpers: generated safe fallback =====
-// Фильтры Китая строятся из тех же нормализованных items, которые уже возвращает getChinaCatalog.
-// Это временно надежнее, чем отдельные пустые DISTINCT-запросы, пока структура china окончательно не закреплена.
-
-type ChinaFilterOption = {
-  id: string;
-  name: string;
-  label: string;
-  value: string;
-  count: number;
-};
-
-function __chinaFilterRead(obj: any, path: string): any {
-  return String(path || "")
-    .split(".")
-    .filter(Boolean)
-    .reduce((acc: any, key: string) => acc == null ? undefined : acc[key], obj);
-}
-
-function __chinaFilterText(value: any): string {
-  return String(value ?? "").trim();
-}
-
-function __chinaFilterKey(value: any): string {
-  return __chinaFilterText(value).toUpperCase();
-}
-
-function __chinaFilterPick(item: any, paths: string[]): string {
-  for (const path of paths) {
-    const value = __chinaFilterText(__chinaFilterRead(item, path));
-    if (value) return value;
-  }
-  return "";
-}
-
-function __chinaFilterArray(payload: any): any[] {
-  if (Array.isArray(payload)) return payload;
-
-  for (const key of ["items", "data", "cars", "lots", "rows", "result", "results"]) {
-    if (Array.isArray(payload?.[key])) return payload[key];
-  }
-
-  return [];
-}
-
-function __chinaFilterOptions(items: any[], paths: string[], limit = 500): ChinaFilterOption[] {
-  const map = new Map<string, { name: string; count: number }>();
-
-  for (const item of items) {
-    const name = __chinaFilterPick(item, paths);
-    if (!name) continue;
-
-    const key = __chinaFilterKey(name);
-    if (!key) continue;
-
-    const current = map.get(key);
-    if (current) {
-      current.count += 1;
-    } else {
-      map.set(key, { name, count: 1 });
-    }
-  }
-
-  return Array.from(map.entries())
-    .map(([key, item]) => ({
-      id: key,
-      name: item.name,
-      label: item.name,
-      value: item.name,
-      count: item.count,
-    }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, Math.max(1, Number(limit) || 500));
-}
-
-function __chinaFilterSameBrand(item: any, brand?: string): boolean {
-  const expected = __chinaFilterKey(brand);
-  if (!expected) return true;
-
-  const actual = __chinaFilterKey(
-    __chinaFilterPick(item, [
-      "brand",
-      "make",
-      "marka",
-      "raw.MARKA_NAME",
-      "MARKA_NAME",
-    ])
-  );
-
-  return actual === expected;
-}
-
-async function __chinaFilterItems(params: any = {}, sampleLimit = 8000): Promise<any[]> {
-  const limit = Math.min(Math.max(Number(sampleLimit) || 8000, 500), 15000);
-
-  const payload = await getChinaCatalog({
-    ...(params || {}),
-    page: 1,
-    limit,
-  } as any);
-
-  return __chinaFilterArray(payload);
-}
-// ===== /China catalog filter helpers =====
-
 export async function getChinaBrands(limit = 500) {
-  const items = await __chinaFilterItems({}, 12000);
-
-  return __chinaFilterOptions(
-    items,
-    [
-      "brand",
-      "make",
-      "marka",
-      "raw.MARKA_NAME",
-      "MARKA_NAME",
-    ],
-    limit
-  );
+  return getFacet("MARKA_NAME", {}, limit);
 }
 
 export async function getChinaModels(brand?: string, limit = 500) {
-  const items = await __chinaFilterItems(
-    {
-      brand: brand || undefined,
-      marka: brand || undefined,
-    },
-    12000
-  );
-
-  const filtered = items.filter((item) => __chinaFilterSameBrand(item, brand));
-
-  return __chinaFilterOptions(
-    filtered,
-    [
-      "model",
-      "modelName",
-      "raw.MODEL_NAME",
-      "MODEL_NAME",
-    ],
-    limit
-  );
+  return getFacet("MODEL_NAME", isAny(brand) ? {} : { brand }, limit);
 }
 
-export async function getChinaFacets(brand?: string) {
-  const items = await __chinaFilterItems(
-    {
-      brand: brand || undefined,
-      marka: brand || undefined,
-    },
-    12000
-  );
+export async function getChinaFacets(brand?: string, model?: string) {
+  const params: ChinaCatalogParams = {};
 
-  const filtered = items.filter((item) => __chinaFilterSameBrand(item, brand));
+  if (!isAny(brand)) params.brand = brand;
+  if (!isAny(model)) params.model = model;
 
-  const bodies = __chinaFilterOptions(
-    filtered,
-    [
-      "body",
-      "raw.KUZOV",
-      "KUZOV",
-    ],
-    500
-  );
-
-  const colors = __chinaFilterOptions(
-    filtered,
-    [
-      "color",
-      "raw.COLOR",
-      "COLOR",
-    ],
-    500
-  );
-
-  const transmissions = __chinaFilterOptions(
-    filtered,
-    [
-      "transmission",
-      "raw.KPP",
-      "KPP",
-    ],
-    100
-  );
-
-  const drives = __chinaFilterOptions(
-    filtered,
-    [
-      "drive",
-      "raw.PRIV",
-      "PRIV",
-    ],
-    100
-  );
-
-  const grades = __chinaFilterOptions(
-    filtered,
-    [
-      "grade",
-      "raw.GRADE",
-      "GRADE",
-      "raw.RATE",
-      "RATE",
-    ],
-    500
-  );
-
-  const auctions = __chinaFilterOptions(
-    filtered,
-    [
-      "auction",
-      "raw.AUCTION",
-      "AUCTION",
-    ],
-    100
-  );
-
-  const statuses = __chinaFilterOptions(
-    filtered,
-    [
-      "status",
-      "raw.STATUS",
-      "STATUS",
-    ],
-    100
-  );
+  const [brands, models, bodies, colors, transmissions, drives, auctions, statuses, grades] =
+    await Promise.all([
+      getFacet("MARKA_NAME", {}, 500),
+      getFacet("MODEL_NAME", params.brand ? { brand: params.brand } : {}, 500),
+      getFacet("KUZOV", params, 200),
+      getFacet("COLOR", params, 200),
+      getFacet("KPP", params, 100),
+      getFacet("PRIV", params, 100),
+      getFacet("AUCTION", params, 100),
+      getFacet("STATUS", params, 100),
+      getFacet("GRADE", params, 100),
+    ]);
 
   return {
+    ok: true,
+    source: "china",
+    market: "china",
+
+    brands,
+    brand: brands,
+    makes: brands,
+    marka: brands,
+    markas: brands,
+
+    models,
+    model: models,
+
     bodies,
     body: bodies,
     kuzov: bodies,
@@ -531,41 +483,47 @@ export async function getChinaFacets(brand?: string) {
     drive: drives,
     priv: drives,
 
+    auctions,
+    auction: auctions,
+
+    statuses,
+    status: statuses,
+
     grades,
     grade: grades,
     rates: grades,
     rating: grades,
     ratings: grades,
     scores: grades,
-
-    auctions,
-    auction: auctions,
-
-    statuses,
-    status: statuses,
   };
 }
 
-export async function getChinaLot(rawId: string) {
-  const id = decodeURIComponent(clean(rawId));
-  if (!id) return null;
+export function formatNum(value: unknown) {
+  const n = toInt(value);
 
-  const rows = await ajesSql<Row[]>(
-    `select * from china where ID=${sqlValue(id)} or LOT=${sqlValue(id)} limit 0,1`
-  );
+  if (!n) return "—";
 
-  const row = Array.isArray(rows) ? rows[0] : null;
-  return row ? mapChinaRow(row) : null;
+  return new Intl.NumberFormat("ru-RU").format(n);
 }
 
 export function formatCny(value: unknown) {
   const n = toInt(value);
+
   if (!n) return "—";
-  return `${new Intl.NumberFormat("ru-RU").format(n)} CNY`;
+
+  return `${new Intl.NumberFormat("ru-RU").format(n)} ¥`;
 }
 
-export function formatNum(value: unknown, suffix = "") {
-  const n = toInt(value);
-  if (!n) return "—";
-  return `${new Intl.NumberFormat("ru-RU").format(n)}${suffix}`;
+export async function getChinaLot(id: string) {
+  const text = clean(id);
+
+  if (!text) return null;
+
+  const rows = await ajesSql<Row[]>(
+    `select * from china where ID=${sqlValue(text)} or LOT=${sqlValue(text)} limit 0,1`
+  );
+
+  const first = Array.isArray(rows) ? rows[0] : null;
+
+  return first ? mapChinaRow(first) : null;
 }

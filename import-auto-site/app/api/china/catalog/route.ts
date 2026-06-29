@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       limit: Number(one(p, "limit") || 24),
       brand: one(p, "brand"),
       model: one(p, "model"),
+      q: one(p, "q") || one(p, "search"),
       lot: one(p, "lot"),
       yearFrom: one(p, "yearFrom"),
       yearTo: one(p, "yearTo"),
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
       color: one(p, "color"),
       transmission: one(p, "transmission"),
       drive: one(p, "drive"),
+      auction: one(p, "auction"),
+      status: one(p, "status"),
       sort: one(p, "sort"),
     });
 
@@ -43,19 +46,26 @@ export async function GET(request: NextRequest) {
     }
 
     const brand = one(p, "brand");
+    const model = one(p, "model");
 
     const [brands, models, facets] = await Promise.all([
       getChinaBrands(),
       getChinaModels(brand),
-      getChinaFacets(brand),
+      getChinaFacets(brand, model),
     ]);
 
     return NextResponse.json({
       ...data,
       facets: {
-        brands,
-        models,
         ...facets,
+        brands,
+        brand: brands,
+        makes: brands,
+        marka: brands,
+        markas: brands,
+
+        models,
+        model: models,
       },
     });
   } catch (error) {
