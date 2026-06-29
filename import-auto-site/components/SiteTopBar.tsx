@@ -266,12 +266,14 @@ export default function SiteTopBar() {
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
-          <RateCard
-            title="ЦБ РФ · 100 JPY"
-            fallbackValue="48,0600 ₽"
-            fallbackChange="актуально"
-            isJpy
-          />
+          {!isChina && (
+            <RateCard
+              title="ЦБ РФ · 100 JPY"
+              fallbackValue="48,0600 ₽"
+              fallbackChange="актуально"
+              isJpy
+            />
+          )}
 
           {!isJapanOnly && (
             <RateCard
