@@ -2,552 +2,583 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import SalesStatsShort from "@/components/SalesStatsShort";
 
-type Option = {
-  value?: string;
-  label?: string;
-  name?: string;
-  count?: number;
+type BrandItem = {
+  name: string;
+  count: number;
 };
 
-type FiltersResponse = {
-  ok?: boolean;
-  filters?: {
-    brands?: Option[];
-    years?: Option[];
-    auctions?: Option[];
-  };
+type CurrencyState = {
+  jpy?: number;
+  date?: string;
 };
 
-type CbrCurrency = {
-  code: "JPY" | "CNY";
-  title: string;
-  nominalLabel: string;
-  value: number;
-  diff: number;
-  diffPercent: number;
-  history: Array<{
-    date: string;
-    value: number;
-    perOne: number;
-  }>;
-};
+const japaneseCards = [
+  {
+    title: "Японские автоаукционы",
+    subtitle: "поиск и каталог авто",
+    note: "актуальные лоты",
+    icon: "jp",
+    href: "/catalog",
+    accent: "from-blue-700 to-slate-950",
+    active: true,
+  },
+  {
+    title: "Статистика продаж",
+    subtitle: "аналитика продаж",
+    note: "1 285 273 проданных авто · данные до 27.06.2026",
+    icon: "📊",
+    href: "/statistics",
+    accent: "from-slate-800 to-slate-950",
+    active: true,
+  
+    description: "аналитика продаж",},
+  {
+    title: "Авто по фикс. цене",
+    subtitle: "скоро появится",
+    note: "статистика по проданным лотам",
+    icon: "🏷️",
+    href: "/japan",
+    accent: "from-amber-700 to-slate-950",
+    active: false,
+  },
+];
 
-type CbrResponse = {
-  ok?: boolean;
-  checkedAt?: string;
-  currencies?: {
-    JPY?: CbrCurrency;
-    CNY?: CbrCurrency;
-  };
-};
+const quickLinks = [
+  {
+    title: "Авто в наличии",
+    subtitle: "перейти",
+    href: "/catalog",
+    icon: "🚗",
+    active: true,
+  },
+  {
+    title: "Японский калькулятор",
+    subtitle: "перейти",
+    href: "/calculator/japan",
+    icon: "🧮",
+    active: true,
+  },
+  {
+    title: "Месяц выпуска",
+    subtitle: "скоро появится",
+    href: "/japan",
+    icon: "🗓️",
+    active: false,
+  },
+  {
+    title: "Каталог автомобилей",
+    subtitle: "перейти",
+    href: "/catalog",
+    icon: "📋",
+    active: true,
+  },
+];
 
-type CatalogResponse = {
-  ok?: boolean;
-  total?: number;
-  items?: unknown[];
-};
+const steps = [
+  {
+    num: "1",
+    title: "Выбор авто",
+    text: "Марка, модель, год, пробег, оценка.",
+  },
+  {
+    num: "2",
+    title: "Проверка лота",
+    text: "Фото, аукционный лист, состояние.",
+  },
+  {
+    num: "3",
+    title: "Расчет",
+    text: "Стоимость покупки, доставки и оформления.",
+  },
+  {
+    num: "4",
+    title: "Сопровождение",
+    text: "От ставки до получения автомобиля.",
+  },
+];
 
-function optionValue(option: Option) {
-  return String(option.value || option.name || option.label || "").trim();
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("ru-RU").format(Math.round(value || 0));
 }
 
-function optionLabel(option: Option) {
-  return String(option.label || option.name || option.value || "").trim();
+function getArray(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.brands)) return value.brands;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
 }
 
-function formatNumber(value?: number | string | null) {
-  if (value === undefined || value === null || value === "") return "—";
+function normalizeBrands(raw: any): BrandItem[] {
+  return getArray(raw)
+    .map((item) => {
+      const name = String(item?.name || item?.brand || item?.title || "").trim();
+      const count = Number(item?.count || item?.total || item?._count || 0);
 
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return String(value);
-
-  return new Intl.NumberFormat("ru-RU").format(n);
-}
-
-function clockLabel() {
-  const now = new Date();
-
-  return new Intl.DateTimeFormat("ru-RU", {
-    timeZone: "Asia/Tokyo",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(now);
-}
-
-function formatRate(value?: number | null) {
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return "—";
-
-  return new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(n);
-}
-
-function MiniRateChart({ currency }: { currency?: CbrCurrency }) {
-  const history = currency?.history || [];
-
-  if (history.length < 2) {
-    return <div className="h-6 w-20 rounded bg-slate-100" />;
-  }
-
-  const values = history.map((item) => item.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const spread = max - min || 1;
-
-  const points = values
-    .map((value, index) => {
-      const x = (index / Math.max(1, values.length - 1)) * 100;
-      const y = 28 - ((value - min) / spread) * 24;
-
-      return `${x},${y}`;
+      return {
+        name,
+        count: Number.isFinite(count) ? count : 0,
+      };
     })
-    .join(" ");
+    .filter((item) => item.name)
+    .sort((a, b) => b.count - a.count);
+}
 
-  const positive = Number(currency?.diff || 0) >= 0;
+function extractJpy(raw: any): CurrencyState {
+  const jpy =
+    Number(raw?.jpy) ||
+    Number(raw?.JPY) ||
+    Number(raw?.rates?.JPY) ||
+    Number(raw?.currency?.jpy) ||
+    Number(raw?.data?.jpy) ||
+    0;
 
+  return {
+    jpy: Number.isFinite(jpy) ? jpy : 0,
+    date: String(raw?.date || raw?.checkedAt || raw?.updatedAt || ""),
+  };
+}
+
+function JapanFlag() {
   return (
-    <svg viewBox="0 0 100 32" className="h-8 w-24 overflow-visible">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={positive ? "#16a34a" : "#ef4444"}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <div className="flex h-14 w-20 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-white/40">
+      <div className="h-7 w-7 rounded-full bg-[#bc002d]" />
+    </div>
   );
 }
 
-function RateChip({ currency }: { currency?: CbrCurrency }) {
-  if (!currency) {
-    return (
-      <div className="hidden items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-400 ring-1 ring-slate-100 lg:flex">
-        курс загружается
-      </div>
-    );
-  }
-
-  const positive = Number(currency.diff || 0) >= 0;
+function CardIcon({ icon }: { icon: string }) {
+  if (icon === "jp") return <JapanFlag />;
 
   return (
-    <div className="hidden items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100 lg:flex">
-      <div>
-        <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-          ЦБ РФ · {currency.nominalLabel}
-        </div>
-        <div className="text-sm font-black text-[#07152f]">
-          {formatRate(currency.value)} ₽
-          <span className={positive ? "ml-2 text-green-600" : "ml-2 text-red-500"}>
-            {positive ? "▲" : "▼"} {formatRate(Math.abs(currency.diff))}
-          </span>
-        </div>
-      </div>
-
-      <MiniRateChart currency={currency} />
+    <div className="flex h-14 w-20 items-center justify-center rounded-2xl bg-white/95 text-3xl shadow-sm ring-1 ring-white/40">
+      {icon}
     </div>
   );
 }
 
 
-function CountryFlag({ type }: { type: "jp" | "kr" | "cn" | "fix" | "stats" }) {
-  if (type === "jp") {
+type RateHistoryPoint = {
+  date: string;
+  label: string;
+  value: number;
+  nominal?: number;
+};
+
+function formatDelta(value: number) {
+  const abs = Math.abs(value).toFixed(4).replace(".", ",");
+
+  if (value > 0) return `▲ ${abs}`;
+  if (value < 0) return `▼ ${abs}`;
+
+  return "0,0000";
+}
+
+function MiniRateChart() {
+  const [points, setPoints] = useState<RateHistoryPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadHistory() {
+      try {
+        const response = await fetch("/api/currency/jpy-history", {
+          cache: "no-store",
+        });
+
+        const json = await response.json();
+
+        if (!mounted) return;
+
+        const nextPoints = Array.isArray(json?.points)
+          ? json.points
+              .map((point: any) => ({
+                date: String(point?.date || ""),
+                label: String(point?.label || point?.date || ""),
+                value: Number(point?.value || 0),
+                nominal: Number(point?.nominal || 100),
+              }))
+              .filter((point: RateHistoryPoint) => Number.isFinite(point.value) && point.value > 0)
+          : [];
+
+        setPoints(nextPoints);
+      } catch {
+        if (!mounted) return;
+        setPoints([]);
+      } finally {
+        if (!mounted) return;
+        setLoading(false);
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const safePoints = points.slice(-14);
+  const latest = safePoints.at(-1);
+  const previous = safePoints.at(-2);
+
+  const delta =
+    latest && previous
+      ? Number((latest.value - previous.value).toFixed(4))
+      : 0;
+
+  const values = safePoints.map((point) => point.value);
+  const min = values.length ? Math.min(...values) : 0;
+  const max = values.length ? Math.max(...values) : 0;
+  const range = max - min || 1;
+
+  const polyline = safePoints
+    .map((point, index) => {
+      const x = safePoints.length <= 1 ? 60 : (index / (safePoints.length - 1)) * 116 + 2;
+      const y = 31 - ((point.value - min) / range) * 28;
+
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const isUp = delta >= 0;
+  const stroke = isUp ? "#16a34a" : "#dc2626";
+  const textClass = isUp ? "text-emerald-600" : "text-red-600";
+
+  if (loading) {
     return (
-      <div className="relative flex h-16 w-24 items-center justify-center rounded-2xl bg-white shadow-lg ring-1 ring-white/30">
-        <div className="h-8 w-8 rounded-full bg-[#bc002d]" />
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-black text-slate-400">график</span>
+        <div className="h-9 w-24 animate-pulse rounded-xl bg-slate-200" />
       </div>
     );
   }
 
-  if (type === "kr") {
+  if (!safePoints.length) {
     return (
-      <div className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-white/30">
-        <div className="absolute left-3 top-3 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
-        <div className="absolute left-3 top-6 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
-        <div className="absolute right-3 bottom-3 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
-        <div className="absolute right-3 bottom-6 h-1.5 w-5 rotate-[-28deg] rounded bg-black" />
-        <div className="relative h-9 w-9 overflow-hidden rounded-full">
-          <div className="absolute inset-x-0 top-0 h-1/2 bg-[#cd2e3a]" />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[#0047a0]" />
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "cn") {
-    return (
-      <div className="relative h-16 w-24 overflow-hidden rounded-2xl bg-[#de2910] shadow-lg ring-1 ring-white/30">
-        <div className="absolute left-4 top-3 text-xl leading-none text-[#ffde00]">★</div>
-        <div className="absolute left-10 top-3 text-[10px] leading-none text-[#ffde00]">★</div>
-        <div className="absolute left-12 top-6 text-[10px] leading-none text-[#ffde00]">★</div>
-        <div className="absolute left-10 top-9 text-[10px] leading-none text-[#ffde00]">★</div>
-      </div>
-    );
-  }
-
-  if (type === "fix") {
-    return (
-      <div className="flex h-16 w-24 items-center justify-center rounded-2xl bg-white/92 text-3xl shadow-lg ring-1 ring-white/30">
-        🏷️
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-black text-emerald-600">актуально</span>
+        <svg viewBox="0 0 120 34" className="h-9 w-24 overflow-visible" aria-hidden="true">
+          <polyline
+            points="2,20 118,20"
+            fill="none"
+            stroke="#16a34a"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+        </svg>
       </div>
     );
   }
 
   return (
-    <div className="flex h-16 w-24 items-center justify-center rounded-2xl bg-white/92 text-3xl shadow-lg ring-1 ring-white/30">
-      📊
+    <div
+      className="flex items-center gap-2"
+      title={`Реальная динамика ЦБ РФ: ${safePoints[0]?.date || ""} — ${latest?.date || ""}`}
+    >
+      <span className={`text-sm font-black ${textClass}`}>
+        {formatDelta(delta)}
+      </span>
+
+      <svg viewBox="0 0 120 34" className="h-9 w-24 overflow-visible" aria-hidden="true">
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {latest ? (
+          <circle
+            cx="118"
+            cy={String(31 - ((latest.value - min) / range) * 28)}
+            r="3.5"
+            fill={stroke}
+          />
+        ) : null}
+      </svg>
     </div>
   );
 }
 
 export default function AfaHome() {
-  const [filters, setFilters] = useState<FiltersResponse | null>(null);
-  const [total, setTotal] = useState(0);
+  const [brands, setBrands] = useState<BrandItem[]>([]);
+  const [currency, setCurrency] = useState<CurrencyState>({});
   const [tokyoTime, setTokyoTime] = useState("");
-  const [rates, setRates] = useState<CbrResponse | null>(null);
-
-  const brands = useMemo(() => {
-    return (filters?.filters?.brands || [])
-      .filter((item) => optionLabel(item))
-      .sort((a, b) => optionLabel(a).localeCompare(optionLabel(b), "en"));
-  }, [filters]);
-
-  const mainBrands = useMemo(() => {
-    const names = [
-      "TOYOTA",
-      "NISSAN",
-      "HONDA",
-      "MAZDA",
-      "MITSUBISHI",
-      "SUBARU",
-      "SUZUKI",
-      "DAIHATSU",
-      "LEXUS",
-      "MERCEDES BENZ",
-      "BMW",
-      "AUDI",
-    ];
-
-    const byName = new Map(
-      brands.map((item) => [optionLabel(item).toUpperCase(), item])
-    );
-
-    return names
-      .map((name) => byName.get(name))
-      .filter(Boolean) as Option[];
-  }, [brands]);
-
-  const otherBrands = useMemo(() => {
-    const mainSet = new Set(mainBrands.map((item) => optionLabel(item).toUpperCase()));
-
-    return brands.filter((item) => !mainSet.has(optionLabel(item).toUpperCase()));
-  }, [brands, mainBrands]);
 
   useEffect(() => {
-    setTokyoTime(clockLabel());
+    let mounted = true;
 
-    const timer = setInterval(() => {
-      setTokyoTime(clockLabel());
-    }, 30_000);
+    async function load() {
+      try {
+        const [brandsResponse, currencyResponse] = await Promise.all([
+          fetch("/api/brands", { cache: "no-store" }),
+          fetch("/api/currency", { cache: "no-store" }),
+        ]);
 
-    fetch("/api/filters", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((payload) => setFilters(payload))
-      .catch(() => setFilters(null));
+        const [brandsJson, currencyJson] = await Promise.all([
+          brandsResponse.json().catch(() => null),
+          currencyResponse.json().catch(() => null),
+        ]);
 
-    fetch("/api/catalog?page=1&limit=1", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((payload: CatalogResponse) => setTotal(Number(payload.total || 0)))
-      .catch(() => setTotal(0));
+        if (!mounted) return;
 
-    fetch("/api/cbr", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((payload: CbrResponse) => setRates(payload))
-      .catch(() => setRates(null));
+        setBrands(normalizeBrands(brandsJson));
+        setCurrency(extractJpy(currencyJson));
+      } catch {
+        if (!mounted) return;
+        setBrands([]);
+        setCurrency({});
+      }
+    }
 
-    return () => clearInterval(timer);
+    load();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const sections = [
-    {
-      title: "Японские автоаукционы",
-      subtitle: "поиск и каталог авто",
-      count: total,
-      href: "/catalog",
-      active: true,
-      accent: "from-blue-600 to-slate-900",
-      flag: "jp",
-    },
-    {
-      title: "Статистика продаж",
-      subtitle: "скоро подключим",
-      count: 0,
-      href: "#soon",
-      active: false,
-      accent: "from-slate-700 to-slate-950",
-      flag: "stats",
-    },
-    {
-      title: "Авто по фикс. цене",
-      subtitle: "скоро появится",
-      count: 0,
-      href: "#soon",
-      active: false,
-      accent: "from-amber-500 to-slate-950",
-      flag: "fix",
-    },
-    {
-      title: "Автомобили из Кореи",
-      subtitle: "скоро появится",
-      count: 0,
-      href: "#soon",
-      active: false,
-      accent: "from-red-600 to-slate-950",
-      flag: "kr",
-    },
-    {
-      title: "Автомобили из Китая",
-      subtitle: "скоро появится",
-      count: 0,
-      href: "#soon",
-      active: false,
-      accent: "from-yellow-500 to-slate-950",
-      flag: "cn",
-    },
-  ];
+  useEffect(() => {
+    function updateTokyoTime() {
+      const value = new Intl.DateTimeFormat("ru-RU", {
+        timeZone: "Asia/Tokyo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date());
 
-  const tools = [
-    ["Авто в наличии", "/catalog", "🚗"],
-    ["Автокалькулятор", "#soon", "🧮"],
-    ["Корейский калькулятор", "#soon", "🧮"],
-    ["Китайский калькулятор", "#soon", "🧮"],
-    ["Месяц выпуска", "#soon", "📅"],
-    ["Каталог автомобилей", "/catalog", "📋"],
-  ];
+      setTokyoTime(value.replace(",", ""));
+    }
+
+    updateTokyoTime();
+    const timer = window.setInterval(updateTokyoTime, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const total = useMemo(() => {
+    return brands.reduce((sum, item) => sum + (item.count || 0), 0);
+  }, [brands]);
+
+  const topBrands = brands.slice(0, 12);
+  const otherBrands = brands.slice(12, 52);
 
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
+      <header className="sticky top-0 z-20 border-t-4 border-[#ff2d3d] bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-black uppercase text-slate-600 transition hover:bg-[#07152f] hover:text-white"
+              className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-black uppercase tracking-wide text-[#07152f] transition hover:bg-[#07152f] hover:text-white"
             >
               Начало
             </Link>
 
-            <div className="hidden items-center gap-2 text-sm font-black text-slate-500 md:flex">
-              <span>TOKYO</span>
-              <span className="text-[#07152f]">{tokyoTime || "—"}</span>
+            <div className="hidden text-sm font-black uppercase tracking-wide text-[#07152f] md:block">
+              Tokyo&nbsp; {tokyoTime || "—"}
             </div>
 
-            <div className="text-sm font-black text-blue-700">
-              {formatNumber(total)} авто из Японии
+            <div className="hidden text-sm font-black text-blue-700 md:block">
+              {total ? `${formatNumber(total)} авто из Японии` : "Авто из Японии"}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <RateChip currency={rates?.currencies?.JPY} />
-            <RateChip currency={rates?.currencies?.CNY} />
+          <div className="flex items-center gap-3">
+            <div className="hidden min-w-[290px] rounded-2xl bg-slate-50 px-4 py-2 shadow-sm ring-1 ring-slate-200 lg:block">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                ЦБ РФ · 100 JPY
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-4">
+                <span className="whitespace-nowrap text-lg font-black">
+                  {currency.jpy ? `${currency.jpy.toFixed(4)} ₽` : "—"}
+                </span>
+                <MiniRateChart />
+              </div>
+            </div>
 
             <Link
               href="/catalog"
-              className="rounded-xl bg-[#07152f] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
+              className="rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
             >
-              Вход / Каталог
+              Каталог
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1500px] px-4 py-5 lg:px-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {sections.map((section) => {
-            const card = (
-              <div
-                className={`group relative h-full overflow-hidden rounded-[1.4rem] bg-gradient-to-br ${section.accent} p-4 text-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-2xl`}
+      <section className="mx-auto max-w-[1500px] px-4 py-6 lg:px-6">
+        <div className="grid gap-4 lg:grid-cols-3">
+          {japaneseCards.map((card) => {
+            const content = (
+              <article
+                className={`group min-h-[220px] rounded-[1.4rem] bg-gradient-to-br ${card.accent} p-5 text-white shadow-xl shadow-slate-300/60 transition ${
+                  card.active ? "hover:-translate-y-1 hover:shadow-2xl" : ""
+                }`}
               >
-                {!section.active && (
-                  <div className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-black text-[#07152f]">
-                    скоро
-                  </div>
-                )}
+                <div className="flex items-start justify-between gap-3">
+                  <CardIcon icon={card.icon} />
 
-                <div className="flex h-24 items-center justify-between">
-                  <CountryFlag type={section.flag as "jp" | "kr" | "cn" | "fix" | "stats"} />
+                  {!card.active ? (
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase text-[#07152f]">
+                      скоро
+                    </span>
+                  ) : null}
                 </div>
 
-                <h2 className="mt-4 min-h-[56px] text-xl font-black uppercase leading-tight tracking-[-0.04em]">
-                  {section.title}
+                <h2 className="mt-7 text-2xl font-black uppercase leading-none tracking-[-0.04em]">
+                  {card.title}
                 </h2>
 
-                <div className="mt-2 text-sm font-bold text-white/72">
-                  {section.subtitle}
-                </div>
+                <p className="mt-4 text-sm font-bold leading-6 text-white/75">
+                  {card.subtitle}
+                </p>
 
-                <div className="mt-1 text-sm font-black text-white">
-                  {section.active
-                    ? `${formatNumber(section.count)} автомобилей`
-                    : "раздел в разработке"}
-                </div>
-              </div>
+                <p className="mt-1 text-sm font-black text-white">{card.title === "Статистика продаж" ? <SalesStatsShort fallback={card.note} /> : card.note}</p>
+              </article>
             );
 
-            return section.active ? (
-              <Link key={section.title} href={section.href}>
-                {card}
+            if (!card.active) {
+              return <div key={card.title}>{content}</div>;
+            }
+
+            return (
+              <Link key={card.title} href={card.href}>
+                {content}
               </Link>
-            ) : (
-              <div key={section.title} id="soon">
-                {card}
-              </div>
             );
           })}
         </div>
-      </section>
 
-      <section className="mx-auto grid max-w-[1500px] gap-5 px-4 pb-5 lg:grid-cols-[1fr_560px] lg:px-6">
-        <div className="rounded-[1.4rem] bg-white p-5 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
-          <div className="mb-4 flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff2d3d]">
-                японские автоаукционы
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+          <section className="rounded-[1.4rem] bg-white p-5 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
+            <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-[#ff2d3d]">
+                  японские автоаукционы
+                </div>
+                <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">
+                  Поиск по марке
+                </h1>
               </div>
-              <h1 className="mt-1 text-2xl font-black tracking-[-0.04em]">
-                Поиск по марке
-              </h1>
+
+              <Link
+                href="/catalog"
+                className="rounded-2xl bg-[#ff2d3d] px-6 py-4 text-center text-sm font-black text-white shadow-lg shadow-red-100 transition hover:bg-[#07152f]"
+              >
+                Открыть каталог →
+              </Link>
             </div>
 
-            <Link
-              href="/catalog"
-              className="rounded-xl bg-[#ff2d3d] px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-100 transition hover:bg-[#e51d2d]"
-            >
-              Открыть каталог →
-            </Link>
-          </div>
+            {topBrands.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {topBrands.map((brand) => (
+                  <Link
+                    key={brand.name}
+                    href={`/catalog?brand=${encodeURIComponent(brand.name)}`}
+                    className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black transition hover:bg-[#07152f] hover:text-white"
+                  >
+                    <span>› {brand.name}</span>
+                    <span className="text-slate-400">{formatNumber(brand.count)}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl bg-slate-50 p-5 text-sm font-bold text-slate-500">
+                Марки загружаются из каталога.
+              </div>
+            )}
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {mainBrands.map((brand) => {
-              const value = optionValue(brand);
+            {otherBrands.length ? (
+              <div className="mt-5 grid gap-x-8 gap-y-0 md:grid-cols-2 xl:grid-cols-4">
+                {otherBrands.map((brand) => (
+                  <Link
+                    key={brand.name}
+                    href={`/catalog?brand=${encodeURIComponent(brand.name)}`}
+                    className="flex items-center justify-between border-b border-slate-100 py-3 text-sm font-bold transition hover:text-[#ff2d3d]"
+                  >
+                    <span>› {brand.name}</span>
+                    <span className="text-slate-400">{formatNumber(brand.count)}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
-              return (
-                <Link
-                  key={value}
-                  href={`/catalog?brand=${encodeURIComponent(value)}`}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-black ring-1 ring-slate-100 transition hover:bg-[#07152f] hover:text-white"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="h-0 w-0 border-y-[5px] border-l-[7px] border-y-transparent border-l-slate-300" />
-                    {optionLabel(brand)}
-                  </span>
-                  <span className="text-xs text-slate-400">{formatNumber(brand.count)}</span>
-                </Link>
-              );
-            })}
-          </div>
+          <aside className="rounded-[1.4rem] bg-white p-5 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
+            <div className="text-sm font-black uppercase tracking-[0.3em] text-[#ff2d3d]">
+              быстрые разделы
+            </div>
 
-          <div className="mt-5 grid gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-4">
-            {otherBrands.slice(0, 56).map((brand) => {
-              const value = optionValue(brand);
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {quickLinks.map((item) => {
+                const content = (
+                  <div className="flex min-h-[92px] items-center gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 transition hover:bg-white hover:shadow-md">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm ring-1 ring-slate-200">
+                      {item.icon}
+                    </div>
 
-              return (
-                <Link
-                  key={value}
-                  href={`/catalog?brand=${encodeURIComponent(value)}`}
-                  className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 text-sm font-bold transition hover:text-[#ff2d3d]"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="h-0 w-0 border-y-[4px] border-l-[6px] border-y-transparent border-l-slate-300" />
-                    {optionLabel(brand)}
-                  </span>
-                  <span className="text-xs text-slate-400">{formatNumber(brand.count)}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <aside className="rounded-[1.4rem] bg-white p-5 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200">
-          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff2d3d]">
-            быстрые разделы
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {tools.map(([title, href, icon]) => {
-              const soon = href === "#soon";
-
-              const content = (
-                <div className="flex min-h-[86px] items-center gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 transition hover:bg-[#07152f] hover:text-white">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">
-                    {icon}
-                  </div>
-
-                  <div>
-                    <div className="font-black leading-tight">{title}</div>
-                    <div className="mt-1 text-xs font-bold text-slate-400">
-                      {soon ? "скоро появится" : "перейти"}
+                    <div>
+                      <div className="text-lg font-black leading-5">{item.title}</div>
+                      <div className="mt-1 text-sm font-black text-slate-400">
+                        {item.subtitle}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
+                );
 
-              return soon ? (
-                <div key={title}>{content}</div>
-              ) : (
-                <Link key={title} href={href}>
-                  {content}
-                </Link>
-              );
-            })}
-          </div>
+                if (!item.active) return <div key={item.title}>{content}</div>;
 
-          <div className="mt-5 rounded-2xl bg-[#07152f] p-5 text-white">
-            <h2 className="text-xl font-black tracking-[-0.04em]">
-              MosaicAuto
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-white/65">
-              Простая витрина автомобилей из Японии. Корея, Китай и FIX-разделы
-              будут добавлены позже, сейчас рабочий основной раздел — японские
-              аукционы и каталог.
-            </p>
+                return (
+                  <Link key={item.title} href={item.href}>
+                    {content}
+                  </Link>
+                );
+              })}
+            </div>
 
-            <Link
-              href="/catalog"
-              className="mt-4 flex w-full justify-center rounded-2xl bg-[#ff2d3d] px-5 py-3 text-sm font-black text-white transition hover:bg-[#e51d2d]"
-            >
-              Перейти к поиску авто
-            </Link>
-          </div>
-        </aside>
-      </section>
+            <div className="mt-5 rounded-[1.4rem] bg-[#07152f] p-5 text-white">
+              <h2 className="text-2xl font-black tracking-[-0.04em]">
+                MosaicAuto
+              </h2>
 
-      <section className="mx-auto max-w-[1500px] px-4 pb-10 lg:px-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[
-            ["1", "Выбор авто", "Марка, модель, год, пробег, оценка."],
-            ["2", "Проверка лота", "Фото, аукционный лист, состояние."],
-            ["3", "Расчет", "Стоимость покупки, доставки и оформления."],
-            ["4", "Сопровождение", "От ставки до получения автомобиля."],
-          ].map(([num, title, text]) => (
-            <div
-              key={num}
+              <p className="mt-3 text-base leading-7 text-white/72">
+                Простая витрина автомобилей из Японии: японские аукционы,
+                каталог, быстрый поиск по марке и расчёт стоимости.
+              </p>
+
+              <Link
+                href="/catalog"
+                className="mt-5 flex rounded-2xl bg-[#ff2d3d] px-6 py-4 text-center text-sm font-black text-white transition hover:bg-white hover:text-[#07152f]"
+              >
+                Перейти к поиску авто
+              </Link>
+            </div>
+          </aside>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step) => (
+            <article
+              key={step.num}
               className="rounded-[1.4rem] bg-white p-5 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff2d3d] font-black text-white">
-                {num}
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff2d3d] text-lg font-black text-white">
+                {step.num}
               </div>
-              <h3 className="mt-4 font-black">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
-            </div>
+
+              <h3 className="mt-4 text-xl font-black">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{step.text}</p>
+            </article>
           ))}
         </div>
       </section>

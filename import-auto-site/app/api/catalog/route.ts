@@ -3,13 +3,30 @@ import { ajesSql, sqlValue, toInt } from "@/lib/ajes/client";
 import { getCountValue } from "@/lib/catalog/sql";
 import { mapCar } from "@/lib/catalog/mapper";
 
+function normalizeAnyParam(value: unknown): string {
+  const text = String(value ?? "").trim();
+
+  if (!text) return "";
+  if (text === "__any__") return "";
+  if (text === "_any_") return "";
+  if (text.toLowerCase() === "any") return "";
+  if (text.toLowerCase() === "all") return "";
+  if (text.toLowerCase() === "undefined") return "";
+  if (text.toLowerCase() === "null") return "";
+  if (text === "Любая") return "";
+  if (text === "Любая марка") return "";
+  if (text === "Любая модель") return "";
+
+  return text;
+}
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 let cachedFields: Set<string> | null = null;
 
-function clean(value: string | null) {
-  return String(value || "").trim();
+function clean(value: unknown): string {
+  return normalizeAnyParam(value);
 }
 
 function cleanInt(value: string | null, fallback = 0) {
@@ -122,8 +139,8 @@ async function buildWhere(params: URLSearchParams) {
     leftHandDrive: pickField(fields, ["LHDRIVE", "lhd", "left_hand_drive"]),
   };
 
-  const brand = clean(params.get("brand") || params.get("marka"));
-  const model = clean(params.get("model"));
+  const brand = clean(normalizeAnyParam(params.get("brand")) || normalizeAnyParam(params.get("marka")));
+  const model = clean(normalizeAnyParam(params.get("model")));
   const q = clean(params.get("q"));
 
   const yearFrom = cleanInt(params.get("yearFrom"));
@@ -226,24 +243,74 @@ async function buildWhere(params: URLSearchParams) {
 async function orderSql(sort: string | null) {
   const fields = await getFields();
 
+  const id = pickField(fields, ["id"]);
+  const lot = pickField(fields, ["lot"]);
   const year = pickField(fields, ["year"]);
   const mileage = pickField(fields, ["mileage", "probeg"]);
   const finish = pickField(fields, ["finish", "finish_price"]);
   const start = pickField(fields, ["start", "start_price"]);
+  const average = pickField(fields, ["avg_price", "average_price", "avg", "average"]);
   const auctionDate = pickField(fields, ["auction_date", "auctionDate", "date"]);
+  const engine = pickField(fields, ["eng_v", "engine", "engine_volume", "volume", "engine_cc"]);
+  const rate = pickField(fields, ["rate", "grade", "ocenka"]);
 
-  if (sort === "year_desc" && year) return `${year} desc`;
-  if (sort === "year_asc" && year) return `${year} asc`;
-  if (sort === "mileage_asc" && mileage) return `${mileage} asc`;
-  if (sort === "mileage_desc" && mileage) return `${mileage} desc`;
-  if (sort === "price_asc" && finish) return `${finish} asc`;
-  if (sort === "price_desc" && finish) return `${finish} desc`;
-  if (sort === "start_asc" && start) return `${start} asc`;
-  if (sort === "start_desc" && start) return `${start} desc`;
+  const map: Record<string, string> = {};
 
-  return auctionDate ? `${auctionDate} asc` : "id desc";
+  function add(key: string, field: string, direction: "asc" | "desc") {
+    if (!field) return;
+    map[key] = `${field} ${direction}`;
+  }
+
+  // Дата аукциона
+  add("date_asc", auctionDate, "asc");
+  add("date_desc", auctionDate, "desc");
+  add("auction_date_asc", auctionDate, "asc");
+  add("auction_date_desc", auctionDate, "desc");
+
+  // Номер лота
+  add("lot_asc", lot, "asc");
+  add("lot_desc", lot, "desc");
+
+  // Год
+  add("year_asc", year, "asc");
+  add("year_desc", year, "desc");
+
+  // Объем двигателя
+  add("engine_asc", engine, "asc");
+  add("engine_desc", engine, "desc");
+  add("volume_asc", engine, "asc");
+  add("volume_desc", engine, "desc");
+
+  // Пробег
+  add("mileage_asc", mileage, "asc");
+  add("mileage_desc", mileage, "desc");
+
+  // Оценка
+  add("rate_asc", rate, "asc");
+  add("rate_desc", rate, "desc");
+
+  // Начальная цена
+  add("start_asc", start, "asc");
+  add("start_desc", start, "desc");
+
+  // Продано за
+  add("finish_asc", finish, "asc");
+  add("finish_desc", finish, "desc");
+  add("price_asc", finish, "asc");
+  add("price_desc", finish, "desc");
+
+  // Средняя цена
+  add("average_asc", average, "asc");
+  add("average_desc", average, "desc");
+  add("avg_asc", average, "asc");
+  add("avg_desc", average, "desc");
+
+  if (sort && map[sort]) {
+    return map[sort];
+  }
+
+  return auctionDate ? `${auctionDate} asc` : id ? `${id} desc` : "id desc";
 }
-
 export async function GET(req: NextRequest) {
   try {
     const p = req.nextUrl.searchParams;

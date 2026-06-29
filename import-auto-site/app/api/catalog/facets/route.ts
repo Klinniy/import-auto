@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ajesSql, sqlValue, normalizeImages } from "@/lib/ajes/client";
 
+function normalizeAnyParam(value: unknown): string {
+  const text = String(value ?? "").trim();
+
+  if (!text) return "";
+  if (text === "__any__") return "";
+  if (text === "_any_") return "";
+  if (text.toLowerCase() === "any") return "";
+  if (text.toLowerCase() === "all") return "";
+  if (text.toLowerCase() === "undefined") return "";
+  if (text.toLowerCase() === "null") return "";
+  if (text === "Любая") return "";
+  if (text === "Любая марка") return "";
+  if (text === "Любая модель") return "";
+
+  return text;
+}
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 let cachedFields: Set<string> | null = null;
 
-function clean(value: string | null) {
-  return String(value || "").trim();
+function clean(value: unknown): string {
+  return normalizeAnyParam(value);
 }
 
 function cleanInt(value: string | null) {
@@ -76,8 +93,8 @@ async function buildWhere(params: URLSearchParams) {
     leftHandDrive: pickField(fields, ["LHDRIVE", "lhd", "left_hand_drive"]),
   };
 
-  const brand = clean(params.get("brand"));
-  const model = clean(params.get("model"));
+  const brand = clean(normalizeAnyParam(params.get("brand")));
+  const model = clean(normalizeAnyParam(params.get("model")));
   const q = clean(params.get("q"));
 
   const yearFrom = cleanInt(params.get("yearFrom"));

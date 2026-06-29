@@ -1,5 +1,7 @@
-import AfaHome from "@/components/AfaHome";
+import HomeLanding from "@/components/HomeLanding";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function Home() {
-  return <AfaHome />;
+  return <HomeLanding />;
 }
