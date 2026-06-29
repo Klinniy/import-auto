@@ -8,34 +8,34 @@ const countries = [
     badge: "JP",
     status: "",
     description:
-      "Японские аукционы, каталог автомобилей, расчёт стоимости и быстрый переход к лотам.",
+      "Японские аукционы, актуальные лоты, фото, характеристики и расчёт стоимости автомобиля до покупки.",
     accent: "from-blue-600 to-slate-950",
     flag: "jp",
-    points: ["Аукционы", "Каталог", "Калькулятор", "AUC"],
+    points: ["Аукционы", "Лоты", "Расчёт", "Подбор"],
   },
   {
     title: "Китай",
     code: "CHINA",
     href: "/china",
     badge: "CN",
-    status: "скоро появится",
+    status: "",
     description:
-      "Отдельное направление под китайские автомобили, CNY, логистику и китайский калькулятор.",
+      "Автомобили из Китая: новые авто, электромобили, цены в юанях, фото и карточки лотов.",
     accent: "from-red-600 to-slate-950",
     flag: "cn",
-    points: ["Новые авто", "Электро", "CNY", "Калькулятор"],
+    points: ["Каталог", "Электро", "Юани", "Расчёт"],
   },
   {
     title: "Корея",
     code: "KOREA",
     href: "/korea",
     badge: "KR",
-    status: "скоро появится",
+    status: "в подготовке",
     description:
-      "Будущий раздел под корейские автомобили, KRW, время Сеула и отдельную структуру расчёта.",
+      "Раздел под автомобили из Кореи готовится. Скоро добавим каталог, расчёт и условия доставки.",
     accent: "from-purple-700 to-slate-950",
     flag: "kr",
-    points: ["Авто из Кореи", "KRW", "Seoul", "В разработке"],
+    points: ["Скоро", "Каталог", "Расчёт", "Доставка"],
   },
 ];
 
@@ -96,7 +96,7 @@ export default function HomeLanding() {
             href="/japan"
             className="rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
           >
-            Перейти в рабочий раздел
+            Смотреть каталог
           </Link>
         </div>
       </header>
@@ -110,10 +110,10 @@ export default function HomeLanding() {
           <div className="mt-5 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div>
               <h1 className="text-4xl font-black leading-[0.95] tracking-[-0.06em] md:text-6xl">
-                Выберите страну покупки автомобиля
+                Выберите, откуда привезти автомобиль
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-white/70">
-                Главная страница больше не привязана к Японии. Время, курсы,
+                Выберите направление, посмотрите актуальные автомобили,
                 каталог и калькуляторы будут показываться внутри выбранного
                 направления.
               </p>
@@ -166,7 +166,7 @@ export default function HomeLanding() {
                 </div>
 
                 <div className="mt-8 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07152f] transition group-hover:bg-[#ff2d3d] group-hover:text-white">
-                  Открыть направление →
+                  Смотреть автомобили →
                 </div>
               </article>
             </Link>
