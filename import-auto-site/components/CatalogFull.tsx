@@ -1,5 +1,7 @@
 "use client";
 
+import { MosaicDualRange, MosaicSingleRange } from "@/components/MosaicRangeFilters";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
@@ -267,7 +269,11 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [mileageTo, setMileageTo] = useState("");
-  const [auction, setAuction] = useState("");
+  
+  const [mileageFrom, setMileageFrom] = useState<string>("");
+  const [engineFrom, setEngineFrom] = useState<string>("");
+  const [engineTo, setEngineTo] = useState<string>("");
+const [auction, setAuction] = useState("");
   const [rateFrom, setRateFrom] = useState("");
   const [transmission, setTransmission] = useState("");
   const [drive, setDrive] = useState("");
@@ -417,7 +423,11 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
     if (yearFrom) params.set("yearFrom", yearFrom);
     if (yearTo) params.set("yearTo", yearTo);
     if (mileageTo) params.set("mileageTo", mileageTo);
-    if (auction) params.set("auction", auction);
+    
+    if (mileageFrom) params.set("mileageFrom", mileageFrom);
+    if (engineFrom) params.set("engineFrom", engineFrom);
+    if (engineTo) params.set("engineTo", engineTo);
+if (auction) params.set("auction", auction);
     if (rateFrom) params.set("rateFrom", rateFrom);
     if (transmission) params.set("transmission", transmission);
     if (drive) params.set("drive", drive);
@@ -581,6 +591,9 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
     setYearFrom("");
     setYearTo("");
     setMileageTo("");
+    setMileageFrom("");
+    setEngineFrom("");
+    setEngineTo("");
     setAuction("");
     setRateFrom("");
     setTransmission("");
@@ -707,51 +720,44 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
                 />
 
                 <div className="mb-[5px] grid grid-cols-2 gap-1">
-                  <select
-                    value={yearFrom}
-                    onChange={(event) => setFilter(() => {
-                      const next = event.target.value;
-                      setYearFrom(next);
-
-                      if (next && yearTo && Number(yearTo) < Number(next)) {
-                        setYearTo(next);
-                      }
-                    })}
-                    className="h-[25px] border border-[#c7d0da] text-[12px]"
-                  >
-                    <option value="">Год от</option>
-                    {yearFromOptions.map((item) => {
-                      const value = optionValue(item);
-                      return <option key={`yf-${value}`} value={value}>{value}</option>;
-                    })}
-                  </select>
-
-                  <select
-                    value={yearTo}
-                    onChange={(event) => setFilter(() => {
-                      const next = event.target.value;
-                      setYearTo(next);
-
-                      if (next && yearFrom && Number(next) < Number(yearFrom)) {
-                        setYearFrom(next);
-                      }
-                    })}
-                    className="h-[25px] border border-[#c7d0da] text-[12px]"
-                  >
-                    <option value="">Год до</option>
-                    {yearToOptions.map((item) => {
-                      const value = optionValue(item);
-                      return <option key={`yt-${value}`} value={value}>{value}</option>;
-                    })}
-                  </select>
+                  <div className="col-span-2">
+              <MosaicDualRange
+                label="Год выпуска"
+                min={1989}
+                max={new Date().getFullYear()}
+                from={yearFrom}
+                to={yearTo}
+                onFrom={setYearFrom}
+                onTo={setYearTo}
+              />
+            </div>
                 </div>
 
-                <input
-                  value={mileageTo}
-                  onChange={(event) => setFilter(() => setMileageTo(event.target.value.replace(/\D/g, "")))}
-                  placeholder="Пробег до, км"
-                  className="mb-[5px] h-[25px] w-full border border-[#c7d0da] px-2 text-[12px]"
-                />
+                <div className="col-span-2 space-y-2">
+              <MosaicDualRange
+                label="Пробег"
+                min={0}
+                max={300000}
+                step={1000}
+                from={mileageFrom}
+                to={mileageTo}
+                onFrom={setMileageFrom}
+                onTo={setMileageTo}
+                unit="км"
+              />
+
+              <MosaicDualRange
+                label="Объем двигателя"
+                min={0}
+                max={6600}
+                step={100}
+                from={engineFrom}
+                to={engineTo}
+                onFrom={setEngineFrom}
+                onTo={setEngineTo}
+                unit="см³"
+              />
+            </div>
 
                 <button
                   type="submit"
@@ -838,7 +844,11 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
               Загружаем лоты...
             </div>
           ) : (
-            <AfaTable cars={cars} />
+            <AfaTable
+              cars={cars}
+              sort={sort}
+              onSort={(nextSort) => setFilter(() => setSort(nextSort))}
+            />
           )}
         </div>
       </section>
@@ -846,7 +856,15 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
   );
 }
 
-function AfaTable({ cars }: { cars: Car[] }) {
+function AfaTable({
+  cars,
+  sort,
+  onSort,
+}: {
+  cars: Car[];
+  sort: string;
+  onSort: (value: string) => void;
+}) {
   if (!cars.length) {
     return (
       <div className="mx-2 mt-3 bg-[#f3f3f3] p-8 text-center text-[14px] font-bold">
@@ -860,14 +878,28 @@ function AfaTable({ cars }: { cars: Car[] }) {
       <table className="w-full table-fixed border-collapse text-[10.5px]">
         <thead>
           <tr className="bg-gradient-to-b from-white to-[#eef2f6] text-[#314154]">
-            <AfaTh>Фото ↑</AfaTh>
-            <AfaTh>Номер лота ↑</AfaTh>
-            <AfaTh>Дата аукцион / Аукцион ↑</AfaTh>
-            <AfaTh>Год / Кузов ↑</AfaTh>
-            <AfaTh>Объем, см³ / Комплектация ↑</AfaTh>
-            <AfaTh>Пробег / Оценка ↑</AfaTh>
-            <AfaTh>Начальная / Продано за ↑</AfaTh>
-            <AfaTh>Средняя цена ↑</AfaTh>
+            <AfaTh>Фото</AfaTh>
+            <AfaSortTh sort={sort} asc="lot_asc" desc="lot_desc" onSort={onSort}>
+              Номер лота
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="date_asc" desc="date_desc" onSort={onSort}>
+              Дата аукцион / Аукцион
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="year_asc" desc="year_desc" onSort={onSort}>
+              Год / Кузов
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="engine_asc" desc="engine_desc" onSort={onSort}>
+              Объем, см³ / Комплектация
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="mileage_asc" desc="mileage_desc" onSort={onSort}>
+              Пробег / Оценка
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="finish_asc" desc="finish_desc" onSort={onSort}>
+              Начальная / Продано за
+            </AfaSortTh>
+            <AfaSortTh sort={sort} asc="average_asc" desc="average_desc" onSort={onSort}>
+              Средняя цена
+            </AfaSortTh>
           </tr>
         </thead>
 
@@ -1158,10 +1190,52 @@ function AfaTitle({ children }: { children: ReactNode }) {
   );
 }
 
+function sortArrow(current: string, asc: string, desc: string) {
+  if (current === asc) return "↑";
+  if (current === desc) return "↓";
+  return "↕";
+}
+
+function nextSortValue(current: string, asc: string, desc: string) {
+  return current === asc ? desc : asc;
+}
+
 function AfaTh({ children }: { children: ReactNode }) {
   return (
     <th className="border-b border-[#d9dfe7] px-1.5 py-[5px] text-center text-[10.5px] font-bold">
       {children}
+    </th>
+  );
+}
+
+function AfaSortTh({
+  children,
+  sort,
+  asc,
+  desc,
+  onSort,
+}: {
+  children: ReactNode;
+  sort: string;
+  asc: string;
+  desc: string;
+  onSort: (value: string) => void;
+}) {
+  const active = sort === asc || sort === desc;
+
+  return (
+    <th className="border-b border-[#d9dfe7] px-1.5 py-[5px] text-center text-[10.5px] font-bold">
+      <button
+        type="button"
+        onClick={() => onSort(nextSortValue(sort, asc, desc))}
+        className={`inline-flex items-center justify-center gap-1 font-bold ${
+          active ? "text-[#d8001f]" : "text-[#314154]"
+        } hover:text-[#d8001f]`}
+        title="Сортировать по всей текущей выборке"
+      >
+        <span>{children}</span>
+        <span>{sortArrow(sort, asc, desc)}</span>
+      </button>
     </th>
   );
 }

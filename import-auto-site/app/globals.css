@@ -48,3 +48,62 @@ select {
     padding-right: 16px;
   }
 }
+
+/* MosaicAuto catalog range sliders */
+.mosaic-range {
+  pointer-events: none;
+}
+
+.mosaic-range::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #ff2b3f;
+  box-shadow: 0 5px 14px rgba(7, 21, 47, 0.22);
+  cursor: pointer;
+}
+
+.mosaic-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #ff2b3f;
+  box-shadow: 0 5px 14px rgba(7, 21, 47, 0.22);
+  cursor: pointer;
+}
+
+.mosaic-range::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.mosaic-range::-moz-range-track {
+  background: transparent;
+}
+
+.mosaic-input {
+  height: 48px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid #dfe7f1;
+  background: #ffffff;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #07152f;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.mosaic-input:focus {
+  border-color: #ff2b3f;
+  box-shadow: 0 0 0 4px rgba(255, 43, 63, .10);
+}
+
+.mosaic-input::placeholder {
+  color: #9aa8ba;
+}

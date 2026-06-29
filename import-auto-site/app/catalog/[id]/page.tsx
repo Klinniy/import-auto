@@ -211,22 +211,20 @@ function carImages(car: Car) {
 function splitImages(car: Car) {
   const images = carImages(car).filter((url) => !isNoPhotoImage(url));
 
-  const damageMap = images[0] || "";
+  // ВАЖНО:
+  // Не считаем первую картинку схемой повреждений или аукционным листом.
+  // У части лотов первая картинка — обычное фото автомобиля.
+  // Аукционный лист показываем только если есть явный признак в URL.
+  const auctionSheet = images.find((url) => looksLikeAuctionSheet(url)) || "";
 
-  // Полный аукционный лист нельзя определять просто как "последняя картинка",
-  // потому что у части лотов туда приходит NO FOTO.
-  // Пока не нашли надежный признак полного листа, не показываем фейковую заглушку.
-  const possibleSheet = images.find((url, index) => index > 0 && looksLikeAuctionSheet(url)) || "";
-
-  const photos = images.filter((url, index) => {
-    if (index === 0) return false;
-    if (possibleSheet && url === possibleSheet) return false;
+  const photos = images.filter((url) => {
+    if (auctionSheet && url === auctionSheet) return false;
     return true;
   });
 
   return {
-    damageMap,
-    auctionSheet: possibleSheet,
+    damageMap: "",
+    auctionSheet,
     photos,
     all: images,
   };
@@ -309,7 +307,6 @@ export default function LotDetailPage() {
         const nextImages = splitImages(nextCar);
         setSelectedImage(
           nextImages.photos[0] ||
-          nextImages.auctionSheet ||
           "/mosaic/car-placeholder.png"
         );
       })
@@ -359,7 +356,7 @@ export default function LotDetailPage() {
   const bodyNumber = cleanText(car.frameNumber || car.frame || car.serial || car.body || "");
   const mileage = `${formatNumber(car.mileage)} км`;
   const rate = cleanText(car.rate || car.grade || car.score) || "—";
-  const auctionImage = images.auctionSheet || images.damageMap || "";
+  const auctionImage = images.auctionSheet || "";
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">
@@ -483,7 +480,7 @@ export default function LotDetailPage() {
               <div>
                 <div className="text-base font-black">Фото автомобиля</div>
                 <div className="text-sm font-bold text-slate-500">
-                  {images.photos.length || images.all.length} фото по лоту
+                  {images.photos.length} фото по лоту
                 </div>
               </div>
 
@@ -508,7 +505,7 @@ export default function LotDetailPage() {
             </div>
 
             <div className="mt-2 grid grid-cols-6 gap-2">
-              {(images.photos.length ? images.photos : images.all).slice(0, 15).map((image) => (
+              {images.photos.slice(0, 15).map((image) => (
                 <button
                   key={image}
                   type="button"
