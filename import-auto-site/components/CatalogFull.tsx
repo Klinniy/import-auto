@@ -37,8 +37,8 @@ function getCatalogItemHref(car: Car) {
   const anyCar = car as any;
 
   if (isStatisticsCatalogRuntime()) {
-    const lot = anyCar.lot || anyCar.lotNo || anyCar.number || anyCar.id;
-    return `/catalog/${encodeURIComponent(lot || "")}?source=statistics`;
+    const id = anyCar.id || anyCar.ID || anyCar.lot || anyCar.lotNo || anyCar.number;
+    return `/catalog/${encodeURIComponent(id || "")}?source=statistics`;
   }
 
   const id = anyCar.id || anyCar.lot || anyCar.lotNo || anyCar.number;

@@ -214,8 +214,20 @@ function splitImages(car: Car) {
   // ВАЖНО:
   // Не считаем первую картинку схемой повреждений или аукционным листом.
   // У части лотов первая картинка — обычное фото автомобиля.
-  // Аукционный лист показываем только если есть явный признак в URL.
-  const auctionSheet = images.find((url) => looksLikeAuctionSheet(url)) || "";
+  // Аукционный лист: сначала берём явное поле из API, потом пробуем найти по URL.
+  const explicitAuctionSheet = imageUrl(
+    (car as any).auctionSheetImage ||
+    (car as any).auctionSheetUrl ||
+    (car as any).sheetImage ||
+    (car as any).schemeImage ||
+    (car as any).sheet ||
+    (car as any).auctionSheet
+  );
+
+  const auctionSheet =
+    explicitAuctionSheet ||
+    images.find((url) => looksLikeAuctionSheet(url)) ||
+    "";
 
   const photos = images.filter((url) => {
     if (auctionSheet && url === auctionSheet) return false;
@@ -359,7 +371,16 @@ export default function LotDetailPage() {
   const bodyNumber = cleanText(car.frameNumber || car.frame || car.serial || car.body || "");
   const mileage = `${formatNumber(car.mileage)} км`;
   const rate = cleanText(car.rate || car.grade || car.score) || "—";
-  const auctionImage = images.auctionSheet || "";
+  const auctionImage = cleanText(
+    (car as any).auctionSheetImage ||
+    (car as any).auctionSheetUrl ||
+    (car as any).sheetImage ||
+    (car as any).schemeImage ||
+    (car as any).sheet ||
+    (car as any).auctionSheet ||
+    images.auctionSheet ||
+    ""
+  );
 
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-slate-950">

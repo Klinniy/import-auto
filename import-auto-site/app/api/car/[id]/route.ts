@@ -28,6 +28,40 @@ function pick(row: Record<string, any>, keys: string[]) {
   return "";
 }
 
+
+function imageValue(item: any) {
+  if (!item) return "";
+
+  if (typeof item === "string") {
+    return clean(item);
+  }
+
+  return (
+    clean(item.medium) ||
+    clean(item.preview) ||
+    clean(item.original) ||
+    clean(item.url) ||
+    clean(item.src)
+  );
+}
+
+
+function statsAuctionSheetUrl(item: any) {
+  const raw =
+    (item && typeof item === "object"
+      ? clean(item.original) || clean(item.url) || clean(item.src) || clean(item.preview) || clean(item.medium)
+      : clean(item)) || "";
+
+  if (!raw) return "";
+
+  if (raw.includes("7.tru.ru/imgs/")) {
+    const base = raw.split("&")[0].split("?")[0];
+    return `${base}&w=320`;
+  }
+
+  return raw;
+}
+
 function splitImages(value: unknown) {
   const raw = clean(value);
   if (!raw) return [];
@@ -52,7 +86,7 @@ function splitImages(value: unknown) {
 }
 
 function mapStatsCar(row: Record<string, any>) {
-  const images = splitImages(
+  const rawImages = splitImages(
     pick(row, [
       "IMAGES",
       "images",
@@ -64,6 +98,13 @@ function mapStatsCar(row: Record<string, any>) {
       "pictures",
     ])
   );
+
+  const auctionSheetImage = statsAuctionSheetUrl(rawImages[0]);
+
+  const images =
+    rawImages.length > 1
+      ? rawImages.slice(1)
+      : rawImages;
 
   const id = clean(pick(row, ["ID", "id"])) || clean(pick(row, ["LOT", "lot"]));
   const lot = clean(pick(row, ["LOT", "lot"])) || id;
@@ -159,9 +200,12 @@ function mapStatsCar(row: Record<string, any>) {
     image: previewImage,
     img: previewImage,
 
-    auctionSheet: "",
-    auctionSheetImage: "",
-    sheet: "",
+    auctionSheet: auctionSheetImage,
+    auctionSheetImage,
+    auctionSheetUrl: auctionSheetImage,
+    sheet: auctionSheetImage,
+    sheetImage: auctionSheetImage,
+    schemeImage: auctionSheetImage,
 
     raw: row,
   };
@@ -181,10 +225,10 @@ async function getStatsCar(id: string) {
   const value = clean(decodeURIComponent(id));
 
   const attempts = [
-    `select * from stats where auction_type=2 and LOT=${sqlValue(value)} limit 0,1`,
-    `select * from stats where auction_type=2 and lot=${sqlValue(value)} limit 0,1`,
     `select * from stats where auction_type=2 and ID=${sqlValue(value)} limit 0,1`,
     `select * from stats where auction_type=2 and id=${sqlValue(value)} limit 0,1`,
+    `select * from stats where auction_type=2 and LOT=${sqlValue(value)} limit 0,1`,
+    `select * from stats where auction_type=2 and lot=${sqlValue(value)} limit 0,1`,
   ];
 
   for (const sql of attempts) {
