@@ -289,7 +289,10 @@ export default function LotDetailPage() {
     setLoading(true);
     setError("");
 
-    fetch(`/api/car/${encodeURIComponent(id)}`, { cache: "no-store" })
+    fetch(
+      `/api/car/${encodeURIComponent(id)}${new URLSearchParams(window.location.search).get("source") ? `?source=${encodeURIComponent(new URLSearchParams(window.location.search).get("source") || "")}` : ""}`,
+      { cache: "no-store" }
+    )
       .then((res) => res.json())
       .then((payload: CarPayload) => {
         if (payload?.ok === false) {

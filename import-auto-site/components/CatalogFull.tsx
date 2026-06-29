@@ -7,37 +7,53 @@ function isChinaCatalogRuntime() {
   return pathname === "/china" || pathname.startsWith("/china/");
 }
 
+function isStatisticsCatalogRuntime() {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.startsWith("/statistics");
+}
+
+function getCatalogPageBase() {
+  return getCatalogBasePath();
+}
+
 function getCatalogBasePath() {
-  return isChinaCatalogRuntime() ? "/china" : "/catalog";
+  if (isStatisticsCatalogRuntime()) return "/statistics";
+  if (isChinaCatalogRuntime()) return "/china";
+  return "/catalog";
 }
 
 function getCatalogApiBase() {
+  if (isStatisticsCatalogRuntime()) return "/api/statistics/sales";
   return isChinaCatalogRuntime() ? "/api/china/catalog" : "/api/catalog";
 }
 
 function getCatalogFacetsApiBase() {
+  if (isStatisticsCatalogRuntime()) return "/api/statistics/facets";
   return isChinaCatalogRuntime() ? "/api/china/catalog/facets" : "/api/catalog/facets";
 }
 
 
-function getCatalogItemHref(car: any) {
-  const id = String(car?.id || "").trim();
-  const lot = String(car?.lot || "").trim();
+function getCatalogItemHref(car: Car) {
+  const anyCar = car as any;
 
-  if (isChinaCatalogRuntime()) {
-    return `/china/${encodeURIComponent(lot || id)}`;
+  if (isStatisticsCatalogRuntime()) {
+    const lot = anyCar.lot || anyCar.lotNo || anyCar.number || anyCar.id;
+    return `/catalog/${encodeURIComponent(lot || "")}?source=statistics`;
   }
 
-  return `/catalog/${encodeURIComponent(id || lot)}`;
+  const id = anyCar.id || anyCar.lot || anyCar.lotNo || anyCar.number;
+  return `${getCatalogBasePath()}/${encodeURIComponent(id || "")}`;
 }
 
 
 
 function getModelsApiBase() {
+  if (isStatisticsCatalogRuntime()) return "/api/statistics/models";
   return isChinaCatalogRuntime() ? "/api/china/models" : "/api/models";
 }
 
 function getFiltersApiBase() {
+  if (isStatisticsCatalogRuntime()) return "/api/statistics/filters";
   return isChinaCatalogRuntime() ? "/api/china/filters" : "/api/filters";
 }
 
@@ -700,6 +716,39 @@ if (auction) params.set("auction", auction);
     }
   }, [cars]);
 
+
+  // MOSAIC_STATISTICS_BUTTON_ROUTING_FIX
+  useEffect(() => {
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const clickable = target.closest("a,button") as HTMLElement | null;
+      if (!clickable) return;
+
+      const label = (clickable.textContent || "").trim().toLowerCase();
+
+      if (label !== "статистика") return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const params = new URLSearchParams(window.location.search);
+      params.set("brand", params.get("brand") || "__any__");
+      params.set("model", params.get("model") || "__any__");
+      params.set("page", "1");
+      params.set("limit", params.get("limit") || "24");
+
+      window.location.href = `/statistics?${params.toString()}`;
+    };
+
+    document.addEventListener("click", handler, true);
+
+    return () => {
+      document.removeEventListener("click", handler, true);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[12px] text-black">
       <div className="hidden border-b border-[#d9d9d9] bg-[#f7f7f7]">
@@ -713,7 +762,7 @@ if (auction) params.set("auction", auction);
             </Link>
             <span className="font-bold text-[#5a6d80]">TOKYO</span>
             <span className="font-bold">{tokyoTime()}</span>
-            <span className="font-bold text-[#1155cc]">{formatNumber(total)} авто из Японии</span>
+            <span className="font-bold text-[#1155cc]">{formatNumber(total)} {isStatisticsCatalogRuntime() ? "проданных авто из Японии" : isChinaCatalogRuntime() ? "авто из Китая" : "авто из Японии"}</span>
           </div>
 
           <Link
