@@ -58,6 +58,57 @@ type CarPayload = {
   error?: string;
 };
 
+
+type FactoryCatalogItem = {
+  image?: string;
+  release?: string;
+  modification?: string;
+  body?: string;
+  engine?: string;
+  drive?: string;
+  transmission?: string;
+  volume?: string;
+  power?: string;
+  fuel?: string;
+  price?: string;
+  rec?: string;
+};
+
+type FactoryCatalogPayload = {
+  ok?: boolean;
+  id?: string;
+  title?: string;
+  total?: number;
+  items?: FactoryCatalogItem[];
+  error?: string;
+  lot?: {
+    markaId?: string;
+    modelId?: string;
+    brand?: string;
+    model?: string;
+    year?: string;
+    body?: string;
+  };
+};
+
+type FactoryDetailRow = {
+  label: string;
+  value: string;
+};
+
+type FactoryDetailSection = {
+  title: string;
+  rows: FactoryDetailRow[];
+};
+
+type FactoryDetailPayload = {
+  ok?: boolean;
+  title?: string;
+  image?: string;
+  sections?: FactoryDetailSection[];
+  error?: string;
+};
+
 function cleanText(value: unknown) {
   return String(value ?? "")
     .replace(/&amp;/g, "&")
@@ -211,10 +262,9 @@ function carImages(car: Car) {
 function splitImages(car: Car) {
   const images = carImages(car).filter((url) => !isNoPhotoImage(url));
 
-  // ВАЖНО:
-  // Не считаем первую картинку схемой повреждений или аукционным листом.
-  // У части лотов первая картинка — обычное фото автомобиля.
-  // Аукционный лист: сначала берём явное поле из API, потом пробуем найти по URL.
+  // Для японских лотов аукционный лист часто приходит первым изображением
+  // в общем массиве IMAGES. Сначала используем явные поля, затем URL-признаки,
+  // затем fallback: первое изображение, если в лоте есть ещё фото автомобиля.
   const explicitAuctionSheet = imageUrl(
     (car as any).auctionSheetImage ||
     (car as any).auctionSheetUrl ||
@@ -224,10 +274,12 @@ function splitImages(car: Car) {
     (car as any).auctionSheet
   );
 
+  const detectedAuctionSheet = images.find((url) => looksLikeAuctionSheet(url)) || "";
+
   const auctionSheet =
     explicitAuctionSheet ||
-    images.find((url) => looksLikeAuctionSheet(url)) ||
-    "";
+    detectedAuctionSheet ||
+    (images.length > 1 ? images[0] : "");
 
   const photos = images.filter((url) => {
     if (auctionSheet && url === auctionSheet) return false;
@@ -251,6 +303,384 @@ function copyText(value: string) {
   navigator.clipboard?.writeText(value).catch(() => {});
 }
 
+
+function LotActionButtons({ activeAction, onAction }: { activeAction: string; onAction: (action: string) => void }) {
+  const actions = [
+    {
+      title: "Содержание лота",
+      icon: "car",
+      active: true,
+      action: "content",
+    },
+    {
+      title: "Статистика продаж",
+      icon: "stats",
+      active: false,
+      action: "sales-stats",
+    },
+    {
+      title: "Каталог автомобилей",
+      icon: "catalog",
+      active: false,
+      action: "catalog",
+    },
+    {
+      title: "Авто калькулятор",
+      icon: "calculator",
+      active: false,
+      action: "calculator",
+    },
+    {
+      title: "Предыдущие торги",
+      icon: "history",
+      active: false,
+      action: "previous-trades",
+    },
+  ];
+
+  function Icon({ type }: { type: string }) {
+    const cls = "h-7 w-7";
+
+    if (type === "car") {
+      return (
+        <svg viewBox="0 0 48 48" className={cls} fill="none" aria-hidden="true">
+          <path d="M10 28l3.2-8.4A6 6 0 0 1 18.8 16h10.4a6 6 0 0 1 5.6 3.6L38 28" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 28h26v7a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3v-.5H19v.5a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3v-7Z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M17 29.5h.1M31 29.5h.1" stroke="#ff2d3d" strokeWidth="5" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    if (type === "stats") {
+      return (
+        <svg viewBox="0 0 48 48" className={cls} fill="none" aria-hidden="true">
+          <path d="M10 38h28" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          <path d="M15 32V23M24 32V13M33 32V18" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M12 18l8 5 8-9 8 4" stroke="#ff2d3d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+
+    if (type === "catalog") {
+      return (
+        <svg viewBox="0 0 48 48" className={cls} fill="none" aria-hidden="true">
+          <rect x="11" y="11" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="3" />
+          <rect x="27" y="11" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="3" />
+          <rect x="11" y="27" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="3" />
+          <rect x="27" y="27" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="3" />
+          <path d="M16 16h.1M32 16h.1M16 32h.1M32 32h.1" stroke="#ff2d3d" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    if (type === "calculator") {
+      return (
+        <svg viewBox="0 0 48 48" className={cls} fill="none" aria-hidden="true">
+          <rect x="14" y="7" width="20" height="34" rx="4" stroke="currentColor" strokeWidth="3" />
+          <path d="M19 15h10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          <path d="M19 24h.1M24 24h.1M29 24h.1M19 31h.1M24 31h.1M29 31h.1M19 37h.1M24 37h.1M29 37h.1" stroke="#ff2d3d" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    return (
+      <svg viewBox="0 0 48 48" className={cls} fill="none" aria-hidden="true">
+        <path d="M13 12h21a3 3 0 0 1 3 3v21H17a4 4 0 0 1-4-4V12Z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M19 21h11M19 28h8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        <path d="M34 13l4-4M38 9v10H28" stroke="#ff2d3d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-5">
+        {actions.map((action) => (
+          <button
+            key={action.action}
+            type="button"
+            onClick={() => onAction(action.action)}
+            data-lot-action={action.action}
+            className={`group relative flex min-h-[96px] flex-col items-center justify-center gap-2 border-b border-slate-100 px-3 py-4 text-center transition md:border-b-0 md:border-r last:md:border-r-0 ${
+              activeAction === action.action
+                ? "bg-[#07152f] text-white"
+                : "bg-white text-[#07152f] hover:bg-slate-50"
+            }`}
+          >
+            <span
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl border shadow-sm transition ${
+                activeAction === action.action
+                  ? "border-white/20 bg-white text-[#07152f]"
+                  : "border-slate-200 bg-slate-50 text-[#07152f] group-hover:border-[#ff2d3d]/50 group-hover:text-[#ff2d3d]"
+              }`}
+            >
+              <Icon type={action.icon} />
+            </span>
+
+            <span
+              className={`max-w-[150px] text-[13px] font-black leading-tight ${
+                activeAction === action.action ? "text-white" : "text-[#07152f]"
+              }`}
+            >
+              {action.title}
+            </span>
+
+            <span
+              className={`absolute inset-x-0 bottom-0 h-[4px] transition ${
+                activeAction === action.action ? "bg-[#ff2d3d]" : "bg-transparent group-hover:bg-[#ff2d3d]"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+function FactoryCatalogPanel({
+  payload,
+  loading,
+  error,
+}: {
+  payload: FactoryCatalogPayload | null;
+  loading: boolean;
+  error: string;
+}) {
+  const items = payload?.items || [];
+
+  const mnfId = String(payload?.lot?.markaId || "").trim();
+  const mdlId = String(payload?.lot?.modelId || "").trim();
+
+  const catalogGroups = items.reduce<Array<{ key: string; image?: string; release?: string; rows: FactoryCatalogItem[] }>>(
+    (groups, item) => {
+      const key = `${item.image || ""}|${item.release || ""}`;
+      const last = groups[groups.length - 1];
+
+      const exactKey = [
+        item.release,
+        item.modification,
+        item.body,
+        item.engine,
+        item.drive,
+        item.transmission,
+        item.volume,
+        item.power,
+        item.fuel,
+        item.price,
+        item.rec,
+      ].join("|");
+
+      if (groups.some((group) => group.rows.some((row) => [
+        row.release,
+        row.modification,
+        row.body,
+        row.engine,
+        row.drive,
+        row.transmission,
+        row.volume,
+        row.power,
+        row.fuel,
+        row.price,
+        row.rec,
+      ].join("|") === exactKey))) {
+        return groups;
+      }
+
+      if (last && last.key === key) {
+        last.rows.push(item);
+        return groups;
+      }
+
+      groups.push({
+        key,
+        image: item.image,
+        release: item.release,
+        rows: [item],
+      });
+
+      return groups;
+    },
+    []
+  );
+
+  return (
+    <section id="factory-catalog" className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 bg-[#07152f] px-4 py-4 text-white">
+        <div className="text-lg font-black">Каталог автомобилей</div>
+        <div className="mt-1 text-sm font-bold text-white/70">
+          Заводские модификации, кузов, двигатель, привод, КПП и цена по каталогу
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="p-5 text-sm font-bold text-slate-500">Загружаю каталог автомобиля...</div>
+      ) : error ? (
+        <div className="p-5 text-sm font-bold text-red-600">{error}</div>
+      ) : items.length === 0 ? (
+        <div className="p-5 text-sm font-bold text-slate-500">По этому лоту каталог не найден.</div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+            <div>
+              <div className="text-sm font-black text-slate-900">
+                {payload?.title || "Данные каталога автомобиля"}
+              </div>
+              <div className="mt-1 text-xs font-bold text-slate-500">
+                Найдено строк: {items.length}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-[980px] w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-3">Фото</th>
+                  <th className="px-3 py-3">Выпуск</th>
+                  <th className="px-3 py-3">Модификация</th>
+                  <th className="px-3 py-3">Кузов</th>
+                  <th className="px-3 py-3">Двигатель</th>
+                  <th className="px-3 py-3">Привод</th>
+                  <th className="px-3 py-3">КПП</th>
+                  <th className="px-3 py-3">Объем</th>
+                  <th className="px-3 py-3">Мощн.</th>
+                  <th className="px-3 py-3">Топливо</th>
+                  <th className="px-3 py-3">Цена, тыс. ¥</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {catalogGroups.flatMap((group) =>
+                  group.rows.map((item, index) => (
+                    <tr key={`${group.key}-${item.rec || index}-${item.drive || ""}`} className="hover:bg-slate-50">
+                      {index === 0 && (
+                        <td className="px-3 py-3 align-top" rowSpan={group.rows.length}>
+                          {group.image ? (
+                            <img
+                              src={group.image}
+                              alt={item.modification || "catalog"}
+                              className="h-12 w-20 rounded-lg object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-12 w-20 rounded-lg bg-slate-100" />
+                          )}
+                        </td>
+                      )}
+
+                      {index === 0 && (
+                        <td className="whitespace-nowrap px-3 py-3 align-top font-bold text-slate-700" rowSpan={group.rows.length}>
+                          {group.release || "—"}
+                        </td>
+                      )}
+
+                      <td className="px-3 py-3 font-black text-slate-900">
+                        {item.rec && mnfId && mdlId ? (
+                          <Link
+                            href={`/catalog/factory/${encodeURIComponent(mnfId)}/${encodeURIComponent(mdlId)}/${encodeURIComponent(item.rec)}`}
+                            className="text-left font-black text-[#07152f] underline decoration-dotted underline-offset-4 hover:text-[#d8001f]"
+                          >
+                            {item.modification || "—"}
+                            <span className="mt-0.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                              открыть характеристики
+                            </span>
+                          </Link>
+                        ) : (
+                          item.modification || "—"
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.body || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.engine || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.drive || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.transmission || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.volume || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.power || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{item.fuel || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3 font-black text-green-700">{item.price || "—"}</td>
+                    </tr>
+                  ))
+                )}
+</tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+
+function FactoryCatalogDetailPanel({
+  payload,
+  loading,
+  error,
+}: {
+  payload: FactoryDetailPayload | null;
+  loading: boolean;
+  error: string;
+}) {
+  const sections = payload?.sections || [];
+  const cleanTitle = cleanText(payload?.title || "").replace(/\s*\/\s*BUY NOW\s*$/i, "");
+
+  if (!loading && !error && !payload) return null;
+
+  return (
+    <section id="factory-detail" className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 bg-slate-50 px-4 py-4">
+        <div className="text-lg font-black text-[#07152f]">Подробности модификации</div>
+        <div className="mt-1 text-sm font-bold text-slate-500">
+          {cleanTitle || "Технические характеристики выбранной комплектации"}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="p-5 text-sm font-bold text-slate-500">Загружаю подробности модификации...</div>
+      ) : error ? (
+        <div className="p-5 text-sm font-bold text-red-600">{error}</div>
+      ) : (
+        <div className="p-4">
+          <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+            <div>
+              {payload?.image ? (
+                <img
+                  src={payload.image}
+                  alt={cleanTitle || "Модификация"}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 object-contain p-2"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-36 items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-400">
+                  Нет фото
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {sections.map((section) => (
+                <div key={section.title} className="overflow-hidden rounded-2xl border border-slate-200">
+                  <div className="bg-[#07152f] px-3 py-2 text-sm font-black text-white">
+                    {section.title}
+                  </div>
+
+                  <div className="divide-y divide-slate-100">
+                    {section.rows.map((row) => (
+                      <div key={`${section.title}-${row.label}-${row.value}`} className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] gap-3 px-3 py-2 text-xs">
+                        <div className="font-bold text-slate-500">{row.label}</div>
+                        <div className="font-black text-slate-900">{row.value || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+
 export default function LotDetailPage() {
   const params = useParams();
   const rawId = params?.id;
@@ -264,6 +694,16 @@ export default function LotDetailPage() {
   const [selectedImage, setSelectedImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [activeAction, setActiveAction] = useState("content");
+  const [factoryCatalog, setFactoryCatalog] = useState<FactoryCatalogPayload | null>(null);
+  const [factoryLoading, setFactoryLoading] = useState(false);
+  const [factoryError, setFactoryError] = useState("");
+
+  const [selectedFactoryRec, setSelectedFactoryRec] = useState("");
+  const [factoryDetail, setFactoryDetail] = useState<FactoryDetailPayload | null>(null);
+  const [factoryDetailLoading, setFactoryDetailLoading] = useState(false);
+  const [factoryDetailError, setFactoryDetailError] = useState("");
 
   const images = useMemo(() => splitImages(car || {}), [car]);
   const title = car ? carTitle(car) : "Лот";
@@ -332,6 +772,86 @@ export default function LotDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id || activeAction !== "catalog") return;
+
+    let ignore = false;
+
+    setFactoryLoading(true);
+    setFactoryError("");
+
+    fetch(`/api/catalog/factory/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload: FactoryCatalogPayload) => {
+        if (ignore) return;
+
+        if (payload?.ok === false) {
+          throw new Error(payload.error || "Каталог автомобиля не найден");
+        }
+
+        setFactoryCatalog(payload);
+      })
+      .catch((err: Error) => {
+        if (!ignore) {
+          setFactoryError(err.message || "Ошибка загрузки каталога автомобиля");
+          setFactoryCatalog(null);
+        }
+      })
+      .finally(() => {
+        if (!ignore) setFactoryLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [id, activeAction]);
+
+  function openFactoryDetail(item: FactoryCatalogItem) {
+    const rec = String(item.rec || "").trim();
+    const mnfId = String(factoryCatalog?.lot?.markaId || "").trim();
+    const mdlId = String(factoryCatalog?.lot?.modelId || "").trim();
+
+    if (!rec || !mnfId || !mdlId) {
+      setFactoryDetailError("Не хватает параметров для загрузки подробностей модификации");
+      setFactoryDetail(null);
+      return;
+    }
+
+    setSelectedFactoryRec(rec);
+    setFactoryDetailLoading(true);
+    setFactoryDetailError("");
+
+    const params = new URLSearchParams({
+      mnf_id: mnfId,
+      mdl_id: mdlId,
+      rec,
+    });
+
+    fetch(`/api/catalog/factory/detail?${params.toString()}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload: FactoryDetailPayload) => {
+        if (payload?.ok === false) {
+          throw new Error(payload.error || "Подробности модификации не найдены");
+        }
+
+        setFactoryDetail(payload);
+
+        setTimeout(() => {
+          document.getElementById("factory-detail")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 50);
+      })
+      .catch((err: Error) => {
+        setFactoryDetailError(err.message || "Ошибка загрузки подробностей модификации");
+        setFactoryDetail(null);
+      })
+      .finally(() => {
+        setFactoryDetailLoading(false);
+      });
+  }
 
   if (loading) {
     return (
@@ -498,7 +1018,19 @@ export default function LotDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.95fr)_320px]">
+        <LotActionButtons activeAction={activeAction} onAction={setActiveAction} />
+
+        {activeAction === "catalog" && (
+          <>
+            <FactoryCatalogPanel
+            payload={factoryCatalog}
+            loading={factoryLoading}
+            error={factoryError}
+          />
+          </>
+        )}
+
+        <div className={`${activeAction === "content" ? "" : "hidden"} grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.95fr)_320px]`}>
           <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <div>
@@ -650,42 +1182,8 @@ export default function LotDetailPage() {
           </aside>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-base font-black">Дополнительно по лоту</div>
-              <div className="text-xs font-bold text-slate-500">
-                Быстрые разделы, которые позже расширим реальными данными.
-              </div>
-            </div>
-          </div>
+        
 
-          <div className="grid gap-2 md:grid-cols-3">
-            <button
-              type="button"
-              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
-            >
-              <div className="text-sm font-black text-[#07152f]">Похожие автомобили</div>
-              <div className="mt-1 text-xs font-bold text-slate-500">Подбор по модели и параметрам</div>
-            </button>
-
-            <button
-              type="button"
-              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
-            >
-              <div className="text-sm font-black text-[#07152f]">Статистика продаж</div>
-              <div className="mt-1 text-xs font-bold text-slate-500">История цен по аналогам</div>
-            </button>
-
-            <button
-              type="button"
-              className="rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-slate-100 hover:bg-slate-100"
-            >
-              <div className="text-sm font-black text-[#07152f]">Расчёт стоимости</div>
-              <div className="mt-1 text-xs font-bold text-slate-500">Подключим отдельным этапом</div>
-            </button>
-          </div>
-        </div>
       </section>
     </main>
   );
