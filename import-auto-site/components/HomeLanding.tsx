@@ -165,12 +165,8 @@ export default function HomeLanding() {
             </span>
           </Link>
 
-          <Link
-            href="/japan"
-            className="rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
-          >
-            Смотреть каталог
-          </Link>
+          
+
         </div>
       </header>
 
