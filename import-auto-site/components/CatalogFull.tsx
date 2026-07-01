@@ -34,16 +34,16 @@ function getCatalogFacetsApiBase() {
 
 
 function getCatalogItemHref(car: Car) {
-  const anyCar = car as any;
+  const id = String(car?.id || "").trim();
+  const lot = String(car?.lot || "").trim();
 
-  if (isStatisticsCatalogRuntime()) {
-    const id = anyCar.id || anyCar.ID || anyCar.lot || anyCar.lotNo || anyCar.number;
-    return `/catalog/${encodeURIComponent(id || "")}?source=statistics`;
+  if (isChinaCatalogRuntime()) {
+    return `/china/${encodeURIComponent(lot || id)}`;
   }
 
-  const id = anyCar.id || anyCar.lot || anyCar.lotNo || anyCar.number;
-  return `${getCatalogBasePath()}/${encodeURIComponent(id || "")}`;
+  return `/catalog/${encodeURIComponent(id || lot)}`;
 }
+
 
 
 
@@ -343,6 +343,52 @@ export default function CatalogFull({ hideLegacyCatalogHeader = false }: { hideL
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [qDraft, setQDraft] = useState("");
+  const [factoryPendingFilters, setFactoryPendingFilters] = useState<Record<string, string> | null>(() => {
+    if (typeof window === "undefined") return null;
+
+    const params = new URLSearchParams(window.location.search);
+    const fromFactory = params.get("fromFactory") === "1" || params.has("factoryRec");
+
+    if (!fromFactory) return null;
+
+    const brand =
+      params.get("brand") ||
+      params.get("marka") ||
+      params.get("markaName") ||
+      "";
+
+    const model =
+      params.get("model") ||
+      params.get("modelName") ||
+      "";
+
+    const body =
+      params.get("body") ||
+      params.get("kuzov") ||
+      params.get("chassis") ||
+      "";
+
+    const yearFrom =
+      params.get("yearFrom") ||
+      params.get("year") ||
+      "";
+
+    const yearTo =
+      params.get("yearTo") ||
+      params.get("year") ||
+      "";
+
+    if (!brand || !model) return null;
+
+    return {
+      brand,
+      model,
+      body,
+      yearFrom,
+      yearTo,
+    };
+  });
+  const [factoryModelApplied, setFactoryModelApplied] = useState(false);
   const [q, setQ] = useState("");
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
@@ -431,13 +477,26 @@ const [auction, setAuction] = useState("");
     { label: "MT", value: "MT" },
   ];
 
-  const canSearch = Boolean(brand && model);
+  const effectiveBrand = brand || factoryPendingFilters?.brand || "";
+  const effectiveModel = model || factoryPendingFilters?.model || "";
+  const canSearch = Boolean(effectiveBrand && effectiveModel);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
     const initialBrand = params.get("brand") || "";
-    const initialModel = params.get("model") || (initialBrand ? ANY_VALUE : "");
+    const isFactoryOpenInitial = params.get("fromFactory") === "1" || params.has("factoryRec");
+    const initialModel = params.get("model") || (initialBrand && !isFactoryOpenInitial ? ANY_VALUE : "");
+
+    if (isFactoryOpenInitial && initialBrand && initialModel) {
+      setFactoryPendingFilters({
+        brand: initialBrand,
+        model: initialModel,
+        body: params.get("body") || params.get("kuzov") || params.get("chassis") || "",
+        yearFrom: params.get("yearFrom") || params.get("year") || "",
+        yearTo: params.get("yearTo") || params.get("year") || "",
+      });
+    }
 
     setBrand(initialBrand);
     setModel(initialModel);
@@ -495,8 +554,9 @@ const [auction, setAuction] = useState("");
 
     const params = new URLSearchParams();
 
-    if (brand) params.set("brand", brand);
-    if (model) params.set("model", model);
+    if (effectiveBrand) params.set("brand", effectiveBrand);
+    if (effectiveModel) params.set("model", effectiveModel);
+    if (factoryPendingFilters) params.set("fromFactory", "1");
     if (q) params.set("q", q);
     if (yearFrom) params.set("yearFrom", yearFrom);
     if (yearTo) params.set("yearTo", yearTo);
@@ -521,6 +581,12 @@ if (auction) params.set("auction", auction);
 
     const apiParams = new URLSearchParams(params);
 
+    if (!apiParams.get("brand") && factoryPendingFilters?.brand) {
+      apiParams.set("brand", factoryPendingFilters.brand);
+    }
+    if (!apiParams.get("model") && factoryPendingFilters?.model) {
+      apiParams.set("model", factoryPendingFilters.model);
+    }
     if (apiParams.get("brand") === ANY_VALUE) apiParams.delete("brand");
     if (apiParams.get("model") === ANY_VALUE) apiParams.delete("model");
 
@@ -587,8 +653,9 @@ if (auction) params.set("auction", auction);
 
     const params = new URLSearchParams();
 
-    if (brand) params.set("brand", brand);
-    if (model) params.set("model", model);
+    if (effectiveBrand) params.set("brand", effectiveBrand);
+    if (effectiveModel) params.set("model", effectiveModel);
+    if (factoryPendingFilters) params.set("fromFactory", "1");
     if (q) params.set("q", q);
     if (yearFrom) params.set("yearFrom", yearFrom);
     if (yearTo) params.set("yearTo", yearTo);
@@ -610,6 +677,12 @@ if (auction) params.set("auction", auction);
 
     const apiParams = new URLSearchParams(params);
 
+    if (!apiParams.get("brand") && factoryPendingFilters?.brand) {
+      apiParams.set("brand", factoryPendingFilters.brand);
+    }
+    if (!apiParams.get("model") && factoryPendingFilters?.model) {
+      apiParams.set("model", factoryPendingFilters.model);
+    }
     if (apiParams.get("brand") === ANY_VALUE) apiParams.delete("brand");
     if (apiParams.get("model") === ANY_VALUE) apiParams.delete("model");
 
@@ -651,6 +724,30 @@ if (auction) params.set("auction", auction);
     setPage(1);
     setQ(qDraft.trim());
   }
+
+
+  // FACTORY_KEEP_MODEL_PATCH
+  useEffect(() => {
+    if (!factoryPendingFilters?.model) return;
+    if (model) return;
+
+    const timer = window.setTimeout(() => {
+      setModel(factoryPendingFilters.model);
+      setPage(1);
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [factoryPendingFilters, model]);
+
+
+  // FACTORY_RESTORE_MODEL_FROM_URL_PATCH
+  useEffect(() => {
+    if (!factoryPendingFilters?.model) return;
+    if (model) return;
+
+    setModel(factoryPendingFilters.model);
+    setPage(1);
+  }, [factoryPendingFilters, model]);
 
   function setFilter(action: () => void) {
     setPage(1);
@@ -775,24 +872,6 @@ if (auction) params.set("auction", auction);
       </div>
 
       <section className="flex">
-        <aside className="w-[42px] shrink-0 bg-[#f4f7fb] pt-2 text-center text-[10px] font-bold text-[#53667c]">
-          {["CS", "BC", "ПП", "BT", "CP", "☝", "100", "LHD"].map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`mb-1 block h-[26px] w-full ${
-                item === "100" ? "bg-[#dff5a7] text-[#4e8a00]" : ""
-              }`}
-              onClick={() => {
-                if (item === "100") toggle(sanction, "0", setSanction);
-                if (item === "LHD") toggle(leftHandDrive, "1", setLeftHandDrive);
-              }}
-            >
-              {item}
-            </button>
-          ))}
-        </aside>
-
         <div className="min-w-0 flex-1">
           <form
             onSubmit={submitSearch}
@@ -914,32 +993,13 @@ if (auction) params.set("auction", auction);
               <AfaCheckList title="КПП" items={facetTransmissions.length ? facetTransmissions : transmissionOptions} active={transmission} onPick={(value) => toggle(transmission, value, setTransmission)} />
             </div>
           </form>
-
-          {!isChinaCatalogPage && (
-            <div className="mx-2 mt-2 bg-[#fff6c9] px-3 py-[5px] text-[12px] font-bold uppercase tracking-[0.08em] text-[#9d1b1b]">
-              Войдите, чтобы видеть всю информацию по лоту
-            </div>
-          )}
-
           <div className="mx-2 mt-2 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-[14px] font-bold">
                 <span className="text-[#498000]">{formatNumber(total)}</span>{" "}
                 найдено{visibleFilterValue(brand) ? ` · ${visibleFilterValue(brand)}` : ""}{visibleFilterValue(model) ? ` · ${visibleFilterValue(model)}` : ""}
               </div>
-
-              <div className="flex items-center gap-[3px] text-[11px]">
-                {["List A", "B", "C", "D", "Статистика"].map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className="rounded-sm border border-[#d5dce6] bg-[#eef2f6] px-2 py-[2px] font-bold text-[#42628a]"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
+</div>
 
             <AfaPager page={page} pages={pages} loading={loading} setPage={setPage} />
           </div>
@@ -1020,7 +1080,7 @@ function AfaTable({
 
         <tbody>
           {cars.map((car, index) => {
-            const images = carImages(car).slice(0, 3);
+            const images = carImages(car).slice(0, 1);
             const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
 
             return (

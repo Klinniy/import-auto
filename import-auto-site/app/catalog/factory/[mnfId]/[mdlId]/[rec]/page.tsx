@@ -1,4 +1,4 @@
-import Link from "next/link";
+import FactoryDetailTopNav from "@/components/FactoryDetailTopNav";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +34,7 @@ type PageProps = {
     mdlId: string;
     rec: string;
   }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type TranslatedSection = {
@@ -50,6 +51,37 @@ type ColorChip = {
 
 function cleanText(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function firstSearchParam(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0] || "";
+  return value || "";
+}
+
+
+function oldCatalogModelName(value: string) {
+  const raw = cleanText(value);
+  const compact = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  const map: Record<string, string> = {
+    NBOX: "N BOX",
+    NBOXPLUS: "N BOX PLUS",
+    NBOXSLASH: "N BOX SLASH",
+    NONE: "N ONE",
+    NONEE: "N ONE E:",
+    NWGN: "N WGN",
+    NVAN: "N VAN",
+    NVANE: "N VAN E:",
+  };
+
+  return map[compact] || raw;
+}
+
+function oldCatalogBodyCode(value: string) {
+  return cleanText(value)
+    .replace(/^[A-Z0-9]+-\s*/i, "")
+    .replace(/\s+/g, "")
+    .trim();
 }
 
 function catalogKey(value: unknown) {
@@ -449,8 +481,14 @@ function SummaryBox({
   );
 }
 
-export default async function FactoryDetailPage({ params }: PageProps) {
+export default async function FactoryDetailPage({ params, searchParams }: PageProps) {
   const { mnfId, mdlId, rec } = await params;
+  const queryParams = searchParams ? await searchParams : {};
+  const lotIdFromQuery = cleanText(
+    firstSearchParam(queryParams.lotId) ||
+      firstSearchParam(queryParams.lot) ||
+      firstSearchParam(queryParams.fromLot)
+  );
 
   const hdrs = await headers();
   const host = hdrs.get("x-forwarded-host") || hdrs.get("host") || "mosaicauto.ru";
@@ -505,23 +543,42 @@ export default async function FactoryDetailPage({ params }: PageProps) {
   const brand = titleParts[0] || "";
   const model = titleParts[1] || "";
 
+  const releaseYear = release.match(/\d{4}/)?.[0] || "";
+  const cleanChassis = oldCatalogBodyCode(chassis);
+  const oldCatalogModel = oldCatalogModelName(model);
+  const offersParams = new URLSearchParams();
+
+  function addOfferParam(key: string, value: string) {
+    const cleaned = cleanText(value);
+    if (cleaned) offersParams.set(key, cleaned);
+  }
+  addOfferParam("brand", brand);
+  addOfferParam("marka", brand);
+  addOfferParam("markaName", brand);
+  addOfferParam("model", oldCatalogModel);
+  addOfferParam("modelName", oldCatalogModel);
+  addOfferParam("grade", modification);
+  addOfferParam("modification", modification);
+  addOfferParam("body", cleanChassis || chassis);
+  addOfferParam("kuzov", cleanChassis || chassis);
+  addOfferParam("chassis", cleanChassis || chassis);
+  addOfferParam("year", releaseYear);
+  addOfferParam("yearFrom", releaseYear);
+  addOfferParam("yearTo", releaseYear);
+  addOfferParam("factoryRec", rec);
+  offersParams.set("fromFactory", "1");
+
+  const catalogHref = "/catalog";
+  const lotHref = lotIdFromQuery ? `/catalog/${encodeURIComponent(lotIdFromQuery)}` : "";
+  const offersHref = `/catalog?${offersParams.toString()}`;
+
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-4 md:py-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <Link
-          href="/catalog"
-          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-[#07152f] shadow-sm hover:bg-slate-50"
-        >
-          ← Назад к лоту
-        </Link>
-
-        <Link
-          href="/catalog"
-          className="inline-flex items-center rounded-full bg-[#07152f] px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-[#0b2248]"
-        >
-          В каталог
-        </Link>
-      </div>
+      <FactoryDetailTopNav
+        lotHref={lotHref}
+        catalogHref={catalogHref}
+        offersHref={offersHref}
+      />
 
       <section className="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">

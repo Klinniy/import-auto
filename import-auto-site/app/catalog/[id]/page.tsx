@@ -438,6 +438,81 @@ function LotActionButtons({ activeAction, onAction }: { activeAction: string; on
 }
 
 
+
+const AUCTION_SHEET_LEGEND: { code: string; label: string }[][] = [
+  [
+    { code: "A1", label: "Маленькая царапина" },
+    { code: "A2", label: "Царапина" },
+    { code: "A3", label: "Большая царапина" },
+    { code: "E1", label: "Незначительная вмятина" },
+    { code: "E2", label: "Несколько небольших вмятин" },
+    { code: "E3", label: "Много небольших вмятин" },
+    { code: "U1", label: "Маленькая вмятина" },
+    { code: "U2", label: "Вмятина" },
+    { code: "U3", label: "Большая вмятина" },
+    { code: "W1", label: "Ремонт / покраска: едва заметно" },
+    { code: "W2", label: "Ремонт / покраска: заметно" },
+    { code: "W3", label: "Ремонт / покраска: заметно, нужна перекраска" },
+    { code: "S1", label: "Малозаметная ржавчина" },
+    { code: "S2", label: "Ржавчина" },
+    { code: "C1", label: "Коррозия" },
+    { code: "C2", label: "Заметная коррозия" },
+    { code: "P", label: "Краска отличается от оригинала" },
+    { code: "H", label: "Следы улучшения / подкраса" },
+  ],
+  [
+    { code: "X", label: "Элемент требует замены" },
+    { code: "XX", label: "Элемент заменён" },
+    { code: "B1", label: "Маленькая вмятина с царапиной" },
+    { code: "B2", label: "Вмятина с царапиной" },
+    { code: "B3", label: "Большая вмятина с царапиной" },
+    { code: "Y1", label: "Маленькая трещина" },
+    { code: "Y2", label: "Трещина" },
+    { code: "Y3", label: "Большая трещина" },
+    { code: "X1", label: "Маленькая трещина на лобовом стекле" },
+    { code: "R", label: "Восстановленная трещина на лобовом стекле" },
+    { code: "RX", label: "Восстановленная трещина на стекле, требуется замена" },
+    { code: "G", label: "Скол на стекле" },
+  ],
+];
+
+function AuctionSheetLegendCard() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+      <div className="border-b border-slate-200 px-4 py-3">
+        <div className="text-sm font-black text-[#07152f]">Справочник обозначений</div>
+        <div className="mt-1 text-xs font-bold text-slate-500">
+          Расшифровка меток на аукционном листе
+        </div>
+      </div>
+
+      <div className="grid gap-x-5 gap-y-2 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        {AUCTION_SHEET_LEGEND.flat().map((item, index) => (
+          <div
+            key={`${index}-${item.code}-${item.label}`}
+            className="grid grid-cols-[42px_minmax(0,1fr)] items-start gap-2 text-[11px] leading-4"
+          >
+            <span className="rounded-lg bg-[#07152f] px-2 py-1 text-center font-black text-white">
+              {item.code}
+            </span>
+            <span className="pt-1 font-bold text-slate-700">{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-slate-200 bg-white px-4 py-3 text-xs">
+        <div className="font-black text-[#07152f]">Описание</div>
+        <div className="mt-1 font-bold text-slate-600">
+          <span className="text-slate-900">Rate ext.</span> — внешнее состояние,
+          {" "}
+          <span className="text-slate-900">Rate int.</span> — состояние салона.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function FactoryCatalogPanel({
   payload,
   loading,
@@ -1083,7 +1158,9 @@ export default function LotDetailPage() {
 
           <section className="grid gap-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="mb-2 flex items-center justify-between">
+  <div className="space-y-4">
+    <div className="min-w-0">
+      <div className="mb-2 flex items-center justify-between">
                 <div>
                   <div className="text-base font-black">Аукционный лист / схема повреждений</div>
                   <div className="text-sm font-bold text-slate-500">
@@ -1116,7 +1193,11 @@ export default function LotDetailPage() {
                   Аукционный документ не найден
                 </div>
               )}
-            </div>
+    </div>
+
+    <AuctionSheetLegendCard />
+  </div>
+</div>
 
             {false && images.damageMap && (
               <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
