@@ -234,11 +234,16 @@ function makeSide(params: {
   aucPrice: number;
   aucRub: number;
   sheet1: number;
+  freightUsd: number;
+  storageRub: number;
+  brokerRub: number;
+  glonassRub: number;
   currency: RubCurrency;
   taxMode: TaxMode;
 }) {
   const usdRub = params.calcos.rates.usdRub || params.currency.usd || 88;
   const jpyRub = params.currency.jpyPerOne || 0.48;
+  const freightRub = Math.round(params.freightUsd * usdRub);
 
   const dutyInfo = params.taxMode === 1 ? params.calcos.jurInfo : params.calcos.fizInfo;
   const dutyUsdTotal = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
@@ -255,8 +260,10 @@ function makeSide(params: {
   }
 
   const extraJapanRub = Math.round(params.sheet1 * jpyRub);
+  const japanTotalRub = params.aucRub + extraJapanRub + freightRub;
   const customsTotalRub = customsDutyRub + utilFeeRub;
-  const totalRub = params.aucRub + extraJapanRub + customsTotalRub;
+  const russiaTotalRub = customsTotalRub + params.storageRub + params.brokerRub + params.glonassRub;
+  const totalRub = japanTotalRub + russiaTotalRub;
 
   const sectionsRub: CalcSection[] = [
     {
@@ -264,18 +271,22 @@ function makeSide(params: {
       rows: [
         makeRow("Ориентировочная стоимость авто на аукционе", params.aucPrice, "JPY", params.aucRub),
         makeRow("Ориентировочные расходы по Японии", params.sheet1, "JPY", extraJapanRub),
+        makeRow("Фрахт до Владивостока", params.freightUsd, "USD", freightRub),
       ],
-      totalRub: params.aucRub + extraJapanRub,
-      formattedTotal: fmtRub(params.aucRub + extraJapanRub),
+      totalRub: japanTotalRub,
+      formattedTotal: fmtRub(japanTotalRub),
     },
     {
-      title: "Таможенный блок",
+      title: "Расходы в России",
       rows: [
         makeRow("Таможенная пошлина", infoSplit.dutyPart, "USD", customsDutyRub),
         makeRow("Утилизационный сбор", infoSplit.utilPart, "USD", utilFeeRub),
+        makeRow("Склад временного хранения", params.storageRub, "RUB", params.storageRub),
+        makeRow("Таможенное оформление / брокер", params.brokerRub, "RUB", params.brokerRub),
+        makeRow("ЭРА-ГЛОНАСС / оформление", params.glonassRub, "RUB", params.glonassRub),
       ],
-      totalRub: customsTotalRub,
-      formattedTotal: fmtRub(customsTotalRub),
+      totalRub: russiaTotalRub,
+      formattedTotal: fmtRub(russiaTotalRub),
     },
   ];
 
@@ -343,11 +354,27 @@ export async function POST(request: NextRequest) {
     const aucRub = Math.round(aucPrice * currency.jpyPerOne);
 
     const sheet1 = Math.round(
-      clamp(toNumber(body.sheet1 ?? body.japanExpensesJpy ?? process.env.CALCOS_JAPAN_SHEET1 ?? 0, 0), 0, 100_000_000),
+      clamp(toNumber(body.sheet1 ?? body.japanExpensesJpy ?? process.env.CALCOS_JAPAN_SHEET1 ?? 65_000, 65_000), 0, 100_000_000),
+    );
+
+    const freightUsd = Math.round(
+      clamp(toNumber(body.freightUsd ?? body.deliveryUsd ?? process.env.CALCOS_JAPAN_FREIGHT_USD ?? 350, 350), 0, 100_000),
+    );
+
+    const storageRub = Math.round(
+      clamp(toNumber(body.storageRub ?? process.env.CALCOS_JAPAN_STORAGE_RUB ?? 6000, 6000), 0, 1_000_000),
+    );
+
+    const brokerRub = Math.round(
+      clamp(toNumber(body.brokerRub ?? process.env.CALCOS_JAPAN_BROKER_RUB ?? 6000, 6000), 0, 1_000_000),
+    );
+
+    const glonassRub = Math.round(
+      clamp(toNumber(body.glonassRub ?? process.env.CALCOS_JAPAN_GLONASS_RUB ?? 50000, 50000), 0, 1_000_000),
     );
 
     const common = {
-      priceRub: aucRub,
+      priceRub: aucPrice,
       sheet1,
       year,
       passing,
@@ -367,6 +394,10 @@ export async function POST(request: NextRequest) {
       aucPrice,
       aucRub,
       sheet1,
+      freightUsd,
+      storageRub,
+      brokerRub,
+      glonassRub,
       currency,
       taxMode: 2,
     });
@@ -377,6 +408,10 @@ export async function POST(request: NextRequest) {
       aucPrice,
       aucRub,
       sheet1,
+      freightUsd,
+      storageRub,
+      brokerRub,
+      glonassRub,
       currency,
       taxMode: 1,
     });
@@ -387,7 +422,13 @@ export async function POST(request: NextRequest) {
       input: {
         aucPrice,
         aucRub,
+        priceForCalcos: aucPrice,
+        priceMode: "jpy",
         sheet1,
+        freightUsd,
+        storageRub,
+        brokerRub,
+        glonassRub,
         year,
         volume,
         power,
