@@ -3,9 +3,19 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type CurrencyKey = "JPY" | "CNY";
+type CurrencyKey = "USD" | "EUR" | "JPY" | "CNY";
 
 const CURRENCIES: Record<CurrencyKey, { id: string; nominalLabel: string; title: string }> = {
+  USD: {
+    id: "R01235",
+    nominalLabel: "1 USD",
+    title: "Доллар США",
+  },
+  EUR: {
+    id: "R01239",
+    nominalLabel: "1 EUR",
+    title: "Евро",
+  },
   JPY: {
     id: "R01820",
     nominalLabel: "100 JPY",

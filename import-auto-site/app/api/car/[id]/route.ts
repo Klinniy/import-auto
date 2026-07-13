@@ -250,6 +250,8 @@ export async function GET(
   try {
     const { id } = await params;
     const source = request.nextUrl.searchParams.get("source") || "";
+  const sourceNormalized = String(source || "").toLowerCase();
+  const isStatsSource = ["stats", "stat", "statistics"].includes(sourceNormalized);
 
     if (!id) {
       return NextResponse.json(
@@ -259,7 +261,7 @@ export async function GET(
     }
 
     const car =
-      source === "statistics"
+      isStatsSource
         ? await getStatsCar(id)
         : await getMainCar(id);
 

@@ -41,6 +41,10 @@ function getCatalogItemHref(car: Car) {
     return `/china/${encodeURIComponent(lot || id)}`;
   }
 
+  if (isStatisticsCatalogRuntime()) {
+    return `/catalog/${encodeURIComponent(id || lot)}?source=stats`;
+  }
+
   return `/catalog/${encodeURIComponent(id || lot)}`;
 }
 
@@ -875,9 +879,165 @@ if (auction) params.set("auction", auction);
         <div className="min-w-0 flex-1">
           <form
             onSubmit={submitSearch}
-            className="mx-2 mt-2 rounded-sm border border-[#d7dce3] bg-[#f6f7f9] p-1.5"
+            className="mx-1 mt-2 rounded-sm border border-[#d7dce3] bg-[#f6f7f9] p-2 sm:mx-2 sm:p-1.5"
           >
-            <div className="grid grid-cols-[260px_260px_180px_90px_90px_125px_135px_100px_80px] gap-x-2">
+            <div className="sm:hidden">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="grid gap-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
+                  Марка
+                  <select
+                    value={brand}
+                    disabled={loadingFilters}
+                    onChange={(event) => setFilter(() => {
+                      const value = event.target.value;
+                      setBrand(value);
+                      setModel(value === ANY_VALUE ? ANY_VALUE : "");
+                    })}
+                    className="h-[34px] w-full rounded-sm border border-[#c9d1db] bg-white px-2 text-[13px] font-bold text-[#07152f] disabled:bg-[#eeeeee]"
+                  >
+                    <option value="">Выберите</option>
+                    <option value={ANY_VALUE}>Любая</option>
+                    {brands.map((item) => {
+                      const value = optionValue(item);
+                      return (
+                        <option key={value} value={value}>
+                          {optionLabel(item)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+
+                <label className="grid gap-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8001f]">
+                  Модель
+                  <select
+                    value={model}
+                    disabled={!brand}
+                    onChange={(event) => setFilter(() => setModel(event.target.value))}
+                    className="h-[34px] w-full rounded-sm border border-[#c9d1db] bg-white px-2 text-[13px] font-bold text-[#07152f] disabled:bg-[#eeeeee]"
+                  >
+                    <option value="">Выберите</option>
+                    <option value={ANY_VALUE}>Любая</option>
+                    {models.map((item) => {
+                      const value = optionValue(item);
+                      return (
+                        <option key={value} value={value}>
+                          {optionLabel(item)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-2 grid grid-cols-[minmax(0,1fr)_78px_78px] gap-2">
+                <input
+                  value={qDraft}
+                  onChange={(event) => setQDraft(event.target.value)}
+                  placeholder="Номер лота"
+                  className="h-[34px] rounded-sm border border-[#c9d1db] bg-white px-2 text-[13px] font-bold"
+                />
+
+                <button
+                  type="submit"
+                  className="h-[34px] rounded-sm bg-[#07152f] text-[12px] font-black uppercase tracking-[0.08em] text-white"
+                >
+                  Поиск
+                </button>
+
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="h-[34px] rounded-sm border border-[#c9d1db] bg-white text-[12px] font-black uppercase tracking-[0.08em] text-[#687789]"
+                >
+                  Сброс
+                </button>
+              </div>
+
+              <details className="mt-2 rounded-sm border border-[#d7dce3] bg-white">
+                <summary className="cursor-pointer px-3 py-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#d8001f]">
+                  Расширенные фильтры
+                </summary>
+
+                <div className="grid gap-2 border-t border-[#edf0f4] p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Год от
+                      <input
+                        value={yearFrom}
+                        onChange={(event) => setYearFrom(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Год до
+                      <input
+                        value={yearTo}
+                        onChange={(event) => setYearTo(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Пробег от
+                      <input
+                        value={mileageFrom}
+                        onChange={(event) => setMileageFrom(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Пробег до
+                      <input
+                        value={mileageTo}
+                        onChange={(event) => setMileageTo(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Объём от
+                      <input
+                        value={engineFrom}
+                        onChange={(event) => setEngineFrom(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-[10px] font-black uppercase text-[#4d6680]">
+                      Объём до
+                      <input
+                        value={engineTo}
+                        onChange={(event) => setEngineTo(event.target.value)}
+                        inputMode="numeric"
+                        className="h-[32px] rounded-sm border border-[#c9d1db] px-2 text-[13px] font-bold"
+                      />
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetOnlyFilters}
+                    className="h-[32px] rounded-sm border border-[#c9d1db] bg-[#f6f7f9] text-[11px] font-black uppercase tracking-[0.1em] text-[#2f6fad]"
+                  >
+                    Сбросить только фильтры
+                  </button>
+                </div>
+              </details>
+            </div>
+
+            <div className="hidden grid-cols-[260px_260px_180px_90px_90px_125px_135px_100px_80px] gap-x-2 sm:grid">
               <AfaSelectList
                 title="Марка"
                 value={brand}
@@ -1049,8 +1209,13 @@ function AfaTable({
   }
 
   return (
-    <div className="mx-2 mt-2 overflow-hidden">
-      <table className="w-full table-fixed border-collapse text-[10.5px]">
+    <div className="mx-1 mt-2 sm:mx-2">
+      <div className="sm:hidden">
+        <AfaMobileLotList cars={cars} />
+      </div>
+
+      <div className="hidden overflow-hidden sm:block">
+        <table className="w-full table-fixed border-collapse text-[10.5px]">
         <thead>
           <tr className="bg-gradient-to-b from-white to-[#eef2f6] text-[#314154]">
             <AfaTh>Фото</AfaTh>
@@ -1145,7 +1310,16 @@ function AfaTable({
                 <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <div>{formatNumber(car.mileage)} km</div>
                   <div className="mt-[4px] font-bold text-[#b78300]">
-                    ▲ {cleanText(car.rate || car.grade) || "—"}
+                    <span
+                      className="group relative inline-flex cursor-pointer items-center"
+                      aria-label="санкционный"
+                    >
+                      ▲
+                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
+                        санкционный
+                      </span>
+                    </span>{" "}
+                    {cleanText(car.rate || car.grade) || "—"}
                   </div>
                 </td>
 
@@ -1173,7 +1347,104 @@ function AfaTable({
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AfaMobileLotList({ cars }: { cars: Car[] }) {
+  return (
+    <div className="overflow-hidden rounded-sm border border-[#d7dde6] bg-white text-[10px] leading-tight">
+      {cars.map((car, index) => {
+        const image = carImages(car)[0] || firstImage(car);
+        const title = `${car.brand || "AUTO"} ${car.model || ""}`.trim();
+        const href = getCatalogItemHref(car);
+        const rate = cleanText(car.rate || car.grade) || "—";
+        const engine = formatNumber(car.engineVolume);
+        const finishOrAverage = car.finishPrice || car.averagePrice;
+
+        return (
+          <div
+            key={car.id || `${car.lot}-${index}`}
+            className={`grid min-h-[64px] grid-cols-[52px_54px_minmax(0,1fr)_72px_38px] items-center gap-1 border-b border-white px-1 py-1 ${
+              index % 2 === 0 ? "bg-white" : "bg-[#eeeeee]"
+            }`}
+          >
+            <Link href={href} className="block">
+              <img
+                src={image || "/mosaic/car-placeholder.png"}
+                alt={title}
+                loading="lazy"
+                className="h-[42px] w-[52px] object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = "/mosaic/car-placeholder.png";
+                }}
+              />
+            </Link>
+
+            <div className="min-w-0 text-center">
+              <Link
+                href={href}
+                className="inline-block max-w-full truncate rounded-sm border border-[#cfd6df] bg-white px-1.5 py-1 text-[12px] font-black text-[#bf4d22]"
+              >
+                {car.lot || "—"}
+              </Link>
+
+              <div className="mt-1 truncate font-bold text-[#b78300]">
+                <span
+                  className="group relative inline-flex cursor-pointer items-center"
+                  aria-label="санкционный"
+                >
+                  ▲
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
+                    санкционный
+                  </span>
+                </span>{" "}
+                {rate}
+              </div>
+            </div>
+
+            <Link href={href} className="min-w-0">
+              <div className="truncate text-[11px] font-black uppercase text-[#07152f]">
+                <span className="text-[#c52b16]">{car.year || "—"}</span>{" "}
+                {title || "AUTO"}
+              </div>
+
+              <div className="mt-0.5 truncate text-[10px] font-bold text-[#4d6680]">
+                {cleanText(car.body) || "—"} · {cleanText(car.transmission) || "—"} · {engine} cc
+              </div>
+
+              <div className="mt-0.5 truncate text-[10px] text-[#66758a]">
+                {car.auctionDate || "—"} · {car.auction || "—"}
+              </div>
+            </Link>
+
+            <div className="min-w-0 text-right">
+              <div className="truncate font-bold text-[#07152f]">
+                {formatNumber(car.mileage)} км
+              </div>
+
+              <div className="mt-1 truncate text-[10px] font-black text-[#008000]">
+                {formatPrice(finishOrAverage)}
+              </div>
+
+              {isSanction(car) ? (
+                <div className="mt-0.5 truncate text-[9px] font-bold text-[#4d6680]">
+                  санкц.
+                </div>
+              ) : null}
+            </div>
+
+            <Link
+              href={href}
+              className="rounded-sm border border-[#07152f] bg-white px-1 py-2 text-center text-[9px] font-black text-[#07152f]"
+            >
+              откр
+            </Link>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1331,25 +1602,30 @@ function AfaPager({
   setPage: (value: number | ((current: number) => number)) => void;
 }) {
   return (
-    <div className="flex items-center gap-[4px] text-[12px]">
+    <div className="grid grid-cols-[34px_minmax(92px,1fr)_34px] items-center gap-[4px] text-[12px] sm:flex">
       <button
         type="button"
         disabled={page <= 1 || loading}
         onClick={() => setPage((current) => Math.max(1, current - 1))}
-        className="h-[24px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40"
+        className="h-[28px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40 sm:h-[24px]"
       >
         ←
       </button>
 
-      <div className="h-[24px] rounded-sm bg-[#eef2f6] px-4 py-[4px] font-bold">
-        List A · стр. {page} из {formatNumber(pages)}
+      <div className="h-[28px] rounded-sm bg-[#eef2f6] px-2 py-[6px] text-center font-black leading-none whitespace-nowrap sm:h-[24px] sm:px-4 sm:py-[4px] sm:font-bold">
+        <span className="hidden sm:inline">
+          List A · стр. {page} из {formatNumber(pages)}
+        </span>
+        <span className="sm:hidden">
+          {page} / {formatNumber(pages)}
+        </span>
       </div>
 
       <button
         type="button"
         disabled={page >= pages || loading}
         onClick={() => setPage((current) => Math.min(pages, current + 1))}
-        className="h-[24px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40"
+        className="h-[28px] min-w-[34px] rounded-sm bg-[#eef2f6] px-2 font-bold disabled:opacity-40 sm:h-[24px]"
       >
         →
       </button>

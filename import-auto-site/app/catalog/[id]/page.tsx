@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import LotSalesStatsPanel from "@/components/LotSalesStatsPanel";
+import LotCalculatorPanel from "@/components/LotCalculatorPanel";
 
 type CarImage = {
   original?: string;
@@ -783,6 +785,83 @@ export default function LotDetailPage() {
   const images = useMemo(() => splitImages(car || {}), [car]);
   const title = car ? carTitle(car) : "Лот";
 
+  const salesStatsHref = useMemo(() => {
+    if (!car) return "/catalog/sales-stats";
+
+    const source = car as any;
+    const params = new URLSearchParams();
+
+    function cleanStatValue(value: unknown) {
+      return String(value ?? "").replace(/\s+/g, " ").trim();
+    }
+
+    function pickStatValue(...values: unknown[]) {
+      for (const value of values) {
+        const cleaned = cleanStatValue(value);
+        if (cleaned && cleaned !== "__any__") return cleaned;
+      }
+
+      return "";
+    }
+
+    function addStatParam(key: string, value: unknown) {
+      const cleaned = cleanStatValue(value);
+      if (cleaned && cleaned !== "__any__") {
+        params.set(key, cleaned);
+      }
+    }
+
+    addStatParam(
+      "brand",
+      pickStatValue(
+        source.brand,
+        source.marka,
+        source.markaName,
+        source.make,
+        source.MARKA_NAME
+      )
+    );
+
+    addStatParam(
+      "model",
+      pickStatValue(
+        source.model,
+        source.modelName,
+        source.MODEL_NAME
+      )
+    );
+
+    addStatParam(
+      "body",
+      pickStatValue(
+        source.body,
+        source.kuzov,
+        source.chassis,
+        source.frame,
+        source.KUZOV
+      )
+    );
+
+    const statYear = pickStatValue(
+      source.year,
+      source.YEAR,
+      source.releaseYear
+    );
+
+    addStatParam("yearFrom", statYear);
+    addStatParam("yearTo", statYear);
+
+    const query = params.toString();
+
+    return query ? `/catalog/sales-stats?${query}` : "/catalog/sales-stats";
+  }, [car]);
+
+  function handleLotAction(action: string) {
+    setActiveAction(action);
+  }
+
+
+
   useEffect(() => {
     if (!id || typeof window === "undefined") return;
 
@@ -1093,7 +1172,7 @@ export default function LotDetailPage() {
           </div>
         </div>
 
-        <LotActionButtons activeAction={activeAction} onAction={setActiveAction} />
+        <LotActionButtons activeAction={activeAction} onAction={handleLotAction} />
 
         {activeAction === "catalog" && (
           <>
@@ -1103,6 +1182,14 @@ export default function LotDetailPage() {
             error={factoryError}
           />
           </>
+        )}
+
+        {activeAction === "sales-stats" && (
+          <LotSalesStatsPanel car={car} />
+        )}
+
+        {activeAction === "calculator" && (
+          <LotCalculatorPanel car={car} />
         )}
 
         <div className={`${activeAction === "content" ? "" : "hidden"} grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.95fr)_320px]`}>

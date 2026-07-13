@@ -406,12 +406,8 @@ export default function AfaHome() {
               </div>
             </div>
 
-            <Link
-              href="/catalog"
-              className="rounded-xl bg-[#07152f] px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff2d3d]"
-            >
-              Каталог
-            </Link>
+            
+
           </div>
         </div>
       </header>
@@ -459,7 +455,7 @@ export default function AfaHome() {
           })}
         </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="mt-5 grid gap-5">
           <section className="rounded-[1.4rem] bg-white p-5 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
             <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-center md:justify-between">
               <div>
@@ -514,73 +510,11 @@ export default function AfaHome() {
             ) : null}
           </section>
 
-          <aside className="rounded-[1.4rem] bg-white p-5 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
-            <div className="text-sm font-black uppercase tracking-[0.3em] text-[#ff2d3d]">
-              быстрые разделы
-            </div>
+          
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {quickLinks.map((item) => {
-                const content = (
-                  <div className="flex min-h-[92px] items-center gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 transition hover:bg-white hover:shadow-md">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm ring-1 ring-slate-200">
-                      {item.icon}
-                    </div>
-
-                    <div>
-                      <div className="text-lg font-black leading-5">{item.title}</div>
-                      <div className="mt-1 text-sm font-black text-slate-400">
-                        {item.subtitle}
-                      </div>
-                    </div>
-                  </div>
-                );
-
-                if (!item.active) return <div key={item.title}>{content}</div>;
-
-                return (
-                  <Link key={item.title} href={item.href}>
-                    {content}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="mt-5 rounded-[1.4rem] bg-[#07152f] p-5 text-white">
-              <h2 className="text-2xl font-black tracking-[-0.04em]">
-                MosaicAuto
-              </h2>
-
-              <p className="mt-3 text-base leading-7 text-white/72">
-                Простая витрина автомобилей из Японии: японские аукционы,
-                каталог, быстрый поиск по марке и расчёт стоимости.
-              </p>
-
-              <Link
-                href="/catalog"
-                className="mt-5 flex rounded-2xl bg-[#ff2d3d] px-6 py-4 text-center text-sm font-black text-white transition hover:bg-white hover:text-[#07152f]"
-              >
-                Перейти к поиску авто
-              </Link>
-            </div>
-          </aside>
         </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {steps.map((step) => (
-            <article
-              key={step.num}
-              className="rounded-[1.4rem] bg-white p-5 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff2d3d] text-lg font-black text-white">
-                {step.num}
-              </div>
 
-              <h3 className="mt-4 text-xl font-black">{step.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{step.text}</p>
-            </article>
-          ))}
-        </div>
       </section>
     </main>
   );

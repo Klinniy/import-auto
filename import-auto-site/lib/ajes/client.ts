@@ -199,3 +199,49 @@ export function normalizeImages(images?: string) {
       medium: url.replace(/&[hw]=\d+$/i, "") + "&w=320",
     }));
 }
+
+
+export async function ajesRawApi(path: string, params: Record<string, string>) {
+  if (!AJ_API_CODE) {
+    throw new Error(
+      "AJES API code is not set. Expected one of: AJ_API_CODE, AJ_CODE, AVTOJP_API_KEY"
+    );
+  }
+
+  const search = new URLSearchParams();
+
+  search.set("code", AJ_API_CODE);
+
+  for (const [key, value] of Object.entries(params)) {
+    search.set(key, value);
+  }
+
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+  const url = `http://${AJ_API_SERVER}/${cleanPath}?${search.toString()}`;
+
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "User-Agent": "MosaicAuto/1.0",
+    },
+  });
+
+  const text = await res.text();
+
+  let json: unknown = null;
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = null;
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    url: url.replace(AJ_API_CODE, "***"),
+    contentType: res.headers.get("content-type") || "",
+    textPreview: text.slice(0, 5000),
+    json,
+  };
+}
