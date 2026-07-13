@@ -327,6 +327,7 @@ function normalizeOption(name: string, count: number): ChinaFilterOption | null 
 
 
 const chinaFacetCache = new Map<string, { expires: number; items: ChinaFilterOption[] }>();
+const chinaFacetPending = new Map<string, Promise<ChinaFilterOption[]>>();
 
 async function getFacet(field: string, params: ChinaCatalogParams = {}, limit = 500) {
   const safeLimit = clamp(toInt(limit, 500), 1, 1000);
@@ -338,6 +339,28 @@ async function getFacet(field: string, params: ChinaCatalogParams = {}, limit = 
     return cached.items;
   }
 
+  const pending = chinaFacetPending.get(cacheKey);
+
+  if (pending) {
+    return pending;
+  }
+
+  const load = loadFacet(field, whereSql, safeLimit, cacheKey);
+  chinaFacetPending.set(cacheKey, load);
+
+  try {
+    return await load;
+  } finally {
+    chinaFacetPending.delete(cacheKey);
+  }
+}
+
+async function loadFacet(
+  field: string,
+  whereSql: string,
+  safeLimit: number,
+  cacheKey: string
+) {
   const sampleLimit =
     field === "MARKA_NAME"
       ? 8000
