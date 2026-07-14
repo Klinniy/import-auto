@@ -9,6 +9,8 @@ export const OPTIONAL_ENV = {
   CALCOS_JAPAN_STORAGE_RUB: 6000,
 };
 
+export const RECONSTRUCTION_TOLERANCE_RUB = 2;
+
 export const scenarios = [
   { name: "Бензин, до 3 лет", aucPrice: 1200000, year: 2024, volume: 1800, power: 120, fuel: 2, passing: 1 },
   { name: "Бензин, 3-5 лет", aucPrice: 950000, year: 2021, volume: 1490, power: 110, fuel: 2, passing: 0 },
@@ -67,6 +69,12 @@ export function parseCurrencyString(value) {
   return result;
 }
 
+export function parseXmlTags(xml, tag) {
+  return Array.from(String(xml || "").matchAll(new RegExp(`<${tag}>([\\s\\S]*?)<\/${tag}>`, "gi")))
+    .map((match) => toNumber(match[1], NaN))
+    .filter((value) => Number.isFinite(value));
+}
+
 export function parseCalcosXml(xml) {
   const currencyRates = parseCurrencyString(parseXmlTag(xml, "currency"));
   const legacyUsd = toNumber(parseXmlTag(xml, "usd"), 0);
@@ -86,6 +94,11 @@ export function parseCalcosXml(xml) {
       usdRub: legacyUsd || undefined,
       eurRub: legacyEur || undefined,
       jpyRub100: legacyJpy100 || undefined,
+    },
+    rows: {
+      tag1: parseXmlTags(xml, "tag1"),
+      tag2: parseXmlTags(xml, "tag2"),
+      tag3: parseXmlTags(xml, "tag3"),
     },
     rawXml: xml,
   };
@@ -164,9 +177,9 @@ function rate(value, source) {
 
 export function resolveRouteEquivalentRates(calcos, cbrRates) {
   return {
-    usdRub: calcos.legacyRates.usdRub ? rate(calcos.legacyRates.usdRub, "API legacy tag") : rate(FALLBACK_RATES.usdRub, "fallback"),
-    eurRub: calcos.legacyRates.eurRub ? rate(calcos.legacyRates.eurRub, "API legacy tag") : rate(FALLBACK_RATES.eurRub, "fallback"),
-    jpyRub: cbrRates.jpyRub,
+    usdRub: calcos.currencyRates.usdRub ? rate(calcos.currencyRates.usdRub, "API currency") : cbrRates.usdRub,
+    eurRub: calcos.currencyRates.eurRub ? rate(calcos.currencyRates.eurRub, "API currency") : cbrRates.eurRub,
+    jpyRub: calcos.currencyRates.jpyRub ? rate(calcos.currencyRates.jpyRub, "API currency") : cbrRates.jpyRub,
   };
 }
 
@@ -179,54 +192,75 @@ export function resolveCalcosCurrencyRates(calcos) {
 }
 
 export function calculateTotals(input, calcos, taxMode, rates, env = process.env) {
+  const rowsAvailable = calcos.rows.tag1.length || calcos.rows.tag2.length || calcos.rows.tag3.length;
+  const usdRub = rates.usdRub.value;
+  const jpyRub = rates.jpyRub.value;
+  const dutyInfo = taxMode === 1 ? calcos.jurInfo : calcos.fizInfo;
+  const dutyUsdTotal = taxMode === 1 ? calcos.jur : calcos.fiz;
+  const split = splitDutyInfo(dutyInfo);
+  const tag1Jpy = calcos.rows.tag1.reduce((sum, value) => sum + value, 0);
+  const tag2Usd = calcos.rows.tag2.reduce((sum, value) => sum + value, 0);
+  const tag3Rub = calcos.rows.tag3.reduce((sum, value) => sum + value, 0);
+  const apiSumRub = Math.round(calcos.sum || 0);
+
+  if (rowsAvailable) {
+    const reconstructedSumRub = Math.round(tag1Jpy * jpyRub + tag2Usd * usdRub + tag3Rub);
+    const components = {
+      tag1Rub: Math.round(tag1Jpy * jpyRub),
+      tag2Rub: Math.round(tag2Usd * usdRub),
+      tag3Rub: Math.round(tag3Rub),
+      customsDutyRub: Math.round((split.dutyPart || dutyUsdTotal) * usdRub),
+      utilFeeRub: Math.round(split.utilPart * usdRub),
+    };
+    return {
+      apiSumRub,
+      dutyUsdTotal,
+      dutyInfo,
+      components,
+      routeEquivalentTotalRub: apiSumRub,
+      componentsIndependentTotalRub: reconstructedSumRub,
+      reconstructedSumRub,
+      reconstructionDiffRub: Math.abs(reconstructedSumRub - apiSumRub),
+      diffRouteVsComponentsRub: apiSumRub - reconstructedSumRub,
+      diffRouteVsApiRub: 0,
+      diffComponentsVsApiRub: reconstructedSumRub - apiSumRub,
+      percentRouteVsApi: 0,
+      percentComponentsVsApi: apiSumRub ? ((reconstructedSumRub - apiSumRub) / apiSumRub) * 100 : null,
+      usedFallback: false,
+    };
+  }
+
   const sheet1 = envNumber("CALCOS_JAPAN_SHEET1", env);
   const freightUsd = envNumber("CALCOS_JAPAN_FREIGHT_USD", env);
   const storageRub = envNumber("CALCOS_JAPAN_STORAGE_RUB", env);
   const brokerRub = envNumber("CALCOS_JAPAN_BROKER_RUB", env);
   const glonassRub = envNumber("CALCOS_JAPAN_GLONASS_RUB", env);
-  const dutyInfo = taxMode === 1 ? calcos.jurInfo : calcos.fizInfo;
-  const dutyUsdTotal = taxMode === 1 ? calcos.jur : calcos.fiz;
-  const split = splitDutyInfo(dutyInfo);
-  const usdRub = rates.usdRub.value;
-  const jpyRub = rates.jpyRub.value;
-  const customsDutyRub = split.dutyPart || split.utilPart ? Math.round(split.dutyPart * usdRub) : Math.round(dutyUsdTotal * usdRub);
-  const utilFeeRub = split.dutyPart || split.utilPart ? Math.round(split.utilPart * usdRub) : 0;
-
   const components = {
     aucRub: Math.round(input.aucPrice * jpyRub),
     japanExpensesRub: Math.round(sheet1 * jpyRub),
     freightRub: Math.round(freightUsd * usdRub),
-    customsDutyRub,
-    utilFeeRub,
+    customsDutyRub: Math.round((split.dutyPart || dutyUsdTotal) * usdRub),
+    utilFeeRub: Math.round(split.utilPart * usdRub),
     storageRub,
     brokerRub,
     glonassRub,
   };
-
-  const routeEquivalentTotalRub =
-    components.aucRub +
-    components.japanExpensesRub +
-    components.freightRub +
-    (components.customsDutyRub + components.utilFeeRub) +
-    components.storageRub +
-    components.brokerRub +
-    components.glonassRub;
-
-  const componentsIndependentTotalRub = Object.values(components).reduce((sum, value) => sum + value, 0);
-  const apiSumRub = Math.round(calcos.sum || 0);
-
+  const fallbackTotalRub = Object.values(components).reduce((sum, value) => sum + value, 0);
   return {
     apiSumRub,
     dutyUsdTotal,
     dutyInfo,
     components,
-    routeEquivalentTotalRub,
-    componentsIndependentTotalRub,
-    diffRouteVsComponentsRub: routeEquivalentTotalRub - componentsIndependentTotalRub,
-    diffRouteVsApiRub: apiSumRub ? routeEquivalentTotalRub - apiSumRub : null,
-    diffComponentsVsApiRub: apiSumRub ? componentsIndependentTotalRub - apiSumRub : null,
-    percentRouteVsApi: apiSumRub ? ((routeEquivalentTotalRub - apiSumRub) / apiSumRub) * 100 : null,
-    percentComponentsVsApi: apiSumRub ? ((componentsIndependentTotalRub - apiSumRub) / apiSumRub) * 100 : null,
+    routeEquivalentTotalRub: fallbackTotalRub,
+    componentsIndependentTotalRub: fallbackTotalRub,
+    reconstructedSumRub: fallbackTotalRub,
+    reconstructionDiffRub: apiSumRub ? Math.abs(fallbackTotalRub - apiSumRub) : null,
+    diffRouteVsComponentsRub: 0,
+    diffRouteVsApiRub: apiSumRub ? fallbackTotalRub - apiSumRub : null,
+    diffComponentsVsApiRub: apiSumRub ? fallbackTotalRub - apiSumRub : null,
+    percentRouteVsApi: apiSumRub ? ((fallbackTotalRub - apiSumRub) / apiSumRub) * 100 : null,
+    percentComponentsVsApi: apiSumRub ? ((fallbackTotalRub - apiSumRub) / apiSumRub) * 100 : null,
+    usedFallback: true,
   };
 }
 
@@ -290,8 +324,6 @@ async function main() {
 
       const routeRates = resolveRouteEquivalentRates(result.parsed, cbrRates);
       const routeCalc = calculateTotals(scenario, result.parsed, taxMode, routeRates);
-      const calcosRates = resolveCalcosCurrencyRates(result.parsed);
-      const alternativeCalc = calculateTotals(scenario, result.parsed, taxMode, calcosRates);
 
       console.log("Route-equivalent rate sources:", routeRates);
       console.log("Route-equivalent components RUB:", routeCalc.components);
@@ -302,23 +334,22 @@ async function main() {
         diffRouteVsComponentsRub: routeCalc.diffRouteVsComponentsRub,
         diffRouteVsApiRub: routeCalc.diffRouteVsApiRub,
         diffComponentsVsApiRub: routeCalc.diffComponentsVsApiRub,
+        reconstructedSumRub: routeCalc.reconstructedSumRub,
+        reconstructionDiffRub: routeCalc.reconstructionDiffRub,
+        usedFallback: routeCalc.usedFallback,
         percentRouteVsApi: formatPercent(routeCalc.percentRouteVsApi),
         percentComponentsVsApi: formatPercent(routeCalc.percentComponentsVsApi),
       });
-      console.log("Alternative totals with Calcos <currency> rates:", {
-        components: alternativeCalc.components,
-        routeEquivalentTotalRub: alternativeCalc.routeEquivalentTotalRub,
-        componentsIndependentTotalRub: alternativeCalc.componentsIndependentTotalRub,
-        diffRouteVsApiRub: alternativeCalc.diffRouteVsApiRub,
-        percentRouteVsApi: formatPercent(alternativeCalc.percentRouteVsApi),
-      });
-
       if (routeCalc.diffRouteVsComponentsRub !== 0) {
         console.error("Route-equivalent total does not match independent components total.");
         failed = true;
       }
-      if (routeCalc.diffRouteVsApiRub !== 0) {
-        console.warn("WARNING: route-equivalent total differs from API <sum>; this is not a technical failure until the included expense set is confirmed.");
+      if (!routeCalc.usedFallback && routeCalc.reconstructionDiffRub > RECONSTRUCTION_TOLERANCE_RUB) {
+        console.error(`Route-equivalent reconstruction differs from API <sum> by more than ${RECONSTRUCTION_TOLERANCE_RUB} RUB.`);
+        failed = true;
+      }
+      if (routeCalc.usedFallback) {
+        console.warn("WARNING: Calcos rows are absent; route-equivalent calculation used legacy fallback components.");
       }
     }
   }

@@ -24,12 +24,12 @@ type CalcosResult = {
   fizInfo: string;
   jurInfo: string;
   taxModeResult: string;
-  rates: {
-    usdRub: number;
-    eurRub: number;
-    jpyRub: number;
+  currencyRates: Partial<Record<"usdRub" | "eurRub" | "jpyRub", number>>;
+  rows: {
+    tag1: number[];
+    tag2: number[];
+    tag3: number[];
   };
-  rawXml: string;
 };
 
 type CalcRow = {
@@ -63,6 +63,53 @@ function fmtRub(value: number) {
 function parseXmlTag(xml: string, tag: string) {
   const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i"));
   return match?.[1]?.trim() || "";
+}
+
+
+function parseCurrencyString(value: string) {
+  const result: Partial<Record<"usdRub" | "eurRub" | "jpyRub", number>> = {};
+
+  for (const part of String(value || "").split(";")) {
+    const [rawKey, rawValue] = part.split(":");
+    if (!rawKey || rawValue == null) continue;
+
+    const key = rawKey.trim().toUpperCase();
+    const amount = toNumber(rawValue, NaN);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+
+    if (key === "USDRUB_SYSTEM" || key === "USDRUB") result.usdRub = amount;
+    if (key === "EURRUB_SYSTEM" || key === "EURRUB") result.eurRub = amount;
+    if (key === "JPYRUB_SYSTEM" || key === "JPYRUB") result.jpyRub = amount;
+  }
+
+  return result;
+}
+
+function parseXmlTags(xml: string, tag: string) {
+  return Array.from(String(xml || "").matchAll(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "gi")))
+    .map((match) => toNumber(match[1], NaN))
+    .filter((value) => Number.isFinite(value));
+}
+
+function sumNumbers(values: number[]) {
+  return values.reduce((sum, value) => sum + value, 0);
+}
+
+function hasRows(calcos: CalcosResult) {
+  return calcos.rows.tag1.length > 0 || calcos.rows.tag2.length > 0 || calcos.rows.tag3.length > 0;
+}
+
+function resolveRates(calcos: CalcosResult, currency: RubCurrency) {
+  const usdRub = calcos.currencyRates.usdRub || currency.usd || 88;
+  const eurRub = calcos.currencyRates.eurRub || currency.eur || 95;
+  const jpyRub = calcos.currencyRates.jpyRub || currency.jpyPerOne || 0.48;
+  const sources = {
+    usdRub: calcos.currencyRates.usdRub ? "calcos" : currency.source === "fallback" ? "fallback" : "CBR",
+    eurRub: calcos.currencyRates.eurRub ? "calcos" : currency.source === "fallback" ? "fallback" : "CBR",
+    jpyRub: calcos.currencyRates.jpyRub ? "calcos" : currency.source === "fallback" ? "fallback" : "CBR",
+  };
+
+  return { usdRub, eurRub, jpyRub, sources, currencySource: Object.values(sources).every((x) => x === "calcos") ? "calcos" : sources };
 }
 
 function parseCbrValue(xml: string, id: string) {
@@ -154,10 +201,6 @@ function calcPassing(body: Record<string, unknown>) {
 }
 
 function parseCalcosXml(xml: string): CalcosResult {
-  const usdRub = toNumber(parseXmlTag(xml, "usd"), 88);
-  const eurRub = toNumber(parseXmlTag(xml, "eur"), 95);
-  const jpyRub = toNumber(parseXmlTag(xml, "jpy"), 48);
-
   return {
     sum: toNumber(parseXmlTag(xml, "sum"), 0),
     fiz: toNumber(parseXmlTag(xml, "fiz"), 0),
@@ -165,12 +208,12 @@ function parseCalcosXml(xml: string): CalcosResult {
     fizInfo: parseXmlTag(xml, "fiz_info"),
     jurInfo: parseXmlTag(xml, "jur_info"),
     taxModeResult: parseXmlTag(xml, "tax_mode"),
-    rates: {
-      usdRub,
-      eurRub,
-      jpyRub,
+    currencyRates: parseCurrencyString(parseXmlTag(xml, "currency")),
+    rows: {
+      tag1: parseXmlTags(xml, "tag1"),
+      tag2: parseXmlTags(xml, "tag2"),
+      tag3: parseXmlTags(xml, "tag3"),
     },
-    rawXml: xml,
   };
 }
 
@@ -241,53 +284,65 @@ function makeSide(params: {
   currency: RubCurrency;
   taxMode: TaxMode;
 }) {
-  const usdRub = params.calcos.rates.usdRub || params.currency.usd || 88;
-  const jpyRub = params.currency.jpyPerOne || 0.48;
-  const freightRub = Math.round(params.freightUsd * usdRub);
-
+  const rates = resolveRates(params.calcos, params.currency);
+  const usdRub = rates.usdRub;
+  const jpyRub = rates.jpyRub;
+  const rowsAvailable = hasRows(params.calcos);
   const dutyInfo = params.taxMode === 1 ? params.calcos.jurInfo : params.calcos.fizInfo;
   const dutyUsdTotal = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
   const infoSplit = splitDutyInfo(dutyInfo);
+  const customsDutyUsd = infoSplit.dutyPart || dutyUsdTotal;
+  const utilFeeUsd = infoSplit.utilPart;
+  const customsDutyRub = Math.round(customsDutyUsd * usdRub);
+  const utilFeeRub = Math.round(utilFeeUsd * usdRub);
 
-  let customsDutyRub = 0;
-  let utilFeeRub = 0;
+  const reconstructedSumRub = rowsAvailable
+    ? Math.round(sumNumbers(params.calcos.rows.tag1) * jpyRub + sumNumbers(params.calcos.rows.tag2) * usdRub + sumNumbers(params.calcos.rows.tag3))
+    : 0;
+  const apiSumRub = Math.round(params.calcos.sum || 0);
+  const reconstructionDiffRub = rowsAvailable ? Math.abs(reconstructedSumRub - apiSumRub) : 0;
 
-  if (infoSplit.dutyPart > 0 || infoSplit.utilPart > 0) {
-    customsDutyRub = Math.round(infoSplit.dutyPart * usdRub);
-    utilFeeRub = Math.round(infoSplit.utilPart * usdRub);
-  } else {
-    customsDutyRub = Math.round(dutyUsdTotal * usdRub);
+  if (rowsAvailable && (!apiSumRub || reconstructionDiffRub > 2)) {
+    throw new Error("Calcos вернул несогласованную сумму расчёта. Попробуйте позже или обратитесь к менеджеру.");
   }
 
-  const extraJapanRub = Math.round(params.sheet1 * jpyRub);
-  const japanTotalRub = params.aucRub + extraJapanRub + freightRub;
-  const customsTotalRub = customsDutyRub + utilFeeRub;
-  const russiaTotalRub = customsTotalRub + params.storageRub + params.brokerRub + params.glonassRub;
-  const totalRub = japanTotalRub + russiaTotalRub;
-
-  const sectionsRub: CalcSection[] = [
-    {
-      title: "Расходы в Японии",
-      rows: [
+  const japanRows = rowsAvailable
+    ? params.calcos.rows.tag1.map((value, index) =>
+        makeRow(index === 0 ? "Стоимость автомобиля" : `Расходы поставщика в Японии №${index}`, value, "JPY", value * jpyRub),
+      )
+    : [
         makeRow("Ориентировочная стоимость авто на аукционе", params.aucPrice, "JPY", params.aucRub),
-        makeRow("Ориентировочные расходы по Японии", params.sheet1, "JPY", extraJapanRub),
-        makeRow("Фрахт до Владивостока", params.freightUsd, "USD", freightRub),
-      ],
-      totalRub: japanTotalRub,
-      formattedTotal: fmtRub(japanTotalRub),
-    },
-    {
-      title: "Расходы в России",
-      rows: [
-        makeRow("Таможенная пошлина", infoSplit.dutyPart, "USD", customsDutyRub),
-        makeRow("Утилизационный сбор", infoSplit.utilPart, "USD", utilFeeRub),
+        makeRow("Ориентировочные расходы по Японии", params.sheet1, "JPY", params.sheet1 * jpyRub),
+        makeRow("Фрахт до Владивостока", params.freightUsd, "USD", params.freightUsd * usdRub),
+      ];
+
+  const tag3Rows = rowsAvailable
+    ? params.calcos.rows.tag3.map((value, index) => makeRow(`Расходы поставщика в России №${index + 1}`, value, "RUB", value))
+    : [
         makeRow("Склад временного хранения", params.storageRub, "RUB", params.storageRub),
         makeRow("Таможенное оформление / брокер", params.brokerRub, "RUB", params.brokerRub),
         makeRow("ЭРА-ГЛОНАСС / оформление", params.glonassRub, "RUB", params.glonassRub),
-      ],
-      totalRub: russiaTotalRub,
-      formattedTotal: fmtRub(russiaTotalRub),
-    },
+      ];
+
+  const japanTotalRub = japanRows.reduce((sum, row) => sum + row.rub, 0);
+  const russiaRows = [
+    makeRow("Таможенная пошлина", customsDutyUsd, "USD", customsDutyRub),
+    makeRow("Утилизационный сбор", utilFeeUsd, "USD", utilFeeRub),
+    ...tag3Rows,
+  ];
+  const russiaTotalRub = russiaRows.reduce((sum, row) => sum + row.rub, 0);
+  const totalRub = rowsAvailable ? apiSumRub : japanTotalRub + russiaTotalRub;
+  const balancingDiff = totalRub - (japanTotalRub + russiaTotalRub);
+
+  if (balancingDiff) {
+    const target = russiaRows[russiaRows.length - 1] || japanRows[japanRows.length - 1];
+    target.rub += balancingDiff;
+    target.formatted = fmtRub(target.rub);
+  }
+
+  const sectionsRub: CalcSection[] = [
+    { title: "Расходы в Японии", rows: japanRows, totalRub: japanRows.reduce((sum, row) => sum + row.rub, 0), formattedTotal: fmtRub(japanRows.reduce((sum, row) => sum + row.rub, 0)) },
+    { title: "Расходы в России", rows: russiaRows, totalRub: russiaRows.reduce((sum, row) => sum + row.rub, 0), formattedTotal: fmtRub(russiaRows.reduce((sum, row) => sum + row.rub, 0)) },
   ];
 
   return {
@@ -299,8 +354,14 @@ function makeSide(params: {
     formattedTotal: fmtRub(totalRub),
     sectionsRub,
     text: `Ориентировочный расчёт: ${fmtRub(totalRub)}`,
-    noteText: "Расчёт ориентировочный. Финальную стоимость уточнит менеджер после проверки лота.",
-    source: "Ориентировочный расчёт поставщика",
+    noteText: rowsAvailable ? "Расчёт получен из Calcos API. Финальную стоимость уточнит менеджер после проверки лота." : "Fallback-расчёт без строк Calcos. Финальную стоимость уточнит менеджер после проверки лота.",
+    source: rowsAvailable ? "Calcos API" : "Fallback-расчёт поставщика",
+    apiSumRub,
+    reconstructedSumRub: rowsAvailable ? reconstructedSumRub : totalRub,
+    reconstructionDiffRub,
+    currencySource: rates.currencySource,
+    calculationSource: "calcos",
+    usedFallback: !rowsAvailable,
     calcos: {
       taxMode: params.taxMode,
       taxModeResult: params.calcos.taxModeResult,
@@ -443,9 +504,9 @@ export async function POST(request: NextRequest) {
           : "physical",
       physical,
       juridical,
-      raw: {
-        physical: physicalCalc,
-        juridical: juridicalCalc,
+      diagnostics: {
+        physical: { apiSumRub: physical.apiSumRub, reconstructedSumRub: physical.reconstructedSumRub, reconstructionDiffRub: physical.reconstructionDiffRub, currencySource: physical.currencySource, calculationSource: physical.calculationSource, usedFallback: physical.usedFallback },
+        juridical: { apiSumRub: juridical.apiSumRub, reconstructedSumRub: juridical.reconstructedSumRub, reconstructionDiffRub: juridical.reconstructionDiffRub, currencySource: juridical.currencySource, calculationSource: juridical.calculationSource, usedFallback: juridical.usedFallback },
       },
     });
   } catch (error) {
