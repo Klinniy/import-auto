@@ -17,6 +17,11 @@ type RubCurrency = {
   source: string;
 };
 
+type CalcosRow = {
+  tag: "tag1" | "tag2" | "tag3";
+  value: number;
+};
+
 type CalcosResult = {
   sum: number;
   fiz: number;
@@ -25,11 +30,7 @@ type CalcosResult = {
   jurInfo: string;
   taxModeResult: string;
   currencyRates: Partial<Record<"usdRub" | "eurRub" | "jpyRub", number>>;
-  rows: {
-    tag1: number[];
-    tag2: number[];
-    tag3: number[];
-  };
+  allRows: CalcosRow[];
 };
 
 type CalcRow = {
@@ -85,10 +86,16 @@ function parseCurrencyString(value: string) {
   return result;
 }
 
-function parseXmlTags(xml: string, tag: string) {
-  return Array.from(String(xml || "").matchAll(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "gi")))
-    .map((match) => toNumber(match[1], NaN))
-    .filter((value) => Number.isFinite(value));
+function parseCalcosRows(xml: string): CalcosRow[] {
+  return Array.from(String(xml || "").matchAll(/<row>([\s\S]*?)<\/row>/gi)).flatMap((rowMatch) => {
+    const row = rowMatch[1] || "";
+    const tagMatch = row.match(/<(tag[123])>([\s\S]*?)<\/\1>/i);
+    if (!tagMatch) return [];
+
+    const tag = tagMatch[1].toLowerCase() as CalcosRow["tag"];
+    const value = toNumber(tagMatch[2], NaN);
+    return Number.isFinite(value) ? [{ tag, value }] : [];
+  });
 }
 
 function sumNumbers(values: number[]) {
@@ -96,7 +103,59 @@ function sumNumbers(values: number[]) {
 }
 
 function hasRows(calcos: CalcosResult) {
-  return calcos.rows.tag1.length > 0 || calcos.rows.tag2.length > 0 || calcos.rows.tag3.length > 0;
+  return calcos.allRows.length > 0;
+}
+
+function extractMonetaryRows(params: { calcos: CalcosResult; aucPrice: number; taxMode: TaxMode }) {
+  const rows = { tag1: [] as number[], tag2: [] as number[], tag3: [] as number[] };
+  let phase: "tag1" | "tag2" | "tag3" = "tag1";
+
+  for (const row of params.calcos.allRows) {
+
+    if (row.tag === "tag1") {
+      if (phase === "tag1") {
+        rows.tag1.push(row.value);
+        continue;
+      }
+
+      break;
+    }
+
+    if (row.tag === "tag2") {
+      if (phase === "tag3") {
+        throw new Error("Calcos вернул непонятную структуру денежных строк: tag2 после tag3.");
+      }
+      if (!rows.tag1.length) {
+        throw new Error("Calcos вернул непонятную структуру денежных строк: tag2 до tag1.");
+      }
+      phase = "tag2";
+      rows.tag2.push(row.value);
+      continue;
+    }
+
+    if (row.tag === "tag3") {
+      if (!rows.tag2.length) {
+        throw new Error("Calcos вернул непонятную структуру денежных строк: tag3 до tag2.");
+      }
+      phase = "tag3";
+      rows.tag3.push(row.value);
+    }
+  }
+
+  if (!rows.tag1.length || !rows.tag2.length) {
+    throw new Error("Calcos вернул неполный денежный блок расчёта.");
+  }
+
+  if (Math.abs(Math.round(rows.tag1[0]) - Math.round(params.aucPrice)) > 2) {
+    throw new Error("Calcos вернул денежный блок с ценой автомобиля, отличающейся от запроса.");
+  }
+
+  const expectedDuty = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
+  if (Math.abs(sumNumbers(rows.tag2) - expectedDuty) > 2) {
+    throw new Error("Calcos вернул таможенный платёж в строках, отличающийся от fiz/jur.");
+  }
+
+  return rows;
 }
 
 function resolveRates(calcos: CalcosResult, currency: RubCurrency) {
@@ -209,11 +268,7 @@ function parseCalcosXml(xml: string): CalcosResult {
     jurInfo: parseXmlTag(xml, "jur_info"),
     taxModeResult: parseXmlTag(xml, "tax_mode"),
     currencyRates: parseCurrencyString(parseXmlTag(xml, "currency")),
-    rows: {
-      tag1: parseXmlTags(xml, "tag1"),
-      tag2: parseXmlTags(xml, "tag2"),
-      tag3: parseXmlTags(xml, "tag3"),
-    },
+    allRows: parseCalcosRows(xml),
   };
 }
 
@@ -288,6 +343,7 @@ function makeSide(params: {
   const usdRub = rates.usdRub;
   const jpyRub = rates.jpyRub;
   const rowsAvailable = hasRows(params.calcos);
+  const monetaryRows = rowsAvailable ? extractMonetaryRows({ calcos: params.calcos, aucPrice: params.aucPrice, taxMode: params.taxMode }) : { tag1: [] as number[], tag2: [] as number[], tag3: [] as number[] };
   const dutyInfo = params.taxMode === 1 ? params.calcos.jurInfo : params.calcos.fizInfo;
   const dutyUsdTotal = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
   const infoSplit = splitDutyInfo(dutyInfo);
@@ -297,7 +353,7 @@ function makeSide(params: {
   const utilFeeRub = Math.round(utilFeeUsd * usdRub);
 
   const reconstructedSumRub = rowsAvailable
-    ? Math.round(sumNumbers(params.calcos.rows.tag1) * jpyRub + sumNumbers(params.calcos.rows.tag2) * usdRub + sumNumbers(params.calcos.rows.tag3))
+    ? Math.round(sumNumbers(monetaryRows.tag1) * jpyRub + sumNumbers(monetaryRows.tag2) * usdRub + sumNumbers(monetaryRows.tag3))
     : 0;
   const apiSumRub = Math.round(params.calcos.sum || 0);
   const reconstructionDiffRub = rowsAvailable ? Math.abs(reconstructedSumRub - apiSumRub) : 0;
@@ -307,7 +363,7 @@ function makeSide(params: {
   }
 
   const japanRows = rowsAvailable
-    ? params.calcos.rows.tag1.map((value, index) =>
+    ? monetaryRows.tag1.map((value, index) =>
         makeRow(index === 0 ? "Стоимость автомобиля" : `Расходы поставщика в Японии №${index}`, value, "JPY", value * jpyRub),
       )
     : [
@@ -317,7 +373,7 @@ function makeSide(params: {
       ];
 
   const tag3Rows = rowsAvailable
-    ? params.calcos.rows.tag3.map((value, index) => makeRow(`Расходы поставщика в России №${index + 1}`, value, "RUB", value))
+    ? monetaryRows.tag3.map((value, index) => makeRow(`Расходы поставщика в России №${index + 1}`, value, "RUB", value))
     : [
         makeRow("Склад временного хранения", params.storageRub, "RUB", params.storageRub),
         makeRow("Таможенное оформление / брокер", params.brokerRub, "RUB", params.brokerRub),

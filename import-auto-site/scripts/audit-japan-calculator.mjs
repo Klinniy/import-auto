@@ -69,10 +69,60 @@ export function parseCurrencyString(value) {
   return result;
 }
 
-export function parseXmlTags(xml, tag) {
-  return Array.from(String(xml || "").matchAll(new RegExp(`<${tag}>([\\s\\S]*?)<\/${tag}>`, "gi")))
-    .map((match) => toNumber(match[1], NaN))
-    .filter((value) => Number.isFinite(value));
+export function parseCalcosRows(xml) {
+  return Array.from(String(xml || "").matchAll(/<row>([\s\S]*?)<\/row>/gi)).flatMap((rowMatch) => {
+    const row = rowMatch[1] || "";
+    const tagMatch = row.match(/<(tag[123])>([\s\S]*?)<\/\1>/i);
+    if (!tagMatch) return [];
+    const tag = tagMatch[1].toLowerCase();
+    const value = toNumber(tagMatch[2], NaN);
+    return Number.isFinite(value) ? [{ tag, value }] : [];
+  });
+}
+
+export function sumNumbers(values) {
+  return values.reduce((sum, value) => sum + value, 0);
+}
+
+export function extractMonetaryRows(calcos, input, taxMode) {
+  const rows = { tag1: [], tag2: [], tag3: [] };
+  let phase = "tag1";
+
+  for (const row of calcos.allRows) {
+    if (row.tag === "tag1") {
+      if (phase === "tag1") {
+        rows.tag1.push(row.value);
+        continue;
+      }
+      break;
+    }
+
+    if (row.tag === "tag2") {
+      if (phase === "tag3") throw new Error("Calcos monetary rows are unclear: tag2 after tag3.");
+      if (!rows.tag1.length) throw new Error("Calcos monetary rows are unclear: tag2 before tag1.");
+      phase = "tag2";
+      rows.tag2.push(row.value);
+      continue;
+    }
+
+    if (row.tag === "tag3") {
+      if (!rows.tag2.length) throw new Error("Calcos monetary rows are unclear: tag3 before tag2.");
+      phase = "tag3";
+      rows.tag3.push(row.value);
+    }
+  }
+
+  if (!rows.tag1.length || !rows.tag2.length) throw new Error("Calcos monetary rows are incomplete.");
+  if (Math.abs(Math.round(rows.tag1[0]) - Math.round(input.aucPrice)) > 2) {
+    throw new Error("Calcos first monetary tag1 differs from requested auction price.");
+  }
+
+  const expectedDuty = taxMode === 1 ? calcos.jur : calcos.fiz;
+  if (Math.abs(sumNumbers(rows.tag2) - expectedDuty) > 2) {
+    throw new Error("Calcos monetary tag2 differs from fiz/jur.");
+  }
+
+  return rows;
 }
 
 export function parseCalcosXml(xml) {
@@ -95,11 +145,7 @@ export function parseCalcosXml(xml) {
       eurRub: legacyEur || undefined,
       jpyRub100: legacyJpy100 || undefined,
     },
-    rows: {
-      tag1: parseXmlTags(xml, "tag1"),
-      tag2: parseXmlTags(xml, "tag2"),
-      tag3: parseXmlTags(xml, "tag3"),
-    },
+    allRows: parseCalcosRows(xml),
     rawXml: xml,
   };
 }
@@ -192,15 +238,16 @@ export function resolveCalcosCurrencyRates(calcos) {
 }
 
 export function calculateTotals(input, calcos, taxMode, rates, env = process.env) {
-  const rowsAvailable = calcos.rows.tag1.length || calcos.rows.tag2.length || calcos.rows.tag3.length;
+  const rowsAvailable = calcos.allRows.length > 0;
+  const monetaryRows = rowsAvailable ? extractMonetaryRows(calcos, input, taxMode) : { tag1: [], tag2: [], tag3: [] };
   const usdRub = rates.usdRub.value;
   const jpyRub = rates.jpyRub.value;
   const dutyInfo = taxMode === 1 ? calcos.jurInfo : calcos.fizInfo;
   const dutyUsdTotal = taxMode === 1 ? calcos.jur : calcos.fiz;
   const split = splitDutyInfo(dutyInfo);
-  const tag1Jpy = calcos.rows.tag1.reduce((sum, value) => sum + value, 0);
-  const tag2Usd = calcos.rows.tag2.reduce((sum, value) => sum + value, 0);
-  const tag3Rub = calcos.rows.tag3.reduce((sum, value) => sum + value, 0);
+  const tag1Jpy = sumNumbers(monetaryRows.tag1);
+  const tag2Usd = sumNumbers(monetaryRows.tag2);
+  const tag3Rub = sumNumbers(monetaryRows.tag3);
   const apiSumRub = Math.round(calcos.sum || 0);
 
   if (rowsAvailable) {

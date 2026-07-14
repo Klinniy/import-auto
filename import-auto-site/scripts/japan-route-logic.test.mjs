@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateTotals, parseCalcosXml, parseCurrencyString, splitDutyInfo } from "./audit-japan-calculator.mjs";
+import { calculateTotals, extractMonetaryRows, parseCalcosXml, parseCurrencyString, splitDutyInfo } from "./audit-japan-calculator.mjs";
 
 const rates = {
   usdRub: { value: 76.6213, source: "API currency" },
@@ -16,7 +16,7 @@ function xml({ sum = 1124303, fiz = 5235, jur = 6200, fizInfo = "4000;1235", jur
     <fiz_info>${fizInfo}</fiz_info>
     <jur_info>${jurInfo}</jur_info>
     <currency>USDRUB_system:76.6213;EURRUB_system:87.5781;JPYRUB_system:0.472679;</currency>
-    ${rows ? `<row><tag1>1200000</tag1></row><row><tag1>70000</tag1></row><row><tag1>30000</tag1></row><row><tag1>29000</tag1></row><row><tag2>${fiz}</tag2></row><row><tag3>30000</tag3></row><row><tag3>65000</tag3></row>` : ""}
+    ${rows ? `<row><tag1>1200000</tag1></row><row><tag1>70000</tag1></row><row><tag1>30000</tag1></row><row><tag1>29000</tag1></row><row><tag2>${fiz}</tag2></row><row><tag3>30000</tag3></row><row><tag3>65000</tag3></row><row><tag1>2024</tag1></row><row><tag1>1</tag1></row><row><tag1>120</tag1></row><row><tag1>1800</tag1></row><row><tag1>2</tag1></row><row><tag1>2</tag1></row>` : ""}
   </response>`;
 }
 
@@ -30,9 +30,10 @@ test("route logic parses Calcos currency line without legacy usd/eur/jpy tags", 
 
 test("route logic parses multiple tag1/tag2/tag3 rows", () => {
   const parsed = parseCalcosXml(xml());
-  assert.deepEqual(parsed.rows.tag1, [1200000, 70000, 30000, 29000]);
-  assert.deepEqual(parsed.rows.tag2, [5235]);
-  assert.deepEqual(parsed.rows.tag3, [30000, 65000]);
+  const monetaryRows = extractMonetaryRows(parsed, { aucPrice: 1200000 }, 2);
+  assert.deepEqual(monetaryRows.tag1, [1200000, 70000, 30000, 29000]);
+  assert.deepEqual(monetaryRows.tag2, [5235]);
+  assert.deepEqual(monetaryRows.tag3, [30000, 65000]);
 });
 
 test("route logic reconstructs Calcos sum from row formula", () => {
@@ -79,6 +80,21 @@ test("route logic uses fallback components when rows are absent", () => {
   assert.equal(result.usedFallback, true);
   assert.equal(result.routeEquivalentTotalRub > 0, true);
 });
+
+test("regression: first live scenario ignores echoed input tag1 rows", () => {
+  const parsed = parseCalcosXml(xml({ sum: 1125528.84, fiz: 5251, fizInfo: "5207+44" }));
+  const result = calculateTotals(
+    { aucPrice: 1200000, year: 2024, volume: 1800, power: 120, fuel: 2, passing: 1 },
+    parsed,
+    2,
+    rates,
+  );
+  const echoRub = Math.round((2024 + 1800 + 120 + 2 + 1) * rates.jpyRub.value);
+  assert.equal(echoRub, 1866);
+  assert.equal(result.reconstructedSumRub, 1125529);
+  assert.equal(result.reconstructionDiffRub <= 2, true);
+});
+
 
 test("client diagnostics should not include rawXml or secret URL fields", () => {
   const parsed = parseCalcosXml(xml());

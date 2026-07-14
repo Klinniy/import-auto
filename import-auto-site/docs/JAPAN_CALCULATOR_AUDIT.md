@@ -37,13 +37,14 @@ apiSumRub = sum(tag1) * JPYRUB_system
 Production route `/api/calculator/japan` теперь:
 
 1. Разбирает `<currency>` и берёт курсы по приоритету: Calcos → ЦБ РФ → fallback.
-2. Разбирает все вхождения `tag1`, `tag2`, `tag3`, а не один фиксированный индекс.
-3. Использует `<sum>` Calcos как авторитетный итог для physical и juridical.
-4. Независимо пересчитывает сумму по формуле `sum(tag1) * jpyRub + sum(tag2) * usdRub + sum(tag3)`.
-5. Возвращает контролируемую ошибку, если расхождение с `<sum>` больше 2 рублей.
-6. Не добавляет `CALCOS_JAPAN_*` расходы поверх строк Calcos.
-7. Использует `CALCOS_JAPAN_*` только как fallback при полном отсутствии строк `row/tag*` в ответе API и помечает такой результат как fallback.
-8. Не возвращает в браузер `rawXml` и не раскрывает `CALCOS_DUTY_API_URL`.
+2. Разбирает строки по отдельным блокам `<row>` в исходном порядке и state-machine выделяет только начальный денежный блок: начальные `tag1`, затем `tag2`, затем `tag3`; повторный `tag1` после `tag2/tag3` считается началом служебного echo входных параметров и исключается из суммы.
+3. Проверяет структуру денежного блока: первое денежное `tag1` должно совпадать с ценой из запроса, а сумма денежных `tag2` — с `fiz` или `jur` для текущего режима.
+4. Использует `<sum>` Calcos как авторитетный итог для physical и juridical.
+5. Независимо пересчитывает сумму по формуле `sum(tag1) * jpyRub + sum(tag2) * usdRub + sum(tag3)`.
+6. Возвращает контролируемую ошибку, если расхождение с `<sum>` больше 2 рублей или денежный блок имеет непонятную структуру.
+7. Не добавляет `CALCOS_JAPAN_*` расходы поверх строк Calcos.
+8. Использует `CALCOS_JAPAN_*` только как fallback при полном отсутствии строк `row/tag*` в ответе API и помечает такой результат как fallback.
+9. Не возвращает в браузер `rawXml` и не раскрывает `CALCOS_DUTY_API_URL`.
 
 Диагностические поля клиентского JSON без секретов:
 
@@ -81,7 +82,9 @@ npm run build
 Покрытые сценарии:
 
 - разбор `<currency>`;
-- разбор нескольких `tag1/tag2/tag3`;
+- разбор нескольких `tag1/tag2/tag3` только из начального денежного блока;
+- игнорирование служебных echo-строк `year`, `passing`, `power`, `volume`, `fuel`, `tax_mode` после денежного блока;
+- regression первого живого сценария с расхождением 3947 JPY echo-строк;
 - восстановление `<sum>` по подтверждённой формуле;
 - physical с `fiz_info`;
 - juridical с `jur_info`;
@@ -108,6 +111,6 @@ CALCOS_DUTY_API_URL='<staging-calcos-url>' npm run audit:calculator:japan
 1. 12 живых сценариев проходят без HTTP-ошибок Calcos.
 2. В каждом ответе распознан `<currency>` с `USDRUB_system`, `EURRUB_system`, `JPYRUB_system`.
 3. `routeEquivalentTotalRub` равен `<sum>` Calcos.
-4. `reconstructionDiffRub <= 2` для каждого режима physical/juridical.
+4. `reconstructionDiffRub <= 2` для каждого режима physical/juridical, включая ответы, где после денежного блока Calcos повторяет входные параметры автомобиля в `tag1`.
 5. В браузерном ответе нет `rawXml`, полного URL Calcos или секретных query-параметров.
 6. Если Calcos вернёт ответ без строк `row/tag*`, результат явно помечается `usedFallback: true`.
