@@ -6,43 +6,29 @@ type AnyCar = Record<string, any>;
 
 type Fuel = "benzine" | "diesel" | "electro" | "benzineHybrid" | "dieselHybrid";
 
-type CalcLine = {
-  label: string;
-  value: string;
-};
-
 type RubRow = {
   label: string;
   formatted: string;
+  rub: number;
 };
 
 type RubSection = {
   title: string;
   rows: RubRow[];
   formattedTotal: string;
+  totalRub: number;
 };
 
 type CalcSide = {
   title: string;
   total: string;
   totalNum: number;
-  dutyUsd: number;
-  text: string;
-  lines: CalcLine[];
   sectionsRub: RubSection[];
+  rowsTotalNum: number;
 };
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
-}
-
-function cleanLines(value: unknown) {
-  return String(value ?? "")
-    .replace(/\r/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s+/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function num(value: unknown) {
@@ -75,12 +61,6 @@ function fmtYen(value: unknown) {
   return `${new Intl.NumberFormat("ru-RU").format(Math.round(n))} ¥`;
 }
 
-function fmtUsd(value: unknown) {
-  const n = num(value);
-  if (!n) return "—";
-  return `${new Intl.NumberFormat("ru-RU").format(Math.round(n))} $`;
-}
-
 function pick(...values: unknown[]) {
   for (const value of values) {
     const text = clean(value);
@@ -107,6 +87,11 @@ function fuelToCode(value: Fuel | string) {
   if (value === "benzineHybrid") return 4;
   if (value === "dieselHybrid") return 5;
   return 2;
+}
+
+function safeInt(value: unknown, fallback = 0) {
+  const n = num(value);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : fallback;
 }
 
 function guessFuel(car: AnyCar | null): Fuel {
@@ -149,93 +134,8 @@ function lotPriceJpy(car: AnyCar | null) {
 
   if (!price) return 0;
 
-  return price > 0 && price < 10000 ? Math.round(price * 1000) : Math.round(price);
+  return Math.round(price);
 }
-
-function matchNumber(text: string, pattern: RegExp) {
-  const match = text.match(pattern);
-  return match?.[1] ? num(match[1]) : 0;
-}
-
-function extractTotalRub(side: any) {
-  const direct = pickNumber(side?.totalRub, side?.total, side?.cityRub);
-  if (direct) return direct;
-
-  const text = cleanLines(side?.text || "");
-  const total = matchNumber(text, /ИТОГО\s+В\s+ГОРОДЕ\s+ДОСТАВКИ:\s*([\d\s.,]+)\s*руб/i);
-  if (total) return total;
-
-  const rubMatches = Array.from(text.matchAll(/([\d\s.,]+)\s*руб/gi))
-    .map((match) => num(match[1]))
-    .filter(Boolean);
-
-  return rubMatches.length ? rubMatches[0] : 0;
-}
-
-function pushLine(lines: CalcLine[], label: string, value: string) {
-  if (!value || value === "—") return;
-  lines.push({ label, value });
-}
-
-function extractAucLines(side: any) {
-  const lines: CalcLine[] = [];
-
-  if (Array.isArray(side?.lines)) {
-    for (const line of side.lines) {
-      const label = clean(line?.label);
-      const value = clean(line?.formatted || line?.value);
-      if (label && value) lines.push({ label, value });
-    }
-    if (lines.length) return lines;
-  }
-
-  const text = cleanLines(side?.text || "");
-
-  const totalRub = extractTotalRub(side);
-  pushLine(lines, "Итого в городе доставки", fmtRub(totalRub));
-
-  const auction = matchNumber(text, /Ориентировочная аукционная стоимость\s+([\d\s.,]+)/i);
-  pushLine(lines, "Ориентировочная аукционная стоимость", fmtYen(auction));
-
-  const japanCosts = matchNumber(text, /Расходы по Японии\s+([\d\s.,]+)/i);
-  pushLine(lines, "Расходы по Японии", fmtYen(japanCosts));
-
-  const freight = matchNumber(text, /Фрахт до Владивостока\s+([\d\s.,]+)/i);
-  pushLine(lines, "Фрахт до Владивостока", fmtUsd(freight));
-
-  const japanTotalRub = matchNumber(
-    text,
-    /Итого\s*\n\s*[\d\s.,]+\s*JPY\s*\n\s*[\d\s.,]+\$?\s*\n\s*([\d\s.,]+)\s*руб/i
-  );
-  pushLine(lines, "Расходы в Японии, итого", fmtRub(japanTotalRub));
-
-  const dutyUsd = num(side?.dutyUsd);
-  pushLine(lines, "Таможенная пошлина и утиль", fmtUsd(dutyUsd));
-
-  const storage = matchNumber(text, /Склад временного хранения\s+([\d\s.,]+)/i);
-  pushLine(lines, "Склад временного хранения", fmtRub(storage));
-
-  const broker = matchNumber(
-    text,
-    /Таможенное оформление автомобиля,\s*услуги брокера\s+([\d\s.,]+)/i
-  );
-  pushLine(lines, "Таможенное оформление / брокер", fmtRub(broker));
-
-  const glonass = matchNumber(text, /Оборудование Эра-Глонасс\s+([\d\s.,]+)/i);
-  pushLine(lines, "ЭРА-ГЛОНАСС", fmtRub(glonass));
-
-  const russiaTotals = Array.from(
-    text.matchAll(/Итого\s*\n\s*([\d\s.,]+)\$?\s*\n\s*([\d\s.,]+)\s*руб/gi)
-  );
-
-  if (russiaTotals.length) {
-    const last = russiaTotals[russiaTotals.length - 1];
-    pushLine(lines, "Расходы в России, итого", fmtRub(last?.[2] || ""));
-  }
-
-  return lines;
-}
-
 
 function normalizeRubSections(raw: any): RubSection[] {
   if (!Array.isArray(raw)) return [];
@@ -245,55 +145,70 @@ function normalizeRubSections(raw: any): RubSection[] {
       const title = clean(section?.title);
       const rows = Array.isArray(section?.rows)
         ? section.rows
-            .map((row: any) => ({
-              label: clean(row?.label),
-              formatted: clean(row?.formatted),
-            }))
+            .map((row: any) => {
+              const rub = num(row?.rub);
+              return {
+                label: clean(row?.label),
+                formatted: clean(row?.formatted) || fmtRub(rub),
+                rub,
+              };
+            })
             .filter((row: RubRow) => row.label && row.formatted)
         : [];
+      const totalRub = pickNumber(section?.totalRub, rows.reduce((sum: number, row: RubRow) => sum + row.rub, 0));
 
       return {
         title,
         rows,
-        formattedTotal: clean(section?.formattedTotal),
+        totalRub,
+        formattedTotal: clean(section?.formattedTotal) || fmtRub(totalRub),
       };
     })
     .filter((section) => section.title && section.rows.length);
 }
 
 function buildCalcSide(side: any, fallbackTitle: string): CalcSide {
-  const totalNum = pickNumber(side?.totalRub, extractTotalRub(side));
+  const totalNum = pickNumber(side?.totalRub);
   const sectionsRub = normalizeRubSections(side?.sectionsRub);
+  const rowsTotalNum = sectionsRub.reduce(
+    (sum, section) => sum + section.rows.reduce((rowSum, row) => rowSum + row.rub, 0),
+    0
+  );
 
   return {
-    title: fallbackTitle,
+    title: clean(side?.title) || fallbackTitle,
     total: clean(side?.cityRub) || fmtRub(totalNum),
     totalNum,
-    dutyUsd: num(side?.dutyUsd),
-    text: cleanLines(side?.text || ""),
-    lines: extractAucLines(side),
     sectionsRub,
+    rowsTotalNum,
   };
 }
 
 function CalcSideCard({
   side,
   accent,
+  recommended = false,
 }: {
   side: CalcSide;
   accent: "green" | "blue";
+  recommended?: boolean;
 }) {
   const accentClass = accent === "green" ? "text-green-700" : "text-blue-700";
   const headerClass = accent === "green" ? "bg-green-50" : "bg-blue-50";
 
+  const diffRub = side.totalNum && side.rowsTotalNum ? Math.abs(side.totalNum - side.rowsTotalNum) : 0;
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+    <div className={`min-w-0 overflow-hidden rounded-2xl border bg-white ${recommended ? "border-[#ff2d3d] shadow-[0_0_0_2px_rgba(255,45,61,0.10)]" : "border-slate-200"}`}>
       <div className={`${headerClass} border-b border-slate-100 px-4 py-4`}>
         <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
           итог в городе доставки
         </div>
-        <div className="mt-1 text-lg font-black text-[#07152f]">{side.title}</div>
-        <div className={`mt-2 text-2xl font-black ${accentClass}`}>
+        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-lg font-black text-[#07152f]">
+          <span className="min-w-0 break-words">{side.title}</span>
+          {recommended ? <span className="rounded-full bg-[#ff2d3d] px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-white">выгоднее</span> : null}
+        </div>
+        <div className={`mt-2 break-words text-2xl font-black tabular-nums ${accentClass}`}>
           {side.total || "—"}
         </div>
       </div>
@@ -302,11 +217,11 @@ function CalcSideCard({
         <div className="divide-y divide-slate-200">
           {side.sectionsRub.map((section) => (
             <div key={section.title} className="p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="text-sm font-black uppercase tracking-[0.08em] text-[#07152f]">
+              <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 break-words text-sm font-black uppercase tracking-[0.08em] text-[#07152f]">
                   {section.title}
                 </div>
-                <div className={`text-sm font-black ${accentClass}`}>
+                <div className={`min-w-0 break-words text-right text-sm font-black tabular-nums ${accentClass}`}>
                   {section.formattedTotal}
                 </div>
               </div>
@@ -315,10 +230,10 @@ function CalcSideCard({
                 {section.rows.map((row) => (
                   <div
                     key={`${section.title}-${row.label}`}
-                    className="grid grid-cols-[minmax(0,1fr)_120px] gap-3 py-2 text-sm"
+                    className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(92px,140px)] gap-3 py-2 text-sm"
                   >
-                    <div className="font-bold text-slate-600">{row.label}</div>
-                    <div className="text-right font-black text-[#07152f]">
+                    <div className="min-w-0 break-words font-bold leading-5 text-slate-600">{row.label}</div>
+                    <div className="min-w-0 break-words text-right font-black tabular-nums text-[#07152f]">
                       {row.formatted}
                     </div>
                   </div>
@@ -327,23 +242,17 @@ function CalcSideCard({
             </div>
           ))}
         </div>
-      ) : side.lines.length ? (
-        <div className="divide-y divide-slate-100">
-          {side.lines.map((line, index) => (
-            <div
-              key={`${line.label}-${index}`}
-              className="grid grid-cols-[minmax(0,1fr)_150px] gap-3 px-4 py-3 text-sm"
-            >
-              <div className="font-bold text-slate-600">{line.label}</div>
-              <div className="text-right font-black text-[#07152f]">{line.value}</div>
-            </div>
-          ))}
-        </div>
       ) : (
         <div className="px-4 py-4 text-sm font-bold text-slate-500">
           Детализация не получена.
         </div>
       )}
+
+      {diffRub > 2 ? (
+        <div className="border-t border-yellow-100 bg-yellow-50 px-4 py-3 text-xs font-bold text-yellow-900">
+          Сумма отображаемых строк отличается от общего итога на {fmtRub(diffRub)}.
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -420,11 +329,11 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
   }, [lot.priceJpy, lot.year, lot.volume, lot.power, lot.electricPower, lot.fuel]);
 
   async function calculate() {
-    const price = num(priceJpy);
-    const engineVolume = num(volume);
-    const enginePower = num(power);
-    const electroPower = num(electricPower);
-    const releaseYear = num(year);
+    const price = safeInt(priceJpy);
+    const engineVolume = safeInt(volume);
+    const enginePower = safeInt(power);
+    const electroPower = safeInt(electricPower);
+    const releaseYear = safeInt(year);
     const fuelCodeValue = fuelToCode(fuel);
 
     if (!price || !releaseYear) {
@@ -456,8 +365,8 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
           priceJpy: Math.round(price),
           aucPrice: Math.round(price),
           auctionPrice: Math.round(price),
-          price: Math.round(price / 1000),
-          cost: Math.round(price / 1000),
+          price: Math.round(price),
+          cost: Math.round(price),
 
           year: Math.round(releaseYear),
 
@@ -505,13 +414,9 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
   }
 
   useEffect(() => {
-    if (!lot.priceJpy || !lot.year || fuelToCode(lot.fuel) !== 3 && (!lot.volume || !lot.power)) {
-      return;
-    }
-
-    calculate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lot.priceJpy, lot.year, lot.volume, lot.power, lot.fuel]);
+    setResult(null);
+    setError("");
+  }, [priceJpy, year, volume, power, electricPower, fuel, youngerThree, dvs30]);
 
   const physicalSide = result ? buildCalcSide(result?.physical, "Физическое лицо") : null;
   const juridicalSide = result ? buildCalcSide(result?.juridical, "Юридическое лицо") : null;
@@ -524,6 +429,9 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
       : "";
 
   const currency = result?.currency;
+  const recommendedSide = physicalSide && juridicalSide && physicalSide.totalNum && juridicalSide.totalNum
+    ? physicalSide.totalNum <= juridicalSide.totalNum ? "physical" : "juridical"
+    : "";
 
   return (
     <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -534,8 +442,8 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
         </div>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[390px_minmax(0,1fr)]">
-        <div className="border-b border-slate-100 p-5 lg:border-b-0 lg:border-r">
+      <div className="grid min-w-0 gap-0 xl:grid-cols-[460px_minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="min-w-0 border-b border-slate-100 p-5 lg:border-b-0 lg:border-r">
           <div className="rounded-2xl bg-slate-50 p-4">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
               текущий лот
@@ -570,62 +478,62 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3">
-            <label className="grid gap-1 text-sm font-bold text-slate-700">
+          <div className="mt-4 grid min-w-0 gap-3">
+            <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
               Цена авто, JPY
               <input
                 value={priceJpy}
                 onChange={(event) => setPriceJpy(event.target.value)}
-                className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-sm font-bold text-slate-700">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
                 Год
                 <input
                   value={year}
                   onChange={(event) => setYear(event.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                  className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
                 />
               </label>
 
-              <label className="grid gap-1 text-sm font-bold text-slate-700">
+              <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
                 Объём, см³
                 <input
                   value={volume}
                   onChange={(event) => setVolume(event.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                  className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
                 />
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-sm font-bold text-slate-700">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
                 Мощность ДВС, л.с.
                 <input
                   value={power}
                   onChange={(event) => setPower(event.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                  className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
                 />
               </label>
 
-              <label className="grid gap-1 text-sm font-bold text-slate-700">
+              <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
                 Электро, л.с.
                 <input
                   value={electricPower}
                   onChange={(event) => setElectricPower(event.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                  className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
                 />
               </label>
             </div>
 
-            <label className="grid gap-1 text-sm font-bold text-slate-700">
+            <label className="grid min-w-0 gap-1 text-sm font-bold leading-5 text-slate-700">
               Тип топлива
               <select
                 value={fuel}
                 onChange={(event) => setFuel(event.target.value as Fuel)}
-                className="rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
+                className="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 font-black text-[#07152f] outline-none focus:border-[#ff2d3d]"
               >
                 <option value="benzine">Бензин</option>
                 <option value="diesel">Дизель</option>
@@ -672,7 +580,7 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
           </div>
         </div>
 
-        <div className="p-5">
+        <div className="min-w-0 p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
@@ -696,12 +604,12 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
               ) : null}
             </div>
 
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+            <div className="min-w-0 rounded-2xl bg-slate-50 px-4 py-3 text-right">
               <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
                 цена в расчёте
               </div>
 
-              <div className="text-lg font-black text-green-700">{fmtYen(priceJpy)}</div>
+              <div className="break-words text-lg font-black tabular-nums text-green-700">{fmtYen(priceJpy)}</div>
             </div>
           </div>
 
@@ -714,9 +622,9 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
               Данные из лота подставлены. Нажми «Рассчитать».
             </div>
           ) : physicalSide && juridicalSide ? (
-            <div className="grid gap-4 xl:grid-cols-2">
-              <CalcSideCard side={physicalSide} accent="green" />
-              <CalcSideCard side={juridicalSide} accent="blue" />
+            <div className="grid min-w-0 gap-4 2xl:grid-cols-2 xl:grid-cols-2">
+              <CalcSideCard side={physicalSide} accent="green" recommended={recommendedSide === "physical"} />
+              <CalcSideCard side={juridicalSide} accent="blue" recommended={recommendedSide === "juridical"} />
             </div>
           ) : (
             <div className="rounded-2xl bg-slate-50 p-5 text-sm font-bold text-slate-500">
