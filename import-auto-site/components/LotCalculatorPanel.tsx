@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { selectLotPriceJpy } from "./lotPriceSelection.mjs";
 
 type AnyCar = Record<string, any>;
 
@@ -117,26 +118,6 @@ function guessFuel(car: AnyCar | null): Fuel {
   return "benzine";
 }
 
-function lotPriceJpy(car: AnyCar | null) {
-  const price = pickNumber(
-    car?.finishPrice,
-    car?.FINISH,
-    car?.priceJpy,
-    car?.aucPrice,
-    car?.auctionPrice,
-    car?.startPrice,
-    car?.START,
-    car?.averagePrice,
-    car?.AVG_PRICE,
-    car?.price,
-    car?.PRICE
-  );
-
-  if (!price) return 0;
-
-  return Math.round(price);
-}
-
 function normalizeRubSections(raw: any): RubSection[] {
   if (!Array.isArray(raw)) return [];
 
@@ -202,7 +183,7 @@ function CalcSideCard({
     <div className={`min-w-0 overflow-hidden rounded-2xl border bg-white ${recommended ? "border-[#ff2d3d] shadow-[0_0_0_2px_rgba(255,45,61,0.10)]" : "border-slate-200"}`}>
       <div className={`${headerClass} border-b border-slate-100 px-4 py-4`}>
         <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
-          итог в городе доставки
+          Итоговая стоимость
         </div>
         <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-lg font-black text-[#07152f]">
           <span className="min-w-0 break-words">{side.title}</span>
@@ -280,7 +261,7 @@ export default function LotCalculatorPanel({ car }: { car: AnyCar | null }) {
       car?.PS
     );
     const electricPower = pickNumber(car?.electricPower, car?.electroPower, car?.PW_EL);
-    const priceJpy = lotPriceJpy(car);
+    const priceJpy = selectLotPriceJpy(car);
     const mileage = pickNumber(car?.mileage, car?.MILEAGE);
     const rate = pick(car?.rate, car?.score, car?.RATE);
     const fuel = guessFuel(car);
