@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "audit:calculator:japan": "node scripts/audit-japan-calculator.mjs",
-    "test:audit:calculator:japan": "node --test scripts/audit-japan-calculator.test.mjs"
+    "test:audit:calculator:japan": "node --test scripts/audit-japan-calculator.test.mjs",
+    "audit:factory:catalog": "node scripts/audit-factory-catalog.mjs"
   },
   "dependencies": {
     "@prisma/client": "^7.8.0",
