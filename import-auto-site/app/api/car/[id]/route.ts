@@ -184,6 +184,8 @@ function mapStatsCar(row: Record<string, any>) {
     soldPrice: finishPrice,
     averagePrice,
     avgPrice: averagePrice,
+    currentPrice: averagePrice,
+    bidPrice: averagePrice,
     price: averagePrice || finishPrice || startPrice,
 
     status,

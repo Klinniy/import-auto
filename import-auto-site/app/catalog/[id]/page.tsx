@@ -37,6 +37,9 @@ type Car = {
   leftHandDrive?: boolean;
   startPrice?: number | string | null;
   finishPrice?: number | string | null;
+  soldPrice?: number | string | null;
+  currentPrice?: number | string | null;
+  bidPrice?: number | string | null;
   averagePrice?: number | string | null;
   status?: string;
   previewImage?: string;

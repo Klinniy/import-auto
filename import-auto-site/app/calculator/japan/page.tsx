@@ -1,7 +1,7 @@
-import ImportCalculator from "@/components/ImportCalculator";
+import JapanStandaloneCalculator from "@/components/JapanStandaloneCalculator";
 
 export const dynamic = "force-dynamic";
 
 export default function JapanCalculatorPage() {
-  return <ImportCalculator market="japan" />;
+  return <JapanStandaloneCalculator />;
 }

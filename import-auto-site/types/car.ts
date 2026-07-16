@@ -26,6 +26,9 @@ export type CatalogCar = {
   rate: string;
   startPrice: number | null;
   finishPrice: number | null;
+  soldPrice?: number | null;
+  currentPrice?: number | null;
+  bidPrice?: number | null;
   averagePrice: number | null;
   averageString: string;
   status: string;

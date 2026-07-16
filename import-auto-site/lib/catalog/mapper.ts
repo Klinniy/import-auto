@@ -71,7 +71,10 @@ export function mapCar(row: Raw): CatalogCar {
 
     startPrice: num(row.START),
     finishPrice: num(row.FINISH),
+    soldPrice: num(row.FINISH),
     averagePrice: num(row.AVG_PRICE),
+    currentPrice: num(row.AVG_PRICE),
+    bidPrice: num(row.AVG_PRICE),
     averageString: clean(row.AVG_STRING),
     status: clean(row.STATUS),
     time: clean(row.TIME),
