@@ -26,27 +26,20 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path("import-auto-site/components/CatalogFull.tsx")
           text = path.read_text(encoding="utf-8")
 
-          old = '''<span
-                      className="group relative inline-flex cursor-pointer items-center"
-                      aria-label="санкционный"
-                    >
-                      ▲
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
-                        санкционный
-                      </span>
-                    </span>{" "}'''
+          pattern = re.compile(
+              r'''<span\s+className="group relative inline-flex cursor-pointer items-center"\s+aria-label="санкционный"\s*>\s*▲\s*<span[^>]*>\s*санкционный\s*</span>\s*</span>\{" "\}''',
+              re.S,
+          )
 
-          replacement = '''<span aria-hidden="true">▲</span>{" "}'''
-
-          count = text.count(old)
+          text, count = pattern.subn('<span aria-hidden="true">▲</span>{" "}', text)
           if count != 2:
               raise SystemExit(f"Expected 2 false sanction tooltip blocks, found {count}")
 
-          text = text.replace(old, replacement)
           path.write_text(text, encoding="utf-8")
           PY
 
