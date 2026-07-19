@@ -1,0 +1,115 @@
+name: Remove calculator recommendation highlighting
+
+on:
+  push:
+    branches:
+      - fix/remove-calculator-recommendation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/remove-calculator-recommendation
+          fetch-depth: 0
+
+      - name: Remove recommendation UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("import-auto-site/components/LotCalculatorPanel.tsx")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  '''function CalcSideCard({
+            side,
+            accent,
+            recommended = false,
+          }: {
+            side: CalcSide;
+            accent: "green" | "blue";
+            recommended?: boolean;
+          }) {''',
+                  '''function CalcSideCard({
+            side,
+            accent,
+          }: {
+            side: CalcSide;
+            accent: "green" | "blue";
+          }) {''',
+              ),
+              (
+                  '''    <div className={`min-w-0 overflow-hidden rounded-2xl border bg-white ${recommended ? "border-[#ff2d3d] shadow-[0_0_0_2px_rgba(255,45,61,0.10)]" : "border-slate-200"}`}>''',
+                  '''    <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">''',
+              ),
+              (
+                  '''        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-lg font-black text-[#07152f]">
+            <span className="min-w-0 break-words">{side.title}</span>
+            {recommended ? <span className="rounded-full bg-[#ff2d3d] px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-white">выгоднее</span> : null}
+          </div>''',
+                  '''        <div className="mt-1 text-lg font-black text-[#07152f]">
+            <span className="min-w-0 break-words">{side.title}</span>
+          </div>''',
+              ),
+              (
+                  '''  const comparisonText =
+            physicalSide && juridicalSide && physicalSide.totalNum && juridicalSide.totalNum
+              ? physicalSide.totalNum <= juridicalSide.totalNum
+                ? `Физическое лицо дешевле на ${fmtRub(juridicalSide.totalNum - physicalSide.totalNum)}`
+                : `Юридическое лицо дешевле на ${fmtRub(physicalSide.totalNum - juridicalSide.totalNum)}`
+              : "";
+
+          const currency = result?.currency;
+          const recommendedSide = physicalSide && juridicalSide && physicalSide.totalNum && juridicalSide.totalNum
+            ? physicalSide.totalNum <= juridicalSide.totalNum ? "physical" : "juridical"
+            : "";''',
+                  '''  const currency = result?.currency;''',
+              ),
+              (
+                  '''              {comparisonText ? (
+                    <div className="mt-1 text-sm font-black text-green-700">
+                      {comparisonText}
+                    </div>
+                  ) : null}
+
+          ''',
+                  '''              ''',
+              ),
+              (
+                  '''              <CalcSideCard side={physicalSide} accent="green" recommended={recommendedSide === "physical"} />
+                  <CalcSideCard side={juridicalSide} accent="blue" recommended={recommendedSide === "juridical"} />''',
+                  '''              <CalcSideCard side={physicalSide} accent="green" />
+                  <CalcSideCard side={juridicalSide} accent="blue" />''',
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f"Expected source block not found:\n{old}")
+              text = text.replace(old, new, 1)
+
+          forbidden = ["recommendedSide", "comparisonText", ">выгоднее<"]
+          for value in forbidden:
+              if value in text:
+                  raise SystemExit(f"Recommendation UI remains: {value}")
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Remove one-time workflow
+        run: rm .github/workflows/remove-calculator-recommendation.yml
+
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add import-auto-site/components/LotCalculatorPanel.tsx .github/workflows/remove-calculator-recommendation.yml
+          git commit -m "Remove calculator recommendation highlighting"
+          git push origin HEAD:fix/remove-calculator-recommendation
