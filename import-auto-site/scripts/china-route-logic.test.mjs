@@ -44,3 +44,10 @@ test("reference case does not lose the amount omitted by fiz_info", () => {
     authoritative - incomplete,
   );
 });
+
+test("China-side 65,000 CNY expenses are included in the Calcos customs base", () => {
+  assert.match(routeSource, /const chinaExpensesCny = Math\.round/);
+  assert.match(routeSource, /const chinaExpensesRub = Math\.round\(chinaExpensesCny \* cnyRub\)/);
+  assert.match(routeSource, /body\.sheet1 \?\? body\.chinaExpensesRub \?\? chinaExpensesRub/);
+  assert.doesNotMatch(routeSource, /CALCOS_CHINA_SHEET1 \?\? 8500/);
+});
