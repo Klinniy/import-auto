@@ -210,25 +210,6 @@ function makeRow(
   };
 }
 
-function splitDutyInfo(raw: string): { dutyPart: number; utilPart: number } {
-  const parts = String(raw || "")
-    .split("+")
-    .map((x) => toNumber(x, 0))
-    .filter((x) => Number.isFinite(x) && x >= 0);
-
-  if (parts.length >= 2) {
-    return {
-      dutyPart: parts[0],
-      utilPart: parts[1],
-    };
-  }
-
-  return {
-    dutyPart: 0,
-    utilPart: 0,
-  };
-}
-
 function makeSide(params: {
   title: string;
   calcos: CalcosResult;
@@ -259,21 +240,12 @@ function makeSide(params: {
   const dutyInfo = params.taxMode === 1 ? params.calcos.jurInfo : params.calcos.fizInfo;
   const dutyUsdTotal = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
 
-  const infoSplit = splitDutyInfo(dutyInfo);
-
-  let customsDutyRub = 0;
-  let utilFeeRub = 0;
-
-  if (infoSplit.dutyPart > 0 || infoSplit.utilPart > 0) {
-    customsDutyRub = Math.round(infoSplit.dutyPart * usdRub);
-    utilFeeRub = Math.round(infoSplit.utilPart * usdRub);
-  } else {
-    customsDutyRub = Math.round(dutyUsdTotal * usdRub);
-    utilFeeRub = 0;
-  }
+  // fiz/jur are authoritative Calcos totals for customs duty plus utilization fee.
+  // fiz_info/jur_info are explanatory fields and can omit parts of that total.
+  const customsAndUtilRub = Math.round(dutyUsdTotal * usdRub);
 
   const chinaTotalRub = carRub + chinaExpensesRub + deliveryRub;
-  const russiaTotalRub = customsDutyRub + utilFeeRub + storageRub + brokerRub + glonassRub;
+  const russiaTotalRub = customsAndUtilRub + storageRub + brokerRub + glonassRub;
   const totalRub = chinaTotalRub + russiaTotalRub;
 
   const sectionsRub: CalcSection[] = [
@@ -290,8 +262,12 @@ function makeSide(params: {
     {
       title: "Расходы в России",
       rows: [
-        makeRow("Таможенная пошлина", infoSplit.dutyPart, "USD", customsDutyRub),
-        makeRow("Утилизационный сбор", infoSplit.utilPart, "USD", utilFeeRub),
+        makeRow(
+          "Таможенная пошлина и утилизационный сбор",
+          dutyUsdTotal,
+          "USD",
+          customsAndUtilRub,
+        ),
         makeRow("Склад временного хранения", storageRub, "RUB", storageRub),
         makeRow("Таможенное оформление / брокер", brokerRub, "RUB", brokerRub),
         makeRow("ЭРА-ГЛОНАСС / оформление", glonassRub, "RUB", glonassRub),
