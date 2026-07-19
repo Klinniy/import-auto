@@ -216,6 +216,7 @@ function makeSide(params: {
   priceCny: number;
   priceRub: number;
   sheet1: number;
+  chinaExpensesCny: number;
   deliveryUsd: number;
   year: number;
   power: number;
@@ -226,7 +227,7 @@ function makeSide(params: {
   const usdRub = params.calcos.rates.usdRub || 77.2264;
 
   // Повторяем структуру расчёта с поддомена auc.mosaicauto.ru.
-  const chinaExpensesCny = 65_000;
+  const chinaExpensesCny = Math.max(0, Math.round(params.chinaExpensesCny || 65_000));
   const deliveryUsd = Math.max(0, Math.round(params.deliveryUsd || 350));
 
   const storageRub = 6_000;
@@ -335,14 +336,32 @@ export async function POST(request: NextRequest) {
 
     const cnyRub = await loadCnyRub();
 
+    const chinaExpensesCny = Math.round(
+      clamp(
+        toNumber(
+          body.chinaExpensesCny ?? process.env.CALCOS_CHINA_EXPENSES_CNY ?? 65_000,
+          65_000,
+        ),
+        0,
+        10_000_000,
+      ),
+    );
+    const chinaExpensesRub = Math.round(chinaExpensesCny * cnyRub);
+
     const priceMode = String(process.env.CALCOS_CHINA_PRICE_MODE || "rub").toLowerCase();
     const priceForCalcos =
       priceMode === "raw" || priceMode === "cny"
         ? priceCny
         : Math.round(priceCny * cnyRub);
 
+    // В расчёте поставщика 65 000 CNY расходов по Китаю входят в таможенную стоимость.
+    // Calcos в текущем China-режиме получает price и sheet1 в одной рублёвой базе.
     const sheet1 = Math.round(
-      clamp(toNumber(body.sheet1 ?? body.deliveryRub ?? process.env.CALCOS_CHINA_SHEET1 ?? 8500, 8500), 0, 10_000_000),
+      clamp(
+        toNumber(body.sheet1 ?? body.chinaExpensesRub ?? chinaExpensesRub, chinaExpensesRub),
+        0,
+        10_000_000,
+      ),
     );
 
     const deliveryUsd = Math.round(
@@ -371,6 +390,7 @@ export async function POST(request: NextRequest) {
       priceCny,
       priceRub: priceForCalcos,
       sheet1,
+      chinaExpensesCny,
       deliveryUsd,
       year,
       power,
@@ -384,6 +404,7 @@ export async function POST(request: NextRequest) {
       priceCny,
       priceRub: priceForCalcos,
       sheet1,
+      chinaExpensesCny,
       deliveryUsd,
       year,
       power,
@@ -400,6 +421,8 @@ export async function POST(request: NextRequest) {
         priceForCalcos,
         priceMode,
         cnyRub,
+        chinaExpensesCny,
+        chinaExpensesRub,
         sheet1,
         deliveryUsd,
         year,
