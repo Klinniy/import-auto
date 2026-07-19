@@ -1,0 +1,138 @@
+name: Apply China customs base fix
+
+on:
+  push:
+    branches:
+      - fix/china-calculator-authoritative-duty
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/china-calculator-authoritative-duty
+          fetch-depth: 0
+
+      - name: Include China expenses in Calcos customs base
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          route_path = Path('import-auto-site/app/api/calculator/china/route.ts')
+          text = route_path.read_text(encoding='utf-8')
+
+          old_type = '''  sheet1: number;
+  deliveryUsd: number;'''
+          new_type = '''  sheet1: number;
+  chinaExpensesCny: number;
+  deliveryUsd: number;'''
+          if old_type not in text:
+              raise SystemExit('makeSide params block not found')
+          text = text.replace(old_type, new_type, 1)
+
+          old_expense = '''  // Повторяем структуру расчёта с поддомена auc.mosaicauto.ru.
+  const chinaExpensesCny = 65_000;
+  const deliveryUsd = Math.max(0, Math.round(params.deliveryUsd || 350));'''
+          new_expense = '''  // Повторяем структуру расчёта с поддомена auc.mosaicauto.ru.
+  const chinaExpensesCny = Math.max(0, Math.round(params.chinaExpensesCny || 65_000));
+  const deliveryUsd = Math.max(0, Math.round(params.deliveryUsd || 350));'''
+          if old_expense not in text:
+              raise SystemExit('China expenses block not found')
+          text = text.replace(old_expense, new_expense, 1)
+
+          old_after_rate = '''    const cnyRub = await loadCnyRub();
+
+    const priceMode = String(process.env.CALCOS_CHINA_PRICE_MODE || "rub").toLowerCase();'''
+          new_after_rate = '''    const cnyRub = await loadCnyRub();
+
+    const chinaExpensesCny = Math.round(
+      clamp(
+        toNumber(
+          body.chinaExpensesCny ?? process.env.CALCOS_CHINA_EXPENSES_CNY ?? 65_000,
+          65_000,
+        ),
+        0,
+        10_000_000,
+      ),
+    );
+    const chinaExpensesRub = Math.round(chinaExpensesCny * cnyRub);
+
+    const priceMode = String(process.env.CALCOS_CHINA_PRICE_MODE || "rub").toLowerCase();'''
+          if old_after_rate not in text:
+              raise SystemExit('CNY rate block not found')
+          text = text.replace(old_after_rate, new_after_rate, 1)
+
+          old_sheet = '''    const sheet1 = Math.round(
+      clamp(toNumber(body.sheet1 ?? body.deliveryRub ?? process.env.CALCOS_CHINA_SHEET1 ?? 8500, 8500), 0, 10_000_000),
+    );'''
+          new_sheet = '''    // Calcos must receive the 65,000 CNY China-side expenses as part of the customs value.
+    // The duty endpoint expects price and sheet1 in the same RUB basis in the current China mode.
+    const sheet1 = Math.round(
+      clamp(
+        toNumber(body.sheet1 ?? body.chinaExpensesRub ?? chinaExpensesRub, chinaExpensesRub),
+        0,
+        10_000_000,
+      ),
+    );'''
+          if old_sheet not in text:
+              raise SystemExit('sheet1 block not found')
+          text = text.replace(old_sheet, new_sheet, 1)
+
+          text = text.replace(
+              '''      sheet1,
+      deliveryUsd,
+      year,''',
+              '''      sheet1,
+      chinaExpensesCny,
+      deliveryUsd,
+      year,''',
+              2,
+          )
+
+          old_input = '''        cnyRub,
+        sheet1,
+        deliveryUsd,'''
+          new_input = '''        cnyRub,
+        chinaExpensesCny,
+        chinaExpensesRub,
+        sheet1,
+        deliveryUsd,'''
+          if old_input not in text:
+              raise SystemExit('input diagnostics block not found')
+          text = text.replace(old_input, new_input, 1)
+
+          route_path.write_text(text, encoding='utf-8')
+
+          test_path = Path('import-auto-site/scripts/china-route-logic.test.mjs')
+          test = test_path.read_text(encoding='utf-8')
+          test += '''
+
+test("China-side 65,000 CNY expenses are included in the Calcos customs base", () => {
+  assert.match(routeSource, /const chinaExpensesCny = Math\.round/);
+  assert.match(routeSource, /const chinaExpensesRub = Math\.round\(chinaExpensesCny \* cnyRub\)/);
+  assert.match(routeSource, /body\.sheet1 \?\? body\.chinaExpensesRub \?\? chinaExpensesRub/);
+  assert.doesNotMatch(routeSource, /CALCOS_CHINA_SHEET1 \?\? 8500/);
+});
+'''
+          test_path.write_text(test, encoding='utf-8')
+          PY
+
+          cd import-auto-site
+          npm ci
+          npm run test:route:calculator:china
+          npx tsc --noEmit --pretty false
+          npm run build
+
+      - name: Commit fix
+        run: |
+          rm .github/workflows/apply-china-sheet1-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add import-auto-site/app/api/calculator/china/route.ts import-auto-site/scripts/china-route-logic.test.mjs .github/workflows/apply-china-sheet1-fix.yml
+          git commit -m "Include China expenses in Calcos customs base"
+          git push origin HEAD:fix/china-calculator-authoritative-duty
