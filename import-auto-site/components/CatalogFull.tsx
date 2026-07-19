@@ -1310,15 +1310,19 @@ function AfaTable({
                 <td className="border-b border-white px-1.5 py-[5px] text-center align-top">
                   <div>{formatNumber(car.mileage)} km</div>
                   <div className="mt-[4px] font-bold text-[#b78300]">
-                    <span
-                      className="group relative inline-flex cursor-pointer items-center"
-                      aria-label="санкционный"
-                    >
-                      ▲
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
-                        санкционный
-                      </span>
-                    </span>{" "}
+                    {isSanction(car) ? (
+            <>
+              <span
+                className="group relative inline-flex cursor-pointer items-center"
+                aria-label="санкционный"
+              >
+                ▲
+                <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
+                  санкционный
+                </span>
+              </span>{" "}
+            </>
+          ) : null}
                     {cleanText(car.rate || car.grade) || "—"}
                   </div>
                 </td>
@@ -1392,15 +1396,19 @@ function AfaMobileLotList({ cars }: { cars: Car[] }) {
               </Link>
 
               <div className="mt-1 truncate font-bold text-[#b78300]">
-                <span
-                  className="group relative inline-flex cursor-pointer items-center"
-                  aria-label="санкционный"
-                >
-                  ▲
-                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
-                    санкционный
-                  </span>
-                </span>{" "}
+                {isSanction(car) ? (
+            <>
+              <span
+                className="group relative inline-flex cursor-pointer items-center"
+                aria-label="санкционный"
+              >
+                ▲
+                <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
+                  санкционный
+                </span>
+              </span>{" "}
+            </>
+          ) : null}
                 {rate}
               </div>
             </div>
