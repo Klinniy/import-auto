@@ -1,0 +1,58 @@
+name: Fix sanction indicator condition
+
+on:
+  push:
+    branches:
+      - fix/sanction-tooltip
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/sanction-tooltip
+          fetch-depth: 0
+
+      - name: Make sanction indicator conditional
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("import-auto-site/components/CatalogFull.tsx")
+          text = path.read_text(encoding="utf-8")
+
+          old = '<span aria-hidden="true">▲</span>{" "}'
+          new = '''{isSanction(car) ? (
+                      <>
+                        <span
+                          className="group relative inline-flex cursor-pointer items-center"
+                          aria-label="санкционный"
+                        >
+                          ▲
+                          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#07152f] px-3 py-1.5 text-xs font-black text-white shadow-xl group-hover:block">
+                            санкционный
+                          </span>
+                        </span>{" "}
+                      </>
+                    ) : null}'''
+
+          count = text.count(old)
+          if count != 2:
+              raise SystemExit(f"Expected 2 neutral indicators, found {count}")
+
+          text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          rm .github/workflows/fix-sanction-conditional.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add import-auto-site/components/CatalogFull.tsx .github/workflows/fix-sanction-conditional.yml
+          git commit -m "Show sanction indicator only for sanctioned cars"
+          git push origin HEAD:fix/sanction-tooltip
