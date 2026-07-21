@@ -45,9 +45,25 @@ test("reference case does not lose the amount omitted by fiz_info", () => {
   );
 });
 
-test("China-side 65,000 CNY expenses are included in the Calcos customs base", () => {
-  assert.match(routeSource, /const chinaExpensesCny = Math\.round/);
-  assert.match(routeSource, /const chinaExpensesRub = Math\.round\(chinaExpensesCny \* cnyRub\)/);
-  assert.match(routeSource, /body\.sheet1 \?\? body\.chinaExpensesRub \?\? chinaExpensesRub/);
-  assert.doesNotMatch(routeSource, /CALCOS_CHINA_SHEET1 \?\? 8500/);
+test("China-side expenses are included directly in the Calcos customs price", () => {
+  assert.match(routeSource, /const customsPriceCny = priceCny \+ chinaExpensesCny/);
+  assert.match(routeSource, /const customsPriceRub = Math\.round\(customsPriceCny \* cnyRub\)/);
+  assert.match(routeSource, /\? customsPriceCny : customsPriceRub/);
+  assert.match(routeSource, /clamp\(toNumber\(body\.sheet1, 0\), 0, 10_000_000\)/);
+  assert.doesNotMatch(routeSource, /body\.sheet1 \?\? body\.chinaExpensesRub/);
+});
+
+test("reference lot customs base contains 171800 plus 65000 CNY", () => {
+  const priceCny = 171800;
+  const chinaExpensesCny = 65000;
+  const cnyPerUsd = 6.77;
+  const missingDutyUsd = (chinaExpensesCny / cnyPerUsd) * 0.48;
+
+  assert.equal(priceCny + chinaExpensesCny, 236800);
+  assert.equal(Math.round(missingDutyUsd), 4609);
+});
+
+test("China request sends the supplier's DVS-30 flag", () => {
+  assert.match(routeSource, /url\.searchParams\.set\("dvs30", String\(params\.dvs30\)\)/);
+  assert.match(routeSource, /const dvs30 = calcDvs30\(body\)/);
 });
