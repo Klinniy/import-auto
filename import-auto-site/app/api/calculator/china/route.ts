@@ -27,7 +27,6 @@ type CalcosResult = {
   fizInfo: string;
   jurInfo: string;
   taxModeResult: string;
-  currencyText: string;
   rates: {
     usdRub: number;
     eurRub: number;
@@ -35,7 +34,6 @@ type CalcosResult = {
     cnyRub: number;
     krwRub: number;
   };
-  rawXmlPreview: string;
 };
 
 function toNumber(value: unknown, fallback = 0): number {
@@ -81,15 +79,13 @@ function parseCalcosXml(xml: string): CalcosResult {
     fizInfo: xmlTag(xml, "fiz_info"),
     jurInfo: xmlTag(xml, "jur_info"),
     taxModeResult: xmlTag(xml, "tax_mode"),
-    currencyText,
     rates: {
-      usdRub: parseRate(currencyText, "USDRUB_system") || 0,
-      eurRub: parseRate(currencyText, "EURRUB_system") || 0,
-      jpyRub: parseRate(currencyText, "JPYRUB_system") || 0,
-      cnyRub: parseRate(currencyText, "CNYRUB_system") || 0,
-      krwRub: parseRate(currencyText, "KRWRUB_system") || 0,
+      usdRub: parseRate(currencyText, "USDRUB_system"),
+      eurRub: parseRate(currencyText, "EURRUB_system"),
+      jpyRub: parseRate(currencyText, "JPYRUB_system"),
+      cnyRub: parseRate(currencyText, "CNYRUB_system"),
+      krwRub: parseRate(currencyText, "KRWRUB_system"),
     },
-    rawXmlPreview: xml.slice(0, 1200),
   };
 }
 
@@ -113,7 +109,7 @@ async function fetchWin1251(url: string): Promise<string> {
 }
 
 async function fetchCalcos(params: {
-  priceRub: number;
+  price: number;
   sheet1: number;
   year: number;
   passing: number;
@@ -121,6 +117,7 @@ async function fetchCalcos(params: {
   volume: number;
   fuel: number;
   taxMode: 0 | 1 | 2;
+  dvs30: number;
 }): Promise<CalcosResult> {
   const baseUrl = process.env.CALCOS_DUTY_API_URL;
 
@@ -130,7 +127,7 @@ async function fetchCalcos(params: {
 
   const url = new URL(baseUrl);
   url.searchParams.set("verbose", "1");
-  url.searchParams.set("price", String(Math.round(params.priceRub)));
+  url.searchParams.set("price", String(Math.round(params.price)));
   url.searchParams.set("sheet1", String(Math.round(params.sheet1)));
   url.searchParams.set("year", String(params.year));
   url.searchParams.set("passing", String(params.passing));
@@ -138,12 +135,13 @@ async function fetchCalcos(params: {
   url.searchParams.set("volume", String(params.volume));
   url.searchParams.set("fuel", String(params.fuel));
   url.searchParams.set("tax_mode", String(params.taxMode));
+  url.searchParams.set("dvs30", String(params.dvs30));
   url.searchParams.set("or_change_tax_mode_to_0", "");
 
   const xml = await fetchWin1251(url.toString());
 
   if (/not object/i.test(xml)) {
-    throw new Error(`Calcos returned not object. Check CALCOS_DUTY_API_URL: ${baseUrl}`);
+    throw new Error("Calcos returned not object");
   }
 
   return parseCalcosXml(xml);
@@ -157,7 +155,7 @@ async function loadCnyRub(): Promise<number> {
         "user-agent": "MosaicAuto CBR",
         accept: "text/xml,text/plain,*/*",
       },
-    }).then((r) => r.text());
+    }).then((response) => response.text());
 
     const block = xml.match(/<Valute ID="R01375">([\s\S]*?)<\/Valute>/i)?.[1] || "";
     const nominal = toNumber(xmlTag(block, "Nominal"), 1) || 1;
@@ -188,11 +186,18 @@ function calcPassing(body: Record<string, unknown>): number {
     return Math.round(clamp(toNumber(direct, 0), 0, 1));
   }
 
-  if (body.isProhChecked !== undefined) {
-    return body.isProhChecked ? 0 : 1;
+  if (body.isProhChecked !== undefined || body.youngerThree !== undefined) {
+    return body.isProhChecked || body.youngerThree ? 1 : 0;
   }
 
   return 0;
+}
+
+function calcDvs30(body: Record<string, unknown>): number {
+  const direct = body.dvs30 ?? body.powerDvsMax30MinEd;
+  if (direct === undefined || direct === null || direct === "") return 1;
+  if (typeof direct === "boolean") return direct ? 1 : 0;
+  return Math.round(clamp(toNumber(direct, 1), 0, 1));
 }
 
 function makeRow(
@@ -214,35 +219,25 @@ function makeSide(params: {
   title: string;
   calcos: CalcosResult;
   priceCny: number;
-  priceRub: number;
-  sheet1: number;
   chinaExpensesCny: number;
   deliveryUsd: number;
-  year: number;
-  power: number;
-  fuel: number;
   taxMode: 0 | 1 | 2;
 }) {
   const cnyRub = params.calcos.rates.cnyRub || 11.3803;
   const usdRub = params.calcos.rates.usdRub || 77.2264;
-
-  // Повторяем структуру расчёта с поддомена auc.mosaicauto.ru.
-  const chinaExpensesCny = Math.max(0, Math.round(params.chinaExpensesCny || 65_000));
-  const deliveryUsd = Math.max(0, Math.round(params.deliveryUsd || 350));
-
   const storageRub = 6_000;
   const brokerRub = 6_000;
   const glonassRub = 50_000;
 
   const carRub = Math.round(params.priceCny * cnyRub);
-  const chinaExpensesRub = Math.round(chinaExpensesCny * cnyRub);
-  const deliveryRub = Math.round(deliveryUsd * usdRub);
+  const chinaExpensesRub = Math.round(params.chinaExpensesCny * cnyRub);
+  const deliveryRub = Math.round(params.deliveryUsd * usdRub);
 
   const dutyInfo = params.taxMode === 1 ? params.calcos.jurInfo : params.calcos.fizInfo;
   const dutyUsdTotal = params.taxMode === 1 ? params.calcos.jur : params.calcos.fiz;
 
-  // fiz/jur are authoritative Calcos totals for customs duty plus utilization fee.
-  // fiz_info/jur_info are explanatory fields and can omit parts of that total.
+  // fiz/jur are the authoritative Calcos totals for customs duty plus utilization fee.
+  // fiz_info/jur_info are explanatory and may omit parts of the amount.
   const customsAndUtilRub = Math.round(dutyUsdTotal * usdRub);
 
   const chinaTotalRub = carRub + chinaExpensesRub + deliveryRub;
@@ -254,10 +249,10 @@ function makeSide(params: {
       title: "Расходы в Китае",
       rows: [
         makeRow("Ориентировочная стоимость авто в Китае", params.priceCny, "CNY", carRub),
-        makeRow("Расходы по Китаю", chinaExpensesCny, "CNY", chinaExpensesRub),
-        makeRow("Доставка до Владивостока", deliveryUsd, "USD", deliveryRub),
+        makeRow("Расходы по Китаю", params.chinaExpensesCny, "CNY", chinaExpensesRub),
+        makeRow("Доставка до Владивостока", params.deliveryUsd, "USD", deliveryRub),
       ],
-      totalRub: Math.round(chinaTotalRub),
+      totalRub: chinaTotalRub,
       formattedTotal: fmtRub(chinaTotalRub),
     },
     {
@@ -273,7 +268,7 @@ function makeSide(params: {
         makeRow("Таможенное оформление / брокер", brokerRub, "RUB", brokerRub),
         makeRow("ЭРА-ГЛОНАСС / оформление", glonassRub, "RUB", glonassRub),
       ],
-      totalRub: Math.round(russiaTotalRub),
+      totalRub: russiaTotalRub,
       formattedTotal: fmtRub(russiaTotalRub),
     },
   ];
@@ -304,79 +299,59 @@ export async function POST(request: NextRequest) {
     const priceCny = Math.round(
       clamp(toNumber(body.priceCny ?? body.price ?? body.cost ?? body.auc_price, 0), 0, 999_999_999),
     );
-
     const year = Math.round(
       clamp(toNumber(body.year, new Date().getFullYear()), 1900, new Date().getFullYear() + 1),
     );
-
     const volume = Math.round(
       clamp(toNumber(body.volume ?? body.engineVolume ?? body.engine, 0), 0, 20_000),
     );
-
     const power = Math.round(
       clamp(toNumber(body.power ?? body.hp ?? body.horsePower ?? body.horsepower, 0), 0, 3_000),
     );
 
+    if (!priceCny) {
+      return NextResponse.json({ ok: false, error: "Укажи стоимость автомобиля в CNY." }, { status: 400 });
+    }
+
     const fuel = calcFuel(body);
     const passing = calcPassing(body);
-
-    if (!priceCny || priceCny < 1) {
-      return NextResponse.json(
-        { ok: false, error: "Укажи стоимость автомобиля в CNY." },
-        { status: 400 },
-      );
-    }
-
-    if (!year || year < 1900) {
-      return NextResponse.json(
-        { ok: false, error: "Укажи корректный год выпуска." },
-        { status: 400 },
-      );
-    }
-
+    const dvs30 = calcDvs30(body);
     const cnyRub = await loadCnyRub();
 
     const chinaExpensesCny = Math.round(
       clamp(
-        toNumber(
-          body.chinaExpensesCny ?? process.env.CALCOS_CHINA_EXPENSES_CNY ?? 65_000,
-          65_000,
-        ),
+        toNumber(body.chinaExpensesCny ?? process.env.CALCOS_CHINA_EXPENSES_CNY ?? 65_000, 65_000),
         0,
         10_000_000,
       ),
     );
     const chinaExpensesRub = Math.round(chinaExpensesCny * cnyRub);
 
+    // The supplier calculates customs duty from the car price plus 65,000 CNY
+    // of China-side expenses. Passing those expenses only as sheet1 does not
+    // affect Calcos fiz/jur, so the full customs basis must be sent as price.
+    const customsPriceCny = priceCny + chinaExpensesCny;
+    const customsPriceRub = Math.round(customsPriceCny * cnyRub);
     const priceMode = String(process.env.CALCOS_CHINA_PRICE_MODE || "rub").toLowerCase();
     const priceForCalcos =
-      priceMode === "raw" || priceMode === "cny"
-        ? priceCny
-        : Math.round(priceCny * cnyRub);
+      priceMode === "raw" || priceMode === "cny" ? customsPriceCny : customsPriceRub;
 
-    // В расчёте поставщика 65 000 CNY расходов по Китаю входят в таможенную стоимость.
-    // Calcos в текущем China-режиме получает price и sheet1 в одной рублёвой базе.
-    const sheet1 = Math.round(
-      clamp(
-        toNumber(body.sheet1 ?? body.chinaExpensesRub ?? chinaExpensesRub, chinaExpensesRub),
-        0,
-        10_000_000,
-      ),
-    );
-
+    // China expenses are already included in priceForCalcos and are displayed
+    // separately in our own sections, therefore sheet1 must not duplicate them.
+    const sheet1 = Math.round(clamp(toNumber(body.sheet1, 0), 0, 10_000_000));
     const deliveryUsd = Math.round(
       clamp(toNumber(body.deliveryUsd ?? body.freightUsd ?? process.env.CALCOS_CHINA_DELIVERY_USD ?? 350, 350), 0, 100_000),
     );
 
     const common = {
-      priceRub: priceForCalcos,
+      price: priceForCalcos,
       sheet1,
-      deliveryUsd,
       year,
       passing,
       power,
       volume,
       fuel,
+      dvs30,
     };
 
     const [physicalCalc, juridicalCalc] = await Promise.all([
@@ -388,27 +363,16 @@ export async function POST(request: NextRequest) {
       title: "Физическое лицо",
       calcos: physicalCalc,
       priceCny,
-      priceRub: priceForCalcos,
-      sheet1,
       chinaExpensesCny,
       deliveryUsd,
-      year,
-      power,
-      fuel,
       taxMode: 2,
     });
-
     const juridical = makeSide({
       title: "Юридическое лицо",
       calcos: juridicalCalc,
       priceCny,
-      priceRub: priceForCalcos,
-      sheet1,
       chinaExpensesCny,
       deliveryUsd,
-      year,
-      power,
-      fuel,
       taxMode: 1,
     });
 
@@ -418,10 +382,12 @@ export async function POST(request: NextRequest) {
       checkedAt: new Date().toISOString(),
       input: {
         priceCny,
+        chinaExpensesCny,
+        customsPriceCny,
+        customsPriceRub,
         priceForCalcos,
         priceMode,
         cnyRub,
-        chinaExpensesCny,
         chinaExpensesRub,
         sheet1,
         deliveryUsd,
@@ -430,29 +396,33 @@ export async function POST(request: NextRequest) {
         power,
         fuel,
         passing,
+        dvs30,
       },
       currency: {
         source: "CBR + Calcos",
         cnyRub,
         calcos: physicalCalc.rates,
       },
-      recommended:
-        physical.totalRub > 0 && juridical.totalRub > 0 && juridical.totalRub < physical.totalRub
-          ? "juridical"
-          : "physical",
       physical,
       juridical,
       raw: {
-        physical: physicalCalc,
-        juridical: juridicalCalc,
+        physical: {
+          sumRub: physicalCalc.sumRub,
+          fiz: physicalCalc.fiz,
+          jur: physicalCalc.jur,
+          taxModeResult: physicalCalc.taxModeResult,
+        },
+        juridical: {
+          sumRub: juridicalCalc.sumRub,
+          fiz: juridicalCalc.fiz,
+          jur: juridicalCalc.jur,
+          taxModeResult: juridicalCalc.taxModeResult,
+        },
       },
     });
   } catch (error) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : String(error),
-      },
+      { ok: false, error: error instanceof Error ? error.message : String(error) },
       { status: 500 },
     );
   }
