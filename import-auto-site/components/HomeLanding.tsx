@@ -273,21 +273,22 @@ function CountryCard({ country }: { country: (typeof countries)[number] }) {
     </article>
   );
 
-  if (!country.active || country.href === "#") return content;
-  return <Link href={country.href}>{content}</Link>;
+  if (country.href !== "#") {
+    return <Link href={country.href}>{content}</Link>;
+  }
+
+  return content;
 }
 
 function MarketsSection() {
   return (
     <section id="markets" className="mt-8 scroll-mt-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeading
-          eyebrow="Выберите направление"
-          title="С какого рынка начать"
-          text="Сейчас доступны Япония и Китай. Остальные направления подключаем постепенно."
-        />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <SectionHeading
+        eyebrow="Выберите направление"
+        title="С какого рынка начать"
+        text="Сейчас доступны Япония и Китай. Остальные направления подключаем постепенно."
+      />
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {countries.map((country) => (
           <CountryCard key={country.title} country={country} />
         ))}
