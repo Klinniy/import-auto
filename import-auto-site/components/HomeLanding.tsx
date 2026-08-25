@@ -53,52 +53,28 @@ const countries = [
 
 const whyReasons = [
   {
-    number: "01",
-    tag: "Подбор",
-    title: "Под ваш бюджет и задачи",
-    text: "Подбираем автомобиль не только по марке и году — учитываем бюджет, сценарий использования и итоговую стоимость покупки.",
+    title: "Подбор под бюджет и задачи",
+    text: "Ищем автомобиль под ваши требования и заранее учитываем итоговую стоимость покупки.",
   },
   {
-    number: "02",
-    tag: "Прозрачность",
-    title: "Безопасно и понятно",
-    text: "До покупки вы видите данные лота, расчёт расходов и ключевые параметры автомобиля — без скрытых этапов и неожиданных сумм.",
+    title: "Реальная цена до ставки",
+    text: "Статистика продаж показывает рынок похожих автомобилей до участия в торгах.",
   },
   {
-    number: "03",
-    tag: "Цена",
-    title: "Рыночная цена до ставки",
-    text: "Статистика продаж помогает понять реальную стоимость похожих автомобилей и принимать решение до участия в торгах.",
+    title: "Проверка до покупки",
+    text: "Фото, пробег, оценка, характеристики и аукционный лист доступны до решения о покупке.",
   },
   {
-    number: "04",
-    tag: "Проверка",
-    title: "Состояние авто до покупки",
-    text: "Фото, пробег, оценка, комплектация и данные аукциона доступны ещё до того, как вы принимаете решение о покупке.",
+    title: "Стоимость в вашем городе",
+    text: "Заранее считаем покупку, доставку, таможенные платежи и основные расходы на оформление.",
   },
   {
-    number: "05",
-    tag: "Расчёт",
-    title: "Стоимость в вашем городе заранее",
-    text: "Калькулятор показывает ориентир полной стоимости с покупкой, доставкой, таможенными платежами и оформлением.",
+    title: "Прозрачный процесс и сроки",
+    text: "Понятные этапы сделки: от подбора и покупки до доставки и получения автомобиля.",
   },
   {
-    number: "06",
-    tag: "Аукцион",
-    title: "Аукционный лист и данные лота",
-    text: "Работаем с исходной информацией аукциона, чтобы решение принималось по фактам, а не только по фотографиям автомобиля.",
-  },
-  {
-    number: "07",
-    tag: "Сроки",
-    title: "Понятные этапы и сроки",
-    text: "Покупка проходит последовательно: подбор, проверка, расчёт, покупка, доставка и оформление — вы понимаете, что происходит на каждом этапе.",
-  },
-  {
-    number: "08",
-    tag: "Доставка",
     title: "Надёжная доставка",
-    text: "Сопровождаем автомобиль после покупки до получения и контролируем движение по основным этапам логистики и оформления.",
+    text: "Сопровождаем автомобиль после покупки и контролируем основные этапы логистики.",
   },
 ];
 
@@ -196,95 +172,68 @@ function CountryCard({ country }: { country: (typeof countries)[number] }) {
 
 function WhyUsSection() {
   return (
-    <section className="relative mt-8 overflow-hidden rounded-[2rem] bg-[#07152f] text-white shadow-2xl shadow-slate-300/70 ring-1 ring-slate-200">
-      <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-[#ff2d3d]/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
-
-      <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.45fr_0.8fr] lg:items-end lg:px-10 lg:py-12">
+    <section className="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
+      <div className="grid gap-6 border-b border-slate-100 px-6 py-7 sm:px-8 sm:py-8 lg:grid-cols-[1fr_auto] lg:items-end lg:px-10">
         <div>
-          <div className="text-xs font-black uppercase tracking-[0.34em] text-[#ff5662]">
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">
             Почему MosaicAuto
           </div>
-          <h2 className="mt-4 max-w-4xl text-4xl font-black leading-[0.96] tracking-[-0.06em] sm:text-5xl lg:text-6xl">
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.045em] text-[#07152f] sm:text-4xl">
             Почему выбирают нас
           </h2>
-          <p className="mt-5 max-w-3xl text-base font-medium leading-7 text-white/65 sm:text-lg sm:leading-8">
-            Покупка автомобиля из другой страны должна быть понятной ещё до оплаты. Мы собираем данные, расчёты и этапы сделки в одном месте, чтобы решение принималось спокойно и на фактах.
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500 sm:text-base sm:leading-7">
+            До покупки вы знаете главное: что покупаете, сколько это стоит и как автомобиль попадёт к вам.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {["до ставки", "до покупки", "до доставки"].map((item) => (
-            <div
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          {["Безопасно", "Прозрачно", "Надёжно"].map((item) => (
+            <span
               key={item}
-              className="rounded-2xl bg-white/[0.07] px-3 py-4 text-center ring-1 ring-white/10 sm:px-4 sm:py-5"
+              className="rounded-full bg-[#07152f] px-4 py-2 text-xs font-black text-white"
             >
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40 sm:text-xs">
-                понятно
-              </div>
-              <div className="mt-1 text-xs font-black leading-4 text-white sm:text-sm">
-                {item}
-              </div>
-            </div>
+              {item}
+            </span>
           ))}
         </div>
       </div>
 
-      <div className="relative grid border-t border-white/10 sm:grid-cols-2 lg:grid-cols-4">
-        {whyReasons.map((reason, index) => (
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:gap-4 lg:p-8">
+        {whyReasons.map((reason) => (
           <article
-            key={reason.number}
-            className={`group min-h-[230px] border-b border-white/10 p-6 transition sm:p-7 lg:min-h-[260px] lg:border-r ${
-              index === 0
-                ? "bg-[#ff2d3d]"
-                : "bg-white/[0.025] hover:bg-white/[0.07]"
-            }`}
+            key={reason.title}
+            className="flex gap-4 rounded-2xl bg-[#f6f8fb] p-5 ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
           >
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black ring-1 ${
-                  index === 0
-                    ? "bg-white text-[#07152f] ring-white"
-                    : "bg-white/[0.08] text-white ring-white/10"
-                }`}
-              >
-                {reason.number}
-              </span>
-              <span
-                className={`text-[10px] font-black uppercase tracking-[0.22em] ${
-                  index === 0 ? "text-white/70" : "text-[#ff5662]"
-                }`}
-              >
-                {reason.tag}
-              </span>
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ff2d3d] text-sm font-black text-white shadow-sm">
+              ✓
             </div>
-
-            <h3 className="mt-7 text-xl font-black leading-6 tracking-[-0.035em] sm:text-2xl sm:leading-7">
-              {reason.title}
-            </h3>
-            <p className={`mt-4 text-sm leading-6 ${index === 0 ? "text-white/85" : "text-white/58"}`}>
-              {reason.text}
-            </p>
+            <div>
+              <h3 className="text-base font-black leading-5 tracking-[-0.02em] text-[#07152f] sm:text-lg">
+                {reason.title}
+              </h3>
+              <p className="mt-2 text-sm leading-5 text-slate-500">
+                {reason.text}
+              </p>
+            </div>
           </article>
         ))}
       </div>
 
-      <div className="relative flex flex-col gap-4 border-t border-white/10 px-6 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10">
-        <div>
-          <div className="text-sm font-black text-white">Выберите рынок и начните с реальных автомобилей</div>
-          <div className="mt-1 text-xs font-medium text-white/45">Каталоги, актуальные лоты и расчёт стоимости доступны сразу.</div>
+      <div className="flex flex-col gap-4 border-t border-slate-100 bg-[#f8fafc] px-6 py-5 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10">
+        <div className="text-sm font-bold text-slate-600">
+          Начните с реальных автомобилей и расчёта стоимости.
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:flex">
           <Link
             href="/japan"
-            className="rounded-xl bg-white px-4 py-3 text-center text-xs font-black text-[#07152f] transition hover:bg-[#ff2d3d] hover:text-white sm:px-5 sm:text-sm"
+            className="rounded-xl bg-[#07152f] px-4 py-3 text-center text-xs font-black text-white transition hover:bg-[#ff2d3d] sm:px-5 sm:text-sm"
           >
             Авто из Японии
           </Link>
           <Link
             href="/china"
-            className="rounded-xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15 transition hover:bg-white hover:text-[#07152f] sm:px-5 sm:text-sm"
+            className="rounded-xl bg-white px-4 py-3 text-center text-xs font-black text-[#07152f] ring-1 ring-slate-200 transition hover:bg-[#07152f] hover:text-white sm:px-5 sm:text-sm"
           >
             Авто из Китая
           </Link>
