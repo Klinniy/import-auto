@@ -78,6 +78,56 @@ const whyReasons = [
   },
 ];
 
+const selectionSteps = [
+  {
+    title: "Выберите рынок",
+    text: "Япония или Китай — начните с нужного каталога.",
+  },
+  {
+    title: "Настройте поиск",
+    text: "Марка, модель, год, пробег, двигатель и другие параметры.",
+  },
+  {
+    title: "Изучите автомобиль",
+    text: "Фото, характеристики, оценка и данные конкретного лота.",
+  },
+  {
+    title: "Сравните цену",
+    text: "Проверьте статистику продаж и ориентир по рынку до покупки.",
+  },
+  {
+    title: "Посчитайте итог",
+    text: "Калькулятор покажет ориентировочную стоимость с доставкой и оформлением.",
+  },
+];
+
+const orderSteps = [
+  {
+    title: "Отправляете вариант",
+    text: "Выбираете автомобиль на сайте или описываете, что хотите найти.",
+  },
+  {
+    title: "Проверяем автомобиль",
+    text: "Проверяем лот, документы, состояние и возможные риски.",
+  },
+  {
+    title: "Согласовываем бюджет",
+    text: "Фиксируем ориентир итоговой стоимости и допустимую цену покупки.",
+  },
+  {
+    title: "Покупаем",
+    text: "Участвуем в торгах или оформляем покупку выбранного автомобиля.",
+  },
+  {
+    title: "Доставляем и оформляем",
+    text: "Организуем логистику, таможню и необходимые документы.",
+  },
+  {
+    title: "Вы получаете автомобиль",
+    text: "Передаём автомобиль в согласованном городе или точке выдачи.",
+  },
+];
+
 function Flag({ type }: { type: string }) {
   if (type === "jp") {
     return (
@@ -243,6 +293,106 @@ function WhyUsSection() {
   );
 }
 
+function SelectionGuideSection() {
+  return (
+    <section className="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
+      <div className="border-b border-slate-100 px-6 py-7 sm:px-8 lg:px-10">
+        <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">
+          Самостоятельный поиск
+        </div>
+        <h2 className="mt-2 text-3xl font-black tracking-[-0.045em] text-[#07152f] sm:text-4xl">
+          Как подобрать автомобиль на сайте
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500 sm:text-base">
+          От каталога до понятной итоговой стоимости — пять простых шагов.
+        </p>
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-5 lg:gap-0 lg:p-0">
+        {selectionSteps.map((step, index) => (
+          <article
+            key={step.title}
+            className="relative rounded-2xl bg-[#f6f8fb] p-5 sm:p-6 lg:min-h-[230px] lg:rounded-none lg:border-r lg:border-slate-100 lg:bg-white lg:p-7 last:lg:border-r-0"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#07152f] text-xs font-black text-white">
+              {index + 1}
+            </div>
+            <h3 className="mt-5 text-lg font-black tracking-[-0.02em] text-[#07152f]">
+              {step.title}
+            </h3>
+            <p className="mt-2 text-sm leading-5 text-slate-500">{step.text}</p>
+            {index < selectionSteps.length - 1 ? (
+              <span className="absolute right-4 top-6 hidden text-xl font-black text-slate-200 lg:block">→</span>
+            ) : null}
+          </article>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-slate-100 bg-[#f8fafc] px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+        <div className="text-sm font-bold text-slate-600">Выберите рынок и начните подбор.</div>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Link href="/japan" className="rounded-xl bg-[#07152f] px-4 py-3 text-center text-xs font-black text-white transition hover:bg-[#ff2d3d] sm:text-sm">
+            Каталог Японии
+          </Link>
+          <Link href="/china" className="rounded-xl bg-white px-4 py-3 text-center text-xs font-black text-[#07152f] ring-1 ring-slate-200 transition hover:bg-[#07152f] hover:text-white sm:text-sm">
+            Каталог Китая
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OrderGuideSection() {
+  return (
+    <section className="mt-8 overflow-hidden rounded-[2rem] bg-[#07152f] text-white shadow-xl shadow-slate-300/70">
+      <div className="grid gap-5 border-b border-white/10 px-6 py-7 sm:px-8 lg:grid-cols-[1fr_auto] lg:items-end lg:px-10">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff5662]">
+            Покупка с MosaicAuto
+          </div>
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.045em] sm:text-4xl">
+            Как заказать автомобиль с MosaicAuto
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55 sm:text-base">
+            Вы выбираете автомобиль — мы ведём сделку от проверки до получения.
+          </p>
+        </div>
+        <div className="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-white/80 ring-1 ring-white/10">
+          6 понятных этапов
+        </div>
+      </div>
+
+      <div className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+        {orderSteps.map((step, index) => (
+          <article key={step.title} className="bg-[#07152f] p-6 sm:p-7">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ff2d3d] text-xs font-black text-white">
+                {index + 1}
+              </div>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+            <h3 className="mt-5 text-lg font-black tracking-[-0.02em] text-white sm:text-xl">
+              {step.title}
+            </h3>
+            <p className="mt-2 text-sm leading-5 text-white/55">{step.text}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-white/10 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+        <div>
+          <div className="text-sm font-black">Нашли подходящий автомобиль?</div>
+          <div className="mt-1 text-xs text-white/45">Следующий шаг — проверка и согласование бюджета перед покупкой.</div>
+        </div>
+        <Link href="/japan" className="rounded-xl bg-white px-5 py-3 text-center text-sm font-black text-[#07152f] transition hover:bg-[#ff2d3d] hover:text-white">
+          Выбрать автомобиль →
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default function HomeLanding() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
@@ -283,6 +433,8 @@ export default function HomeLanding() {
         </div>
 
         <WhyUsSection />
+        <SelectionGuideSection />
+        <OrderGuideSection />
       </section>
     </main>
   );
