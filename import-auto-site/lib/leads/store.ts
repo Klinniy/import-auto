@@ -4,6 +4,17 @@ import path from "node:path";
 // @ts-ignore -- project currently uses @types/node 20, which does not declare node:sqlite.
 import { DatabaseSync } from "node:sqlite";
 
+export const CRM_LEAD_STATUSES = [
+  "NEW",
+  "IN_PROGRESS",
+  "CONTACTED",
+  "QUALIFIED",
+  "DEAL",
+  "CLOSED",
+] as const;
+
+export type CrmLeadStatus = (typeof CRM_LEAD_STATUSES)[number];
+
 export type PurchaseLeadInput = {
   source: string;
   name: string;
@@ -35,6 +46,40 @@ export type SavedPurchaseLead = {
   id: string;
   createdAt: string;
 };
+
+export type CrmPurchaseLead = {
+  id: number;
+  publicId: string;
+  createdAt: string;
+  updatedAt: string;
+  status: CrmLeadStatus;
+  source: string;
+  name: string;
+  phone: string;
+  city: string | null;
+  comment: string | null;
+  country: string | null;
+  market: string | null;
+  lot: string | null;
+  carId: string | null;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  priceForeign: string | null;
+  currency: string | null;
+  calculatedTotalRub: number | null;
+  pageUrl: string | null;
+  visitorId: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  utmTerm: string | null;
+  referrer: string | null;
+  userAgent: string | null;
+};
+
+export type CrmLeadStats = Record<CrmLeadStatus, number> & { TOTAL: number };
 
 let db: DatabaseSync | null = null;
 
@@ -118,6 +163,43 @@ function leadId() {
   return `lead_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
 }
 
+function rowToLead(row: Record<string, unknown>): CrmPurchaseLead {
+  return {
+    id: Number(row.id),
+    publicId: String(row.public_id || ""),
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+    status: CRM_LEAD_STATUSES.includes(row.status as CrmLeadStatus)
+      ? (row.status as CrmLeadStatus)
+      : "NEW",
+    source: String(row.source || ""),
+    name: String(row.name || ""),
+    phone: String(row.phone || ""),
+    city: row.city == null ? null : String(row.city),
+    comment: row.comment == null ? null : String(row.comment),
+    country: row.country == null ? null : String(row.country),
+    market: row.market == null ? null : String(row.market),
+    lot: row.lot == null ? null : String(row.lot),
+    carId: row.car_id == null ? null : String(row.car_id),
+    brand: row.brand == null ? null : String(row.brand),
+    model: row.model == null ? null : String(row.model),
+    year: row.year == null ? null : Number(row.year),
+    priceForeign: row.price_foreign == null ? null : String(row.price_foreign),
+    currency: row.currency == null ? null : String(row.currency),
+    calculatedTotalRub:
+      row.calculated_total_rub == null ? null : Number(row.calculated_total_rub),
+    pageUrl: row.page_url == null ? null : String(row.page_url),
+    visitorId: row.visitor_id == null ? null : String(row.visitor_id),
+    utmSource: row.utm_source == null ? null : String(row.utm_source),
+    utmMedium: row.utm_medium == null ? null : String(row.utm_medium),
+    utmCampaign: row.utm_campaign == null ? null : String(row.utm_campaign),
+    utmContent: row.utm_content == null ? null : String(row.utm_content),
+    utmTerm: row.utm_term == null ? null : String(row.utm_term),
+    referrer: row.referrer == null ? null : String(row.referrer),
+    userAgent: row.user_agent == null ? null : String(row.user_agent),
+  };
+}
+
 export function savePurchaseLead(input: PurchaseLeadInput): SavedPurchaseLead {
   const database = openDb();
   const id = leadId();
@@ -174,4 +256,101 @@ export function savePurchaseLead(input: PurchaseLeadInput): SavedPurchaseLead {
   );
 
   return { id, createdAt: now };
+}
+
+export function listPurchaseLeads(options?: {
+  search?: string;
+  status?: string;
+  market?: string;
+  limit?: number;
+}): CrmPurchaseLead[] {
+  const database = openDb();
+  const where: string[] = [];
+  const params: Array<string | number> = [];
+  const search = String(options?.search || "").trim();
+  const status = String(options?.status || "").trim();
+  const market = String(options?.market || "").trim();
+  const limit = Math.min(Math.max(Number(options?.limit || 100), 1), 300);
+
+  if (search) {
+    const like = `%${search}%`;
+    where.push(`(
+      name LIKE ? OR phone LIKE ? OR city LIKE ? OR lot LIKE ? OR
+      brand LIKE ? OR model LIKE ? OR public_id LIKE ?
+    )`);
+    params.push(like, like, like, like, like, like, like);
+  }
+
+  if (status && CRM_LEAD_STATUSES.includes(status as CrmLeadStatus)) {
+    where.push("status = ?");
+    params.push(status);
+  }
+
+  if (market === "japan" || market === "china") {
+    where.push("market = ?");
+    params.push(market);
+  }
+
+  const sql = `
+    SELECT *
+    FROM purchase_leads
+    ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+    ORDER BY id DESC
+    LIMIT ?
+  `;
+
+  params.push(limit);
+  const rows = database.prepare(sql).all(...params) as Record<string, unknown>[];
+  return rows.map(rowToLead);
+}
+
+export function getPurchaseLead(publicId: string): CrmPurchaseLead | null {
+  const database = openDb();
+  const row = database
+    .prepare("SELECT * FROM purchase_leads WHERE public_id = ? LIMIT 1")
+    .get(publicId) as Record<string, unknown> | undefined;
+
+  return row ? rowToLead(row) : null;
+}
+
+export function updatePurchaseLeadStatus(
+  publicId: string,
+  status: CrmLeadStatus
+): CrmPurchaseLead | null {
+  if (!CRM_LEAD_STATUSES.includes(status)) return null;
+
+  const database = openDb();
+  const now = new Date().toISOString();
+  const result = database
+    .prepare("UPDATE purchase_leads SET status = ?, updated_at = ? WHERE public_id = ?")
+    .run(status, now, publicId);
+
+  if (!Number(result.changes || 0)) return null;
+  return getPurchaseLead(publicId);
+}
+
+export function getPurchaseLeadStats(): CrmLeadStats {
+  const database = openDb();
+  const stats = {
+    TOTAL: 0,
+    NEW: 0,
+    IN_PROGRESS: 0,
+    CONTACTED: 0,
+    QUALIFIED: 0,
+    DEAL: 0,
+    CLOSED: 0,
+  } satisfies CrmLeadStats;
+
+  const rows = database
+    .prepare("SELECT status, COUNT(*) AS count FROM purchase_leads GROUP BY status")
+    .all() as Array<Record<string, unknown>>;
+
+  for (const row of rows) {
+    const status = String(row.status || "") as CrmLeadStatus;
+    const count = Number(row.count || 0);
+    stats.TOTAL += count;
+    if (CRM_LEAD_STATUSES.includes(status)) stats[status] = count;
+  }
+
+  return stats;
 }
