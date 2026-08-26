@@ -23,6 +23,8 @@ type FormState = {
   company: string;
 };
 
+type Variant = "inline" | "floating" | "responsive";
+
 const initialForm: FormState = {
   name: "",
   phone: "",
@@ -88,10 +90,10 @@ function trackingData() {
 
 export default function PurchaseLeadCta({
   car,
-  variant = "card",
+  variant = "inline",
 }: {
   car: PurchaseLeadCar;
-  variant?: "card" | "floating";
+  variant?: Variant;
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm);
@@ -184,6 +186,49 @@ export default function PurchaseLeadCta({
     }
   }
 
+  const inlineCta = (
+    <section className="overflow-hidden rounded-2xl bg-[#07152f] text-white shadow-xl shadow-slate-300/50 ring-1 ring-[#07152f]">
+      <div className="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-8">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#ff2d3d] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
+              Понравился автомобиль?
+            </span>
+            {lot && (
+              <span className="text-xs font-bold text-slate-300">
+                Лот {lot}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-3 text-xl font-black tracking-[-0.025em] sm:text-2xl">
+            Проверим лот и обсудим покупку
+          </div>
+
+          <p className="mt-1.5 max-w-3xl text-sm font-medium leading-6 text-slate-300">
+            Оставьте номер — свяжемся именно по этому автомобилю, уточним детали и расскажем о следующих шагах.
+          </p>
+        </div>
+
+        <div className="lg:min-w-[270px]">
+          <button
+            type="button"
+            onClick={openForm}
+            className="group min-h-14 w-full rounded-xl bg-[#ff2d3d] px-6 py-4 text-base font-black text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:bg-[#e51f30] hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-400/30"
+          >
+            <span className="inline-flex items-center gap-2">
+              Обсудить покупку
+              <span className="text-lg transition group-hover:translate-x-1">→</span>
+            </span>
+          </button>
+          <div className="mt-2 text-center text-[11px] font-semibold text-slate-400">
+            Данные этого лота уже добавятся в заявку
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <>
       {variant === "floating" ? (
@@ -191,40 +236,31 @@ export default function PurchaseLeadCta({
           <button
             type="button"
             onClick={openForm}
-            className="min-h-12 w-full rounded-xl bg-[#ff2d3d] px-6 py-3 text-sm font-black text-white shadow-2xl shadow-slate-900/25 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[230px]"
+            className="min-h-14 w-full rounded-xl bg-[#ff2d3d] px-7 py-4 text-base font-black text-white shadow-2xl shadow-slate-900/25 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[250px]"
           >
-            Обсудить покупку
+            Обсудить покупку →
           </button>
         </div>
-      ) : (
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="min-w-0">
-              <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ff2d3d]">
-                Заинтересовал этот автомобиль?
-              </div>
-              <div className="mt-1 text-lg font-black tracking-[-0.02em] text-[#07152f] sm:text-xl">
-                Обсудим покупку и проверим лот перед следующим шагом
-              </div>
-              <p className="mt-1 max-w-3xl text-sm font-medium leading-5 text-slate-500">
-                Оставьте номер — свяжемся с вами, уточним детали автомобиля и дальнейшие шаги покупки.
-              </p>
-            </div>
-
+      ) : variant === "responsive" ? (
+        <>
+          <div className="hidden sm:block">{inlineCta}</div>
+          <div className="fixed bottom-3 left-3 right-3 z-40 sm:hidden">
             <button
               type="button"
               onClick={openForm}
-              className="min-h-12 shrink-0 rounded-xl bg-[#ff2d3d] px-6 py-3 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[220px]"
+              className="min-h-14 w-full rounded-xl bg-[#ff2d3d] px-6 py-4 text-base font-black text-white shadow-2xl shadow-slate-900/30 focus:outline-none focus:ring-4 focus:ring-red-100"
             >
-              Обсудить покупку
+              Обсудить покупку →
             </button>
           </div>
-        </section>
+        </>
+      ) : (
+        inlineCta
       )}
 
       {open && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#020b1f]/65 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#020b1f]/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
           onMouseDown={(event) => {
             if (event.currentTarget === event.target) close();
           }}
