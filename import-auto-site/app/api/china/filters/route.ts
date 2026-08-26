@@ -24,6 +24,129 @@ function arr(value: any): any[] {
   return [];
 }
 
+function emptyFilterPayload(brands: any[]) {
+  return {
+    ok: true,
+    source: "china",
+    market: "china",
+    initialOnly: true,
+
+    brands,
+    brand: brands,
+    makes: brands,
+    marka: brands,
+    markas: brands,
+
+    models: [],
+    model: [],
+
+    bodies: [],
+    body: [],
+    kuzov: [],
+    kuzovs: [],
+
+    colors: [],
+    color: [],
+    colours: [],
+
+    transmissions: [],
+    transmission: [],
+    kpp: [],
+    kpps: [],
+
+    drives: [],
+    drive: [],
+    priv: [],
+
+    grades: [],
+    grade: [],
+    rates: [],
+    rating: [],
+    ratings: [],
+    scores: [],
+
+    auctions: [],
+    auction: [],
+
+    statuses: [],
+    status: [],
+
+    sortOptions: [
+      { value: "", label: "По умолчанию" },
+      { value: "date_desc", label: "Дата ↓" },
+      { value: "date_asc", label: "Дата ↑" },
+      { value: "lot_asc", label: "Номер лота ↑" },
+      { value: "lot_desc", label: "Номер лота ↓" },
+      { value: "year_desc", label: "Год ↓" },
+      { value: "year_asc", label: "Год ↑" },
+      { value: "mileage_asc", label: "Пробег ↑" },
+      { value: "mileage_desc", label: "Пробег ↓" },
+      { value: "finish_asc", label: "Цена ↑" },
+      { value: "finish_desc", label: "Цена ↓" },
+    ],
+
+    facets: {
+      brands,
+      brand: brands,
+      makes: brands,
+      marka: brands,
+      markas: brands,
+      models: [],
+      model: [],
+      bodies: [],
+      body: [],
+      kuzov: [],
+      kuzovs: [],
+      colors: [],
+      color: [],
+      colours: [],
+      transmissions: [],
+      transmission: [],
+      kpp: [],
+      kpps: [],
+      drives: [],
+      drive: [],
+      priv: [],
+      grades: [],
+      grade: [],
+      rates: [],
+      rating: [],
+      ratings: [],
+      scores: [],
+      auctions: [],
+      auction: [],
+      statuses: [],
+      status: [],
+    },
+
+    filters: {
+      brands,
+      models: [],
+      years: [],
+      bodies: [],
+      colors: [],
+      transmissions: [],
+      drives: [],
+      grades: [],
+      rates: [],
+      auctions: [],
+      statuses: [],
+    },
+
+    debugCounts: {
+      brands: brands.length,
+      models: 0,
+      bodies: 0,
+      colors: 0,
+      transmissions: 0,
+      drives: 0,
+      grades: 0,
+      auctions: 0,
+      statuses: 0,
+    },
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const brand =
@@ -32,10 +155,21 @@ export async function GET(req: NextRequest) {
       req.nextUrl.searchParams.get("makerName") ||
       "";
 
+    // Initial /china page load only needs the list of brands.
+    // Models are loaded after a brand is selected, and the secondary facets
+    // are loaded only after a brand + model search becomes possible.
+    // Avoiding all China facets here prevents tens of thousands of upstream
+    // rows from being sampled before the visitor has selected anything.
+    if (!brand) {
+      const brandsRaw = await getChinaBrands(500);
+      const brands = arr(brandsRaw);
+      return NextResponse.json(emptyFilterPayload(brands));
+    }
+
     const [brandsRaw, modelsRaw, facetsRaw] = await Promise.all([
       getChinaBrands(500),
-      getChinaModels(brand || undefined, 500),
-      getChinaFacets(brand || undefined),
+      getChinaModels(brand, 500),
+      getChinaFacets(brand),
     ]);
 
     const brands = arr(brandsRaw);
@@ -44,9 +178,13 @@ export async function GET(req: NextRequest) {
 
     const bodies = arr(facets.bodies || facets.body || facets.kuzov || facets.kuzovs);
     const colors = arr(facets.colors || facets.color || facets.colours);
-    const transmissions = arr(facets.transmissions || facets.transmission || facets.kpp || facets.kpps);
+    const transmissions = arr(
+      facets.transmissions || facets.transmission || facets.kpp || facets.kpps
+    );
     const drives = arr(facets.drives || facets.drive || facets.priv);
-    const grades = arr(facets.grades || facets.grade || facets.rates || facets.rating || facets.ratings || facets.scores);
+    const grades = arr(
+      facets.grades || facets.grade || facets.rates || facets.rating || facets.ratings || facets.scores
+    );
     const auctions = arr(facets.auctions || facets.auction);
     const statuses = arr(facets.statuses || facets.status);
 
@@ -106,7 +244,7 @@ export async function GET(req: NextRequest) {
         { value: "mileage_asc", label: "Пробег ↑" },
         { value: "mileage_desc", label: "Пробег ↓" },
         { value: "finish_asc", label: "Цена ↑" },
-        { value: "finish_desc", label: "Цена ↓" }
+        { value: "finish_desc", label: "Цена ↓" },
       ],
 
       facets: {
@@ -115,38 +253,30 @@ export async function GET(req: NextRequest) {
         makes: brands,
         marka: brands,
         markas: brands,
-
         models,
         model: models,
-
         bodies,
         body: bodies,
         kuzov: bodies,
         kuzovs: bodies,
-
         colors,
         color: colors,
         colours: colors,
-
         transmissions,
         transmission: transmissions,
         kpp: transmissions,
         kpps: transmissions,
-
         drives,
         drive: drives,
         priv: drives,
-
         grades,
         grade: grades,
         rates: grades,
         rating: grades,
         ratings: grades,
         scores: grades,
-
         auctions,
         auction: auctions,
-
         statuses,
         status: statuses,
       },
