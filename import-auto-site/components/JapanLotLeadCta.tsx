@@ -73,5 +73,17 @@ export default function JapanLotLeadCta() {
 
   if (!car) return null;
 
-  return <PurchaseLeadCta car={car} variant="floating" />;
+  return (
+    <div className="japan-lot-lead-cta">
+      <PurchaseLeadCta car={car} variant="floating" />
+
+      <style jsx global>{`
+        @media (min-width: 640px) {
+          .japan-lot-lead-cta > div.fixed {
+            right: max(24px, calc((100vw - 1800px) / 2 + 12px)) !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
 }
