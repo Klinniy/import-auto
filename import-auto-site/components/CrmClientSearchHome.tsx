@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -25,18 +24,9 @@ export default function CrmClientSearchHome() {
   return (
     <main className="min-h-screen bg-[#f3f6fb] text-[#07152f]">
       <header className="border-t-4 border-[#ff2d3d] bg-[#07152f] text-white shadow-xl shadow-slate-900/10">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff6a77]">MosaicAuto</div>
-            <h1 className="mt-1 text-3xl font-black tracking-[-0.045em] sm:text-4xl">CRM</h1>
-          </div>
-
-          <Link
-            href="/crm/leads"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#ff2d3d] hover:text-white"
-          >
-            Заявки
-          </Link>
+        <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
+          <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff6a77]">MosaicAuto</div>
+          <h1 className="mt-1 text-3xl font-black tracking-[-0.045em] sm:text-4xl">CRM</h1>
         </div>
       </header>
 
