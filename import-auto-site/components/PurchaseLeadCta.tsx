@@ -86,7 +86,13 @@ function trackingData() {
   };
 }
 
-export default function PurchaseLeadCta({ car }: { car: PurchaseLeadCar }) {
+export default function PurchaseLeadCta({
+  car,
+  variant = "card",
+}: {
+  car: PurchaseLeadCar;
+  variant?: "card" | "floating";
+}) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm);
   const [consent, setConsent] = useState(false);
@@ -119,6 +125,11 @@ export default function PurchaseLeadCta({ car }: { car: PurchaseLeadCar }) {
   function close() {
     if (sending) return;
     setOpen(false);
+  }
+
+  function openForm() {
+    setError("");
+    setOpen(true);
   }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -175,32 +186,41 @@ export default function PurchaseLeadCta({ car }: { car: PurchaseLeadCar }) {
 
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="min-w-0">
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ff2d3d]">
-              Заинтересовал этот автомобиль?
-            </div>
-            <div className="mt-1 text-lg font-black tracking-[-0.02em] text-[#07152f] sm:text-xl">
-              Обсудим покупку и проверим лот перед следующим шагом
-            </div>
-            <p className="mt-1 max-w-3xl text-sm font-medium leading-5 text-slate-500">
-              Оставьте номер — свяжемся с вами, уточним детали автомобиля и дальнейшие шаги покупки.
-            </p>
-          </div>
-
+      {variant === "floating" ? (
+        <div className="fixed bottom-3 left-3 right-3 z-40 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto">
           <button
             type="button"
-            onClick={() => {
-              setError("");
-              setOpen(true);
-            }}
-            className="min-h-12 shrink-0 rounded-xl bg-[#ff2d3d] px-6 py-3 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[220px]"
+            onClick={openForm}
+            className="min-h-12 w-full rounded-xl bg-[#ff2d3d] px-6 py-3 text-sm font-black text-white shadow-2xl shadow-slate-900/25 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[230px]"
           >
             Обсудить покупку
           </button>
         </div>
-      </section>
+      ) : (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ff2d3d]">
+                Заинтересовал этот автомобиль?
+              </div>
+              <div className="mt-1 text-lg font-black tracking-[-0.02em] text-[#07152f] sm:text-xl">
+                Обсудим покупку и проверим лот перед следующим шагом
+              </div>
+              <p className="mt-1 max-w-3xl text-sm font-medium leading-5 text-slate-500">
+                Оставьте номер — свяжемся с вами, уточним детали автомобиля и дальнейшие шаги покупки.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openForm}
+              className="min-h-12 shrink-0 rounded-xl bg-[#ff2d3d] px-6 py-3 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-[#e51f30] focus:outline-none focus:ring-4 focus:ring-red-100 sm:min-w-[220px]"
+            >
+              Обсудить покупку
+            </button>
+          </div>
+        </section>
+      )}
 
       {open && (
         <div
