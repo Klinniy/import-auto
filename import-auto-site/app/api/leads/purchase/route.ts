@@ -14,6 +14,8 @@ function text(value: unknown, max = 250) {
 }
 
 function optionalInt(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+
   const n = Number(value);
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
