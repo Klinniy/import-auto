@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import PurchaseLeadCta, { type PurchaseLeadCar } from "./PurchaseLeadCta";
 
 type AnyCar = Record<string, any>;
@@ -36,6 +37,7 @@ export default function JapanLotLeadCta() {
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : String(rawId || "");
   const [car, setCar] = useState<PurchaseLeadCar | null>(null);
+  const [host, setHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -71,19 +73,43 @@ export default function JapanLotLeadCta() {
     };
   }, [id]);
 
-  if (!car) return null;
+  useEffect(() => {
+    let attempts = 0;
+    let timer = 0;
 
-  return (
-    <div className="japan-lot-lead-cta">
-      <PurchaseLeadCta car={car} variant="floating" />
+    function attach() {
+      const actionButton = document.querySelector<HTMLElement>('[data-lot-action="content"]');
+      const actionBar = actionButton?.closest<HTMLElement>(".mb-3");
 
-      <style jsx global>{`
-        @media (min-width: 640px) {
-          .japan-lot-lead-cta > div.fixed {
-            right: max(24px, calc((100vw - 1800px) / 2 + 12px)) !important;
-          }
-        }
-      `}</style>
-    </div>
-  );
+      if (!actionBar) {
+        attempts += 1;
+        if (attempts < 30) timer = window.setTimeout(attach, 100);
+        return;
+      }
+
+      const existing = document.getElementById("japan-lot-purchase-cta-host");
+      if (existing) {
+        setHost(existing);
+        return;
+      }
+
+      const element = document.createElement("div");
+      element.id = "japan-lot-purchase-cta-host";
+      element.className = "mb-4";
+      actionBar.insertAdjacentElement("afterend", element);
+      setHost(element);
+    }
+
+    attach();
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      const current = document.getElementById("japan-lot-purchase-cta-host");
+      current?.remove();
+    };
+  }, [id]);
+
+  if (!car || !host) return null;
+
+  return createPortal(<PurchaseLeadCta car={car} variant="responsive" />, host);
 }
