@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type ClientSummary = {
   phone: string;
@@ -13,6 +13,12 @@ type ClientSummary = {
   latestStatus: string;
   latestCar: string;
   latestMarket: string | null;
+};
+
+type Props = {
+  initialPhone: string;
+  initialName: string;
+  initialCity: string;
 };
 
 function formatMsk(value: string) {
@@ -30,13 +36,8 @@ function formatMsk(value: string) {
   }
 }
 
-export default function CrmClientsDashboard() {
+export default function CrmClientsDashboard({ initialPhone, initialName, initialCity }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialPhone = searchParams.get("phone") || "";
-  const initialName = searchParams.get("name") || "";
-  const initialCity = searchParams.get("city") || "";
-
   const [clients, setClients] = useState<ClientSummary[]>([]);
   const [phone, setPhone] = useState(initialPhone);
   const [name, setName] = useState(initialName);
