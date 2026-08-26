@@ -165,7 +165,7 @@ export default function CrmClientWorkspace({ phone }: { phone: string }) {
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href="/crm/clients" className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-black text-white transition hover:bg-white hover:text-[#07152f]">← Клиенты</Link>
-              <Link href="/crm" className="rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#ff2d3d] hover:text-white">Заявки</Link>
+              <Link href="/crm/leads" className="rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#ff2d3d] hover:text-white">Заявки</Link>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function CrmClientWorkspace({ phone }: { phone: string }) {
                 </div>
                 <div className="divide-y divide-slate-100">
                   {client.leads.map((lead) => (
-                    <div key={lead.publicId} className="p-5">
+                    <div key={lead.publicId} className="p-5 transition hover:bg-slate-50/70">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="text-lg font-black">{carTitle(lead)}</div>
@@ -212,7 +212,15 @@ export default function CrmClientWorkspace({ phone }: { phone: string }) {
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{lead.status}</span>
                       </div>
                       {lead.comment && <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{lead.comment}</div>}
-                      {lead.pageUrl && <a href={lead.pageUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-xl bg-[#07152f] px-4 py-2 text-xs font-black text-white hover:bg-[#ff2d3d]">Открыть автомобиль ↗</a>}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link
+                          href={`/crm/leads/${encodeURIComponent(lead.publicId)}`}
+                          className="inline-flex rounded-xl bg-[#ff2d3d] px-4 py-2 text-xs font-black text-white transition hover:bg-[#e51f30]"
+                        >
+                          Открыть заявку →
+                        </Link>
+                        {lead.pageUrl && <a href={lead.pageUrl} target="_blank" rel="noreferrer" className="inline-flex rounded-xl bg-[#07152f] px-4 py-2 text-xs font-black text-white hover:bg-slate-800">Открыть автомобиль ↗</a>}
+                      </div>
                     </div>
                   ))}
                 </div>
