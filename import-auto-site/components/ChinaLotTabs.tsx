@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import ChinaLotCalculatorPanel from "./ChinaLotCalculatorPanel";
+import PurchaseLeadCta from "./PurchaseLeadCta";
 
 type AnyCar = Record<string, any>;
 
@@ -54,7 +55,7 @@ export default function ChinaLotTabs({ car }: { car: AnyCar }) {
 
           <div className="rounded-2xl bg-[#07152f] p-5 text-white">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-300">
-              ориентировочная ориентировочная цена в Китае
+              ориентировочная цена в Китае
             </div>
             <div className="mt-2 text-4xl font-black">{formatCny(car.priceCny)}</div>
             <div className="mt-2 text-sm font-bold text-slate-300">
@@ -63,6 +64,22 @@ export default function ChinaLotTabs({ car }: { car: AnyCar }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <PurchaseLeadCta
+          car={{
+            market: "china",
+            country: "Китай",
+            carId: car.id,
+            lot: car.lot,
+            brand: car.brand,
+            model: car.model,
+            year: car.year,
+            priceForeign: car.priceCny,
+            currency: "CNY",
+          }}
+        />
       </div>
 
       <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-[1.25rem] bg-white shadow-xl shadow-slate-200/70 ring-1 ring-slate-200">
@@ -152,7 +169,7 @@ export default function ChinaLotTabs({ car }: { car: AnyCar }) {
                 {row("Лот", car.lot)}
                 {row("Источник", "Китай")}
                 {row("Дата", car.auctionDate === "0000-00-00 00:00:00" ? "—" : car.auctionDate)}
-                {row("Ориентировочная ориентировочная ориентировочная цена в Китае", formatCny(car.priceCny))}
+                {row("Ориентировочная цена в Китае", formatCny(car.priceCny))}
               </div>
             </section>
           </aside>
