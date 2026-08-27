@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 
 const PHONE_DISPLAY = "+7 916 712-73-06";
@@ -31,12 +32,7 @@ function MaxIcon({ className = "h-5 w-5" }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M8 8.2h8M8 11.5h5.2"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
+      <path d="M8 8.2h8M8 11.5h5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -46,7 +42,7 @@ function patchPurchaseButtons() {
 
   for (const button of buttons) {
     const text = (button.textContent || "").replace(/\s+/g, " ").trim();
-    if (!text.includes("Обсудить покупку")) continue;
+    if (!text.includes("Обсудить покупку") && !text.includes("Обсудить детали")) continue;
 
     button.dataset.mosaicautoContactTrigger = "1";
     button.setAttribute("aria-label", "Обсудить детали с менеджером");
@@ -57,12 +53,58 @@ function patchPurchaseButtons() {
     } else {
       button.textContent = "Обсудить детали →";
     }
+
+    const section = button.closest("section");
+    if (!section) continue;
+
+    for (const node of Array.from(section.querySelectorAll<HTMLElement>("div,p"))) {
+      const value = (node.textContent || "").replace(/\s+/g, " ").trim();
+
+      if (value === "Проверим лот и обсудим покупку") {
+        node.textContent = "Свяжитесь с менеджером по этому автомобилю";
+      }
+
+      if (value.startsWith("Оставьте номер — свяжемся именно по этому автомобилю")) {
+        node.textContent = "Позвоните или напишите в MAX — ответим на вопросы по выбранному автомобилю.";
+      }
+
+      if (value === "Данные этого лота уже добавятся в заявку") {
+        node.textContent = "Выберите удобный способ связи";
+      }
+    }
   }
+}
+
+function HeaderContacts() {
+  return (
+    <div className="flex items-center gap-2">
+      <a
+        href={PHONE_HREF}
+        className="flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[#07152f] px-3 text-xs font-black text-white shadow-sm transition hover:bg-[#ff2d3d] 2xl:px-4"
+        aria-label={`Позвонить менеджеру ${PHONE_DISPLAY}`}
+      >
+        <PhoneIcon className="h-4 w-4" />
+        <span>Позвонить</span>
+        <span className="hidden 2xl:inline text-white/65">{PHONE_DISPLAY}</span>
+      </a>
+      <a
+        href={MAX_HREF}
+        target="_blank"
+        rel="noreferrer"
+        className="flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-white px-3 text-xs font-black text-[#07152f] shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300 2xl:px-4"
+        aria-label="Написать менеджеру в MAX"
+      >
+        <MaxIcon className="h-4 w-4" />
+        <span>MAX</span>
+      </a>
+    </div>
+  );
 }
 
 export default function ManagerContactHub() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null);
 
   const isPrivate = pathname.startsWith("/crm") || pathname.startsWith("/debug");
   const isLot = pathname.startsWith("/catalog/") || /^\/china\/[^/]+/.test(pathname);
@@ -95,6 +137,49 @@ export default function ManagerContactHub() {
   }, [isPrivate, pathname]);
 
   useEffect(() => {
+    if (isPrivate) {
+      setHeaderHost(null);
+      return;
+    }
+
+    let timer = 0;
+    let attempts = 0;
+
+    function attachHeaderContacts() {
+      const header = document.querySelector<HTMLElement>("header");
+      const inner = header?.firstElementChild as HTMLElement | null;
+
+      if (!header || !inner) {
+        attempts += 1;
+        if (attempts < 30) timer = window.setTimeout(attachHeaderContacts, 100);
+        return;
+      }
+
+      const existing = document.getElementById("mosaicauto-header-manager-contacts");
+      if (existing) {
+        setHeaderHost(existing);
+        return;
+      }
+
+      const last = inner.lastElementChild as HTMLElement | null;
+      const target = last?.tagName === "DIV" ? last : inner;
+      const host = document.createElement("div");
+      host.id = "mosaicauto-header-manager-contacts";
+      host.className = "hidden lg:flex shrink-0 items-center";
+      target.appendChild(host);
+      setHeaderHost(host);
+    }
+
+    attachHeaderContacts();
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      document.getElementById("mosaicauto-header-manager-contacts")?.remove();
+      setHeaderHost(null);
+    };
+  }, [isPrivate, pathname]);
+
+  useEffect(() => {
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
@@ -116,36 +201,32 @@ export default function ManagerContactHub() {
 
   return (
     <>
-      <div
-        className={`fixed right-3 z-[65] flex items-center gap-2 sm:right-5 ${
-          isLot ? "bottom-24 sm:bottom-5" : "bottom-4 sm:bottom-5"
-        }`}
-        aria-label="Связаться с менеджером"
-      >
-        <a
-          href={PHONE_HREF}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#07152f] text-white shadow-xl shadow-slate-900/20 ring-1 ring-white/20 transition hover:-translate-y-0.5 hover:bg-[#ff2d3d] sm:h-auto sm:w-auto sm:gap-2 sm:rounded-xl sm:px-4 sm:py-3"
-          aria-label={`Позвонить менеджеру ${PHONE_DISPLAY}`}
-        >
-          <PhoneIcon />
-          <span className="hidden text-sm font-black sm:inline">{PHONE_DISPLAY}</span>
-        </a>
+      {headerHost ? createPortal(<HeaderContacts />, headerHost) : null}
 
-        <a
-          href={MAX_HREF}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#07152f] shadow-xl shadow-slate-900/15 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-[#07152f] hover:text-white sm:h-auto sm:w-auto sm:gap-2 sm:rounded-xl sm:px-4 sm:py-3"
-          aria-label="Написать менеджеру в MAX"
-        >
-          <MaxIcon />
-          <span className="hidden text-sm font-black sm:inline">Написать в MAX</span>
-        </a>
-      </div>
+      {!isLot ? (
+        <div className="fixed bottom-3 left-3 right-3 z-[65] grid grid-cols-2 gap-2 lg:hidden" aria-label="Связаться с менеджером">
+          <a
+            href={PHONE_HREF}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#07152f] px-4 text-sm font-black text-white shadow-2xl shadow-slate-900/25"
+          >
+            <PhoneIcon />
+            Позвонить
+          </a>
+          <a
+            href={MAX_HREF}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-[#07152f] shadow-2xl shadow-slate-900/20 ring-1 ring-slate-200"
+          >
+            <MaxIcon />
+            MAX
+          </a>
+        </div>
+      ) : null}
 
       {open && (
         <div
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-[#020b1f]/70 p-0 backdrop-blur-[3px] sm:items-center sm:p-4"
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-[#020b1f]/65 p-0 backdrop-blur-[3px] sm:items-center sm:p-4"
           onMouseDown={(event) => {
             if (event.currentTarget === event.target) setOpen(false);
           }}
@@ -153,61 +234,50 @@ export default function ManagerContactHub() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Связаться с менеджером"
-            className="w-full rounded-t-[1.75rem] bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-[1.75rem] sm:p-6"
+            aria-label="Обсудить детали"
+            className="w-full rounded-t-[1.6rem] bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-[1.6rem] sm:p-6"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ff2d3d]">
-                  MosaicAuto
-                </div>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.035em] text-[#07152f]">
-                  Обсудить детали
-                </h2>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-                  Выберите удобный способ связи с менеджером.
-                </p>
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#ff2d3d]">MosaicAuto</div>
+                <h2 className="mt-1 text-2xl font-black tracking-[-0.035em] text-[#07152f]">Обсудить детали</h2>
+                <p className="mt-1.5 text-sm font-medium leading-5 text-slate-500">Выберите удобный способ связи.</p>
               </div>
-
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-black text-slate-500 transition hover:bg-slate-200"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg font-black text-slate-500 transition hover:bg-slate-200"
                 aria-label="Закрыть"
               >
                 ×
               </button>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 grid gap-2.5">
               <a
                 href={PHONE_HREF}
-                className="group rounded-2xl bg-[#07152f] p-5 text-white transition hover:-translate-y-0.5 hover:bg-[#ff2d3d]"
+                className="flex min-h-16 items-center gap-4 rounded-xl bg-[#07152f] px-4 py-3 text-white transition hover:bg-[#ff2d3d]"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
-                  <PhoneIcon className="h-6 w-6" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"><PhoneIcon /></span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black">Позвонить менеджеру</span>
+                  <span className="mt-0.5 block text-xs font-bold text-white/65">{PHONE_DISPLAY}</span>
                 </span>
-                <div className="mt-4 text-lg font-black">Позвонить</div>
-                <div className="mt-1 text-sm font-bold text-white/70">{PHONE_DISPLAY}</div>
-                <div className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-white/55 group-hover:text-white/80">
-                  Связаться сейчас →
-                </div>
+                <span className="ml-auto text-lg text-white/45">→</span>
               </a>
 
               <a
                 href={MAX_HREF}
                 target="_blank"
                 rel="noreferrer"
-                className="group rounded-2xl bg-[#f4f7fb] p-5 text-[#07152f] ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#07152f]"
+                className="flex min-h-16 items-center gap-4 rounded-xl bg-[#f4f7fb] px-4 py-3 text-[#07152f] ring-1 ring-slate-200 transition hover:ring-slate-300"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-                  <MaxIcon className="h-6 w-6" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-slate-200"><MaxIcon /></span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black">Написать в MAX</span>
+                  <span className="mt-0.5 block text-xs font-semibold text-slate-500">Открыть чат с менеджером</span>
                 </span>
-                <div className="mt-4 text-lg font-black">Написать в MAX</div>
-                <div className="mt-1 text-sm font-semibold text-slate-500">Откроется чат с менеджером</div>
-                <div className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-[#ff2d3d]">
-                  Открыть MAX →
-                </div>
+                <span className="ml-auto text-lg text-[#ff2d3d]">→</span>
               </a>
             </div>
           </div>
