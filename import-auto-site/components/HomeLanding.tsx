@@ -69,69 +69,70 @@ function Flag({ type }: { type: "jp" | "cn" }) {
   );
 }
 
-function HeroSection() {
+function MarketCard({ country }: { country: (typeof countries)[number] }) {
   return (
-    <section className="grid gap-6 rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-center lg:p-10">
-      <div>
-        <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">Импорт автомобилей</div>
-        <h1 className="mt-3 max-w-4xl text-4xl font-black leading-[0.98] tracking-[-0.055em] text-[#07152f] sm:text-5xl lg:text-6xl">
-          Автомобиль из Японии или Китая — понятно до покупки
-        </h1>
-        <p className="mt-5 max-w-3xl text-base leading-7 text-slate-500 sm:text-lg sm:leading-8">
-          Реальные предложения, данные автомобилей, статистика продаж и калькулятор итоговой стоимости.
-        </p>
-        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-          <a
-            href="#cars"
-            className="rounded-xl bg-[#ff2d3d] px-6 py-4 text-center text-sm font-black text-white shadow-lg shadow-red-100 transition hover:bg-[#07152f]"
-          >
-            Смотреть автомобили
-          </a>
-          <Link
-            href="/how-to-buy"
-            className="rounded-xl bg-[#07152f] px-6 py-4 text-center text-sm font-black text-white transition hover:bg-slate-800"
-          >
-            Как купить
-          </Link>
+    <Link href={country.href} className="h-full">
+      <article className="group relative flex h-full min-h-[245px] flex-col overflow-hidden rounded-[1.6rem] bg-[#07152f] p-6 text-white shadow-lg shadow-slate-300/40 transition hover:-translate-y-1 hover:shadow-xl">
+        <div className={`absolute inset-x-0 top-0 h-1 ${country.accent}`} />
+        <div className="flex items-start justify-between gap-3">
+          <Flag type={country.flag as "jp" | "cn"} />
+          <span className="rounded-full bg-white/8 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-white/45">
+            {country.code}
+          </span>
         </div>
-      </div>
 
-      <div className="grid gap-3">
-        {["Реальные данные лотов", "Статистика продаж", "Автоматический расчёт стоимости"].map((item) => (
-          <div key={item} className="flex items-center gap-3 rounded-2xl bg-[#f6f8fb] p-4 ring-1 ring-slate-100">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-black text-[#ff2d3d] shadow-sm ring-1 ring-slate-200">✓</span>
-            <span className="text-sm font-black text-[#07152f]">{item}</span>
-          </div>
-        ))}
-      </div>
-    </section>
+        <h2 className="mt-6 text-2xl font-black tracking-[-0.045em] sm:text-3xl">{country.title}</h2>
+        <p className="mt-3 text-sm leading-6 text-white/62">{country.description}</p>
+
+        <div className="mt-auto pt-6">
+          <span className="inline-flex rounded-xl bg-white px-4 py-3 text-sm font-black text-[#07152f] transition group-hover:bg-[#ff2d3d] group-hover:text-white">
+            Открыть →
+          </span>
+        </div>
+      </article>
+    </Link>
   );
 }
 
-function CarsSection() {
+function HeroSection() {
   return (
-    <section id="cars" className="mt-9 scroll-mt-6">
-      <div>
-        <div className="text-[11px] font-black uppercase tracking-[0.3em] text-[#ff2d3d] sm:text-xs">Автомобили</div>
-        <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#07152f] sm:text-3xl lg:text-4xl">Сейчас доступны Япония и Китай</h2>
-      </div>
+    <section
+      id="cars"
+      className="rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8 lg:p-10"
+    >
+      <div className="grid gap-7 lg:grid-cols-[1.15fr_0.85fr_0.85fr] lg:items-stretch">
+        <div className="flex flex-col justify-center lg:pr-3">
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">Импорт автомобилей</div>
+          <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[0.98] tracking-[-0.055em] text-[#07152f] sm:text-5xl lg:text-[52px]">
+            Автомобиль из Японии или Китая — понятно до покупки
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg sm:leading-8">
+            Реальные предложения, данные автомобилей, статистика продаж и автоматический расчёт стоимости.
+          </p>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 flex flex-wrap gap-2">
+            {["Реальные лоты", "Статистика продаж", "Калькулятор"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full bg-[#f4f7fb] px-3 py-2 text-xs font-black text-[#07152f] ring-1 ring-slate-100"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-7">
+            <Link
+              href="/how-to-buy"
+              className="inline-flex rounded-xl bg-[#07152f] px-6 py-4 text-center text-sm font-black text-white transition hover:bg-[#ff2d3d]"
+            >
+              Как купить →
+            </Link>
+          </div>
+        </div>
+
         {countries.map((country) => (
-          <Link key={country.title} href={country.href}>
-            <article className="group relative flex min-h-[245px] h-full flex-col overflow-hidden rounded-[1.6rem] bg-[#07152f] p-6 text-white shadow-xl shadow-slate-300/60 transition hover:-translate-y-1 hover:shadow-2xl">
-              <div className={`absolute inset-x-0 top-0 h-1 ${country.accent}`} />
-              <Flag type={country.flag as "jp" | "cn"} />
-              <div className="mt-6 text-[10px] font-black uppercase tracking-[0.28em] text-white/40">{country.code}</div>
-              <h3 className="mt-2 text-3xl font-black tracking-[-0.05em] sm:text-4xl">{country.title}</h3>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-white/62">{country.description}</p>
-              <div className="mt-auto pt-6">
-                <span className="inline-flex rounded-xl bg-white px-4 py-3 text-sm font-black text-[#07152f] transition group-hover:bg-[#ff2d3d] group-hover:text-white">
-                  Открыть →
-                </span>
-              </div>
-            </article>
-          </Link>
+          <MarketCard key={country.title} country={country} />
         ))}
       </div>
     </section>
@@ -226,7 +227,6 @@ export default function HomeLanding() {
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 lg:px-6 lg:py-10">
         <HeroSection />
-        <CarsSection />
         <CapabilitiesSection />
         <HowToBuySection />
         <ContactSection />
