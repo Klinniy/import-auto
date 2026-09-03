@@ -133,17 +133,20 @@ export async function getChinaSeoCars(brand: string, model?: string, limit = 12)
 }
 
 async function loadSitemapData() {
-  const lotLimit = 1500;
+  // AJES фактически ограничивает крупные выборки примерно 500 строками.
+  // Для лотов важно использовать select *, потому что проекции ID/LOT в AJES
+  // могут возвращаться в TAG-полях и давать невалидные URL в sitemap.
+  const lotLimit = 500;
   const hierarchyLimit = 6000;
 
   const [japanLotsRaw, chinaLotsRaw, japanHierarchyRaw, chinaHierarchyRaw] = await Promise.all([
-    ajesSql<Row[]>(`select id,lot,auction_date from main order by auction_date desc limit 0,${lotLimit}`),
-    ajesSql<Row[]>(`select id,lot,auction_date from china order by auction_date desc limit 0,${lotLimit}`),
+    ajesSql<Row[]>(`select * from main order by auction_date desc limit 0,${lotLimit}`),
+    ajesSql<Row[]>(`select * from china order by auction_date desc limit 0,${lotLimit}`),
     ajesSql<Row[]>(`select marka_name,model_name from main order by auction_date desc limit 0,${hierarchyLimit}`),
     ajesSql<Row[]>(`select marka_name,model_name from china order by year desc limit 0,${hierarchyLimit}`),
   ]);
 
-  const lots: SeoSitemapLot[] = [];
+  const lotsByKey = new Map<string, SeoSitemapLot>();
   const collections = new Map<string, SeoSitemapCollection>();
 
   for (const [market, rows] of [
@@ -151,10 +154,19 @@ async function loadSitemapData() {
     ["china", chinaLotsRaw],
   ] as const) {
     for (const row of Array.isArray(rows) ? rows : []) {
-      const id = pick(row, ["ID", "id", "LOT", "lot"]);
+      const id = pick(row, ["ID", "id"]) || pick(row, ["LOT", "lot"]);
       if (!id) continue;
+
       const lastModified = pick(row, ["AUCTION_DATE", "auction_date"]);
-      lots.push({ market, id, ...(lastModified ? { lastModified } : {}) });
+      const key = `${market}|${id}`;
+
+      if (!lotsByKey.has(key)) {
+        lotsByKey.set(key, {
+          market,
+          id,
+          ...(lastModified ? { lastModified } : {}),
+        });
+      }
     }
   }
 
@@ -182,11 +194,11 @@ async function loadSitemapData() {
   }
 
   return {
-    lots,
+    lots: Array.from(lotsByKey.values()),
     collections: Array.from(collections.values()),
   };
 }
 
-export const getSeoSitemapData = unstable_cache(loadSitemapData, ["mosaicauto-seo-sitemap-v1"], {
+export const getSeoSitemapData = unstable_cache(loadSitemapData, ["mosaicauto-seo-sitemap-v2"], {
   revalidate: 60 * 60,
 });
