@@ -69,11 +69,28 @@ export async function getJapanLotServer(id: string) {
   const value = clean(decodeURIComponent(id || ""));
   if (!value) return null;
 
-  const rows = await ajesSql<Row[]>(
+  const mainRows = await ajesSql<Row[]>(
     `select * from main where ID=${sqlValue(value)} or LOT=${sqlValue(value)} limit 0,1`
   );
-  const row = Array.isArray(rows) ? rows[0] : null;
-  return row ? mapCar(row) : null;
+  const mainRow = Array.isArray(mainRows) ? mainRows[0] : null;
+  if (mainRow) return mapCar(mainRow);
+
+  const attempts = [
+    `select * from stats where auction_type=2 and ID=${sqlValue(value)} limit 0,1`,
+    `select * from stats where auction_type=2 and LOT=${sqlValue(value)} limit 0,1`,
+  ];
+
+  for (const sql of attempts) {
+    try {
+      const rows = await ajesSql<Row[]>(sql);
+      const row = Array.isArray(rows) ? rows[0] : null;
+      if (row) return mapCar(row);
+    } catch {
+      // Исторический источник может отличаться по доступным полям; пробуем следующий вариант.
+    }
+  }
+
+  return null;
 }
 
 export async function getJapanSeoBrands(): Promise<SeoDictionaryItem[]> {
