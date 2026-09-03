@@ -134,8 +134,8 @@ export async function getChinaSeoCars(brand: string, model?: string, limit = 12)
 
 async function loadSitemapData() {
   // AJES фактически ограничивает крупные выборки примерно 500 строками.
-  // Для лотов важно использовать select *, потому что проекции ID/LOT в AJES
-  // могут возвращаться в TAG-полях и давать невалидные URL в sitemap.
+  // Для лотов используем select *, потому что проекции ID/LOT у этого источника
+  // могут возвращаться через TAG-поля и тогда формируют невалидные URL.
   const lotLimit = 500;
   const hierarchyLimit = 6000;
 
