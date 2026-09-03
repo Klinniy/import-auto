@@ -69,15 +69,26 @@ export async function getJapanLotServer(id: string) {
   const value = clean(decodeURIComponent(id || ""));
   if (!value) return null;
 
-  const mainRows = await ajesSql<Row[]>(
-    `select * from main where ID=${sqlValue(value)} or LOT=${sqlValue(value)} limit 0,1`
-  );
-  const mainRow = Array.isArray(mainRows) ? mainRows[0] : null;
-  if (mainRow) return mapCar(mainRow);
+  // AJES detail queries are intentionally executed one field at a time.
+  // The provider's SQL parser is not reliable with OR in detail lookups.
+  for (const sql of [
+    `select * from main where id=${sqlValue(value)} limit 0,1`,
+    `select * from main where lot=${sqlValue(value)} limit 0,1`,
+  ]) {
+    try {
+      const rows = await ajesSql<Row[]>(sql);
+      const row = Array.isArray(rows) ? rows[0] : null;
+      if (row) return mapCar(row);
+    } catch {
+      // Try the next exact lookup.
+    }
+  }
 
   const attempts = [
     `select * from stats where auction_type=2 and ID=${sqlValue(value)} limit 0,1`,
+    `select * from stats where auction_type=2 and id=${sqlValue(value)} limit 0,1`,
     `select * from stats where auction_type=2 and LOT=${sqlValue(value)} limit 0,1`,
+    `select * from stats where auction_type=2 and lot=${sqlValue(value)} limit 0,1`,
   ];
 
   for (const sql of attempts) {
@@ -149,24 +160,38 @@ async function loadSitemapData() {
   const lotsByKey = new Map<string, SeoSitemapLot>();
   const collections = new Map<string, SeoSitemapCollection>();
 
-  for (const [market, rows] of [
-    ["japan", japanLotsRaw],
-    ["china", chinaLotsRaw],
-  ] as const) {
-    for (const row of Array.isArray(rows) ? rows : []) {
-      const id = pick(row, ["ID", "id"]) || pick(row, ["LOT", "lot"]);
-      if (!id) continue;
+  for (const row of Array.isArray(japanLotsRaw) ? japanLotsRaw : []) {
+    // Japan catalog links use ID first and LOT only as a fallback.
+    const id = pick(row, ["ID", "id"]) || pick(row, ["LOT", "lot"]);
+    if (!id) continue;
 
-      const lastModified = pick(row, ["AUCTION_DATE", "auction_date"]);
-      const key = `${market}|${id}`;
+    const lastModified = pick(row, ["AUCTION_DATE", "auction_date"]);
+    const key = `japan|${id}`;
 
-      if (!lotsByKey.has(key)) {
-        lotsByKey.set(key, {
-          market,
-          id,
-          ...(lastModified ? { lastModified } : {}),
-        });
-      }
+    if (!lotsByKey.has(key)) {
+      lotsByKey.set(key, {
+        market: "japan",
+        id,
+        ...(lastModified ? { lastModified } : {}),
+      });
+    }
+  }
+
+  for (const row of Array.isArray(chinaLotsRaw) ? chinaLotsRaw : []) {
+    // China catalog links intentionally use LOT first. Keep sitemap URLs identical
+    // to the URLs a user gets by opening the same car from the public catalog.
+    const id = pick(row, ["LOT", "lot"]) || pick(row, ["ID", "id"]);
+    if (!id) continue;
+
+    const lastModified = pick(row, ["AUCTION_DATE", "auction_date"]);
+    const key = `china|${id}`;
+
+    if (!lotsByKey.has(key)) {
+      lotsByKey.set(key, {
+        market: "china",
+        id,
+        ...(lastModified ? { lastModified } : {}),
+      });
     }
   }
 
@@ -199,6 +224,6 @@ async function loadSitemapData() {
   };
 }
 
-export const getSeoSitemapData = unstable_cache(loadSitemapData, ["mosaicauto-seo-sitemap-v2"], {
+export const getSeoSitemapData = unstable_cache(loadSitemapData, ["mosaicauto-seo-sitemap-v3"], {
   revalidate: 60 * 60,
 });
