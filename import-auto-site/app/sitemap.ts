@@ -2,9 +2,7 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
 import { getSeoSitemapData, seoSlug } from "@/lib/seo/catalog-data";
 
-export const dynamic = "force-dynamic";
-
-const staticEntries: MetadataRoute.Sitemap = [
+const basePages: MetadataRoute.Sitemap = [
   { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
   { url: absoluteUrl("/japan"), changeFrequency: "daily", priority: 0.9 },
   { url: absoluteUrl("/catalog"), changeFrequency: "hourly", priority: 0.9 },
@@ -15,50 +13,39 @@ const staticEntries: MetadataRoute.Sitemap = [
   { url: absoluteUrl("/how-to-buy"), changeFrequency: "monthly", priority: 0.7 },
 ];
 
-function safeLastModified(value?: string) {
-  if (!value) return undefined;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const data = await getSeoSitemapData();
 
-    const collectionEntries: MetadataRoute.Sitemap = data.collections.map((item) => {
-      const root = item.market === "japan" ? "/japan/brand" : "/china/brand";
+    const lotPages: MetadataRoute.Sitemap = data.lots.map((lot) => ({
+      url: absoluteUrl(
+        lot.market === "japan"
+          ? `/catalog/${encodeURIComponent(lot.id)}`
+          : `/china/${encodeURIComponent(lot.id)}`
+      ),
+      changeFrequency: "daily",
+      priority: 0.65,
+      ...(lot.lastModified ? { lastModified: lot.lastModified } : {}),
+    }));
+
+    const collectionPages: MetadataRoute.Sitemap = data.collections.map((item) => {
+      const brand = seoSlug(item.brand);
+      const model = item.model ? seoSlug(item.model) : "";
       const path = item.model
-        ? `${root}/${seoSlug(item.brand)}/${seoSlug(item.model)}`
-        : `${root}/${seoSlug(item.brand)}`;
+        ? `/${item.market}/brand/${brand}/${model}`
+        : `/${item.market}/brand/${brand}`;
 
       return {
         url: absoluteUrl(path),
-        changeFrequency: "daily" as const,
-        priority: item.model ? 0.65 : 0.7,
+        changeFrequency: "daily",
+        priority: item.model ? 0.7 : 0.75,
       };
     });
 
-    const lotEntries: MetadataRoute.Sitemap = data.lots.map((item) => ({
-      url: absoluteUrl(
-        item.market === "japan"
-          ? `/catalog/${encodeURIComponent(item.id)}`
-          : `/china/${encodeURIComponent(item.id)}`
-      ),
-      ...(safeLastModified(item.lastModified)
-        ? { lastModified: safeLastModified(item.lastModified) }
-        : {}),
-      changeFrequency: "daily" as const,
-      priority: 0.6,
-    }));
-
-    const deduped = new Map<string, MetadataRoute.Sitemap[number]>();
-    [...staticEntries, ...collectionEntries, ...lotEntries].forEach((entry) => {
-      deduped.set(entry.url, entry);
-    });
-
-    return Array.from(deduped.values());
+    return [...basePages, ...collectionPages, ...lotPages];
   } catch {
-    // Если внешний каталог временно недоступен, базовый sitemap всё равно остаётся валидным.
-    return staticEntries;
+    // Поисковики всё равно получают стабильный базовый sitemap,
+    // если внешний каталог временно недоступен.
+    return basePages;
   }
 }
