@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HardHomeNavigation from "@/components/HardHomeNavigation";
+import ManagerContactHub from "@/components/ManagerContactHub";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MosaicAuto — автомобили с аукционов Японии под ключ",
-  description: "Автомобили из Японии, Кореи и Китая. Аукционы, статистика, расчёт стоимости и доставка под ключ.",
+  description:
+    "Автомобили из Японии, Кореи и Китая. Аукционы, статистика, расчёт стоимости и доставка под ключ.",
 };
 
 export default function RootLayout({
@@ -23,8 +25,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}        
-              <HardHomeNavigation />
+      <body>
+        {children}
+        <HardHomeNavigation />
+        <ManagerContactHub />
       </body>
     </html>
   );
