@@ -9,7 +9,8 @@
     "lint": "eslint",
     "audit:calculator:japan": "node scripts/audit-japan-calculator.mjs",
     "test:audit:calculator:japan": "node --test scripts/audit-japan-calculator.test.mjs",
-    "test:route:calculator:japan": "node --test scripts/japan-route-logic.test.mjs scripts/lot-price-selection.test.mjs"
+    "test:route:calculator:japan": "node --test scripts/japan-route-logic.test.mjs scripts/lot-price-selection.test.mjs",
+    "test:route:calculator:china": "node --test scripts/china-route-parity.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^7.8.0",
