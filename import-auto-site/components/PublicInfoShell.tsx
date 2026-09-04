@@ -1,13 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import PublicSiteHeader from "@/components/PublicSiteHeader";
 import { MANAGER_PHONE, MANAGER_PHONE_E164, MAX_URL } from "@/lib/seo";
-
-const NAV_ITEMS = [
-  { href: "/about", label: "О компании" },
-  { href: "/how-to-buy", label: "Как купить" },
-  { href: "/delivery", label: "Доставка" },
-  { href: "/contacts", label: "Контакты" },
-];
 
 export function InfoCard({
   title,
@@ -73,32 +67,7 @@ export default function PublicInfoShell({
 }) {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-4 lg:px-6">
-          <Link href="/" className="flex items-center gap-3" aria-label="MosaicAuto">
-            <img
-              src="/brand/mosaicauto-logo.svg"
-              alt="MosaicAuto"
-              className="h-11 w-11 shrink-0 object-contain"
-            />
-            <span className="text-lg font-black tracking-[-0.045em] text-[#07152f]">
-              Mosaic<span className="text-[#ff2d3d]">Auto</span>
-            </span>
-          </Link>
-
-          <nav className="flex flex-wrap items-center gap-2" aria-label="Информация о покупке">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-xl bg-slate-100 px-3.5 py-2.5 text-xs font-black text-slate-600 transition hover:bg-[#07152f] hover:text-white sm:text-sm"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       <div className="mx-auto max-w-[1200px] px-4 py-8 lg:px-6 lg:py-12">
         <section className="rounded-[2rem] bg-[#07152f] p-6 text-white shadow-xl shadow-slate-300/60 sm:p-8 lg:p-10">
