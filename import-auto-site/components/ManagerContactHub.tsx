@@ -37,41 +37,52 @@ function MaxIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-function patchPurchaseButtons() {
-  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("button"));
+function patchPurchaseButton(button: HTMLButtonElement) {
+  if (button.dataset.mosaicautoContactPatched === "1") return;
 
-  for (const button of buttons) {
-    const text = (button.textContent || "").replace(/\s+/g, " ").trim();
-    if (!text.includes("Обсудить покупку") && !text.includes("Обсудить детали")) continue;
+  const text = (button.textContent || "").replace(/\s+/g, " ").trim();
+  if (!text.includes("Обсудить покупку") && !text.includes("Обсудить детали")) return;
 
-    button.dataset.mosaicautoContactTrigger = "1";
-    button.setAttribute("aria-label", "Обсудить детали с менеджером");
+  // Mark BEFORE changing DOM. This makes our own mutations idempotent and prevents
+  // MutationObserver from repeatedly rewriting the same button forever.
+  button.dataset.mosaicautoContactPatched = "1";
+  button.dataset.mosaicautoContactTrigger = "1";
+  button.setAttribute("aria-label", "Обсудить детали с менеджером");
 
-    const content = button.querySelector<HTMLElement>(":scope > span");
-    if (content && content.firstChild?.nodeType === Node.TEXT_NODE) {
+  const content = button.querySelector<HTMLElement>(":scope > span");
+  if (content && content.firstChild?.nodeType === Node.TEXT_NODE) {
+    if (content.firstChild.textContent !== "Обсудить детали ") {
       content.firstChild.textContent = "Обсудить детали ";
-    } else {
-      button.textContent = "Обсудить детали →";
+    }
+  } else if (text !== "Обсудить детали →") {
+    button.textContent = "Обсудить детали →";
+  }
+
+  const section = button.closest("section");
+  if (!section) return;
+
+  for (const node of Array.from(section.querySelectorAll<HTMLElement>("div,p"))) {
+    const value = (node.textContent || "").replace(/\s+/g, " ").trim();
+
+    if (value === "Проверим лот и обсудим покупку") {
+      node.textContent = "Свяжитесь с менеджером по этому автомобилю";
     }
 
-    const section = button.closest("section");
-    if (!section) continue;
-
-    for (const node of Array.from(section.querySelectorAll<HTMLElement>("div,p"))) {
-      const value = (node.textContent || "").replace(/\s+/g, " ").trim();
-
-      if (value === "Проверим лот и обсудим покупку") {
-        node.textContent = "Свяжитесь с менеджером по этому автомобилю";
-      }
-
-      if (value.startsWith("Оставьте номер — свяжемся именно по этому автомобилю")) {
-        node.textContent = "Позвоните или напишите в MAX — ответим на вопросы по выбранному автомобилю.";
-      }
-
-      if (value === "Данные этого лота уже добавятся в заявку") {
-        node.textContent = "Выберите удобный способ связи";
-      }
+    if (value.startsWith("Оставьте номер — свяжемся именно по этому автомобилю")) {
+      node.textContent = "Позвоните или напишите в MAX — ответим на вопросы по выбранному автомобилю.";
     }
+
+    if (value === "Данные этого лота уже добавятся в заявку") {
+      node.textContent = "Выберите удобный способ связи";
+    }
+  }
+}
+
+function patchPurchaseButtons(root: ParentNode = document) {
+  if (root instanceof HTMLButtonElement) patchPurchaseButton(root);
+
+  for (const button of Array.from(root.querySelectorAll<HTMLButtonElement>("button"))) {
+    patchPurchaseButton(button);
   }
 }
 
@@ -114,7 +125,13 @@ export default function ManagerContactHub() {
 
     patchPurchaseButtons();
 
-    const observer = new MutationObserver(() => patchPurchaseButtons());
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (node instanceof HTMLElement) patchPurchaseButtons(node);
+        }
+      }
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     function interceptPurchaseCta(event: MouseEvent) {
