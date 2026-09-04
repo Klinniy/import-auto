@@ -50,6 +50,24 @@ const capabilities = [
   },
 ];
 
+const infoLinks = [
+  {
+    href: "/about",
+    title: "О MosaicAuto",
+    text: "Как устроен сервис и какие данные доступны при выборе автомобиля.",
+  },
+  {
+    href: "/delivery",
+    title: "Доставка",
+    text: "Этапы после покупки: отправка, таможня, лаборатория и доставка в город.",
+  },
+  {
+    href: "/contacts",
+    title: "Контакты",
+    text: "Телефон менеджера и MAX для обсуждения конкретного автомобиля.",
+  },
+];
+
 function Flag({ type }: { type: "jp" | "cn" }) {
   if (type === "jp") {
     return (
@@ -182,6 +200,33 @@ function HowToBuySection() {
   );
 }
 
+function InformationSection() {
+  return (
+    <section className="mt-10 rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8">
+      <div className="max-w-3xl">
+        <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">Перед покупкой</div>
+        <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#07152f] sm:text-3xl">Информация о сервисе, доставке и контактах</h2>
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {infoLinks.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-2xl bg-[#f7f9fc] p-5 ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+          >
+            <h3 className="text-lg font-black text-[#07152f]">{item.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{item.text}</p>
+            <div className="mt-4 text-sm font-black text-[#ff2d3d]">Подробнее →</div>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-5 text-xs font-bold text-slate-400">
+        <Link href="/privacy" className="hover:text-[#07152f]">Обработка персональных данных</Link>
+      </div>
+    </section>
+  );
+}
+
 function ContactSection() {
   return (
     <section className="mt-10 mb-16 overflow-hidden rounded-[2rem] bg-[#07152f] px-6 py-7 text-white shadow-xl shadow-slate-300/60 sm:px-8 lg:flex lg:items-center lg:justify-between lg:gap-8">
@@ -218,6 +263,15 @@ export default function HomeLanding() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <Link href="/about" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
+              О сервисе
+            </Link>
+            <Link href="/delivery" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
+              Доставка
+            </Link>
+            <Link href="/contacts" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
+              Контакты
+            </Link>
             <Link href="/how-to-buy" className="hidden rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#07152f] hover:text-white sm:inline-flex">
               Как купить
             </Link>
@@ -229,6 +283,7 @@ export default function HomeLanding() {
         <HeroSection />
         <CapabilitiesSection />
         <HowToBuySection />
+        <InformationSection />
         <ContactSection />
       </div>
     </main>
