@@ -10,7 +10,10 @@ const BASE_SITEMAP: MetadataRoute.Sitemap = [
   { url: absoluteUrl("/calculator/japan"), changeFrequency: "monthly", priority: 0.8 },
   { url: absoluteUrl("/china"), changeFrequency: "daily", priority: 0.9 },
   { url: absoluteUrl("/calculator/china"), changeFrequency: "monthly", priority: 0.8 },
-  { url: absoluteUrl("/how-to-buy"), changeFrequency: "monthly", priority: 0.7 },
+  { url: absoluteUrl("/how-to-buy"), changeFrequency: "monthly", priority: 0.76 },
+  { url: absoluteUrl("/about"), changeFrequency: "monthly", priority: 0.7 },
+  { url: absoluteUrl("/delivery"), changeFrequency: "monthly", priority: 0.72 },
+  { url: absoluteUrl("/contacts"), changeFrequency: "monthly", priority: 0.68 },
 ];
 
 function safeDate(value?: string) {

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-
-const PHONE_DISPLAY = "+7 916 712-73-06";
-const PHONE_HREF = "tel:+79167127306";
-const MAX_HREF = "https://max.ru/u/f9LHodD0cOI_qf3LXsnjJrhrQP1KGWSV8M01vyrAEtwN22MUaYWCjDGCd6U";
+import PublicInfoShell from "@/components/PublicInfoShell";
 
 export const metadata: Metadata = {
   title: "Как купить автомобиль",
-  description: "Как выбрать автомобиль из Японии или Китая, рассчитать стоимость и пройти основные этапы покупки и доставки.",
+  description: "Как выбрать автомобиль из Японии или Китая, рассчитать стоимость, проверить основные данные и пройти этапы покупки и доставки.",
 };
 
 const chooseSteps = [
@@ -68,6 +65,21 @@ const buySteps = [
   },
 ];
 
+const beforePurchase = [
+  {
+    title: "Проверьте конкретный лот",
+    text: "Сравнивайте не только модель и год, но и пробег, состояние, оценку, фотографии и доступные документы конкретного автомобиля.",
+  },
+  {
+    title: "Считайте стоимость как ориентир",
+    text: "Калькулятор помогает понять порядок итоговой суммы, но актуальные расходы по конкретному автомобилю нужно подтвердить перед покупкой.",
+  },
+  {
+    title: "Уточните маршрут доставки",
+    text: "Страна покупки, место автомобиля и город назначения влияют на маршрут, сроки и расходы после покупки.",
+  },
+];
+
 function StepList({ items }: { items: typeof chooseSteps }) {
   return (
     <div className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-200/60 ring-1 ring-slate-200">
@@ -88,70 +100,66 @@ function StepList({ items }: { items: typeof chooseSteps }) {
 
 export default function HowToBuyPage() {
   return (
-    <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
-          <Link href="/" className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-[#07152f] hover:text-white">
-            ← На главную
-          </Link>
-          <div className="text-sm font-black text-[#07152f]">Как купить</div>
+    <PublicInfoShell
+      currentPath="/how-to-buy"
+      eyebrow="Как купить"
+      title="Как купить автомобиль из Японии или Китая"
+      intro="Ниже собрали весь путь: от самостоятельного поиска и расчёта до покупки, оформления и получения автомобиля."
+    >
+      <section>
+        <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">Самостоятельный подбор</div>
+        <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Как найти подходящий автомобиль</h2>
+        <StepList items={chooseSteps} />
+      </section>
+
+      <section>
+        <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">После выбора</div>
+        <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Как проходит покупка</h2>
+        <StepList items={buySteps} />
+      </section>
+
+      <section>
+        <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">Перед решением</div>
+        <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Что важно подтвердить до покупки</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {beforePurchase.map((item) => (
+            <article key={item.title} className="rounded-[1.5rem] bg-white p-5 shadow-lg shadow-slate-200/50 ring-1 ring-slate-200">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ff2d3d] text-sm font-black text-white">✓</div>
+              <h3 className="mt-4 text-lg font-black text-[#07152f]">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{item.text}</p>
+            </article>
+          ))}
         </div>
-      </header>
+      </section>
 
-      <div className="mx-auto max-w-[1200px] px-4 py-8 lg:px-6 lg:py-12">
-        <section className="rounded-[2rem] bg-[#07152f] p-6 text-white shadow-xl shadow-slate-300/60 sm:p-8 lg:p-10">
-          <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff5662]">MosaicAuto</div>
-          <h1 className="mt-3 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.055em] sm:text-5xl">
-            Как купить автомобиль из Японии или Китая
-          </h1>
-          <p className="mt-5 max-w-3xl text-base leading-7 text-white/68 sm:text-lg">
-            Ниже собрали весь путь: от самостоятельного поиска и расчёта до покупки, оформления и получения автомобиля.
-          </p>
-        </section>
+      <section className="grid gap-4 md:grid-cols-2">
+        <Link href="/japan" className="rounded-[1.6rem] bg-white p-6 shadow-lg shadow-slate-200/60 ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+          <div className="text-xs font-black uppercase tracking-[0.25em] text-[#ff2d3d]">Япония</div>
+          <h2 className="mt-2 text-2xl font-black">Авто с японских аукционов</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-500">Перейти к поиску автомобилей, статистике продаж и японскому калькулятору.</p>
+          <div className="mt-5 text-sm font-black text-[#07152f]">Перейти →</div>
+        </Link>
+        <Link href="/china" className="rounded-[1.6rem] bg-white p-6 shadow-lg shadow-slate-200/60 ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+          <div className="text-xs font-black uppercase tracking-[0.25em] text-[#ff2d3d]">Китай</div>
+          <h2 className="mt-2 text-2xl font-black">Автомобили из Китая</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-500">Перейти к актуальным предложениям и калькулятору стоимости автомобиля из Китая.</p>
+          <div className="mt-5 text-sm font-black text-[#07152f]">Перейти →</div>
+        </Link>
+      </section>
 
-        <section className="mt-8">
-          <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">Самостоятельный подбор</div>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Как найти подходящий автомобиль</h2>
-          <StepList items={chooseSteps} />
-        </section>
-
-        <section className="mt-10">
-          <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">После выбора</div>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Как проходит покупка</h2>
-          <StepList items={buySteps} />
-        </section>
-
-        <section className="mt-10 grid gap-4 md:grid-cols-2">
-          <Link href="/japan" className="rounded-[1.6rem] bg-white p-6 shadow-lg shadow-slate-200/60 ring-1 ring-slate-200 transition hover:-translate-y-0.5">
-            <div className="text-xs font-black uppercase tracking-[0.25em] text-[#ff2d3d]">Япония</div>
-            <h2 className="mt-2 text-2xl font-black">Авто с японских аукционов</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">Перейти к поиску автомобилей, статистике продаж и японскому калькулятору.</p>
-            <div className="mt-5 text-sm font-black text-[#07152f]">Перейти →</div>
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[
+          ["/about", "О MosaicAuto", "Какие данные и инструменты доступны на сайте."],
+          ["/delivery", "Доставка", "Этапы после покупки и что влияет на маршрут."],
+          ["/contacts", "Контакты", "Телефон менеджера и MAX."],
+        ].map(([href, title, text]) => (
+          <Link key={href} href={href} className="rounded-2xl bg-[#f7f9fc] p-5 ring-1 ring-slate-200 transition hover:bg-white hover:shadow-lg">
+            <div className="font-black text-[#07152f]">{title}</div>
+            <div className="mt-2 text-sm leading-6 text-slate-500">{text}</div>
+            <div className="mt-4 text-sm font-black text-[#ff2d3d]">Подробнее →</div>
           </Link>
-          <Link href="/china" className="rounded-[1.6rem] bg-white p-6 shadow-lg shadow-slate-200/60 ring-1 ring-slate-200 transition hover:-translate-y-0.5">
-            <div className="text-xs font-black uppercase tracking-[0.25em] text-[#ff2d3d]">Китай</div>
-            <h2 className="mt-2 text-2xl font-black">Автомобили из Китая</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">Перейти к актуальным предложениям и калькулятору стоимости автомобиля из Китая.</p>
-            <div className="mt-5 text-sm font-black text-[#07152f]">Перейти →</div>
-          </Link>
-        </section>
-
-        <section className="mt-10 mb-12 rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8 lg:flex lg:items-center lg:justify-between lg:gap-8">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">Нужна помощь?</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.04em]">Свяжитесь с менеджером</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">Если уже нашли автомобиль или хотите обсудить подбор, можно сразу позвонить или написать в MAX.</p>
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:mt-0 lg:min-w-[470px]">
-            <a href={PHONE_HREF} className="rounded-xl bg-[#ff2d3d] px-5 py-4 text-center text-sm font-black text-white transition hover:bg-[#07152f]">
-              Позвонить · {PHONE_DISPLAY}
-            </a>
-            <a href={MAX_HREF} target="_blank" rel="noreferrer" className="rounded-xl bg-[#07152f] px-5 py-4 text-center text-sm font-black text-white transition hover:bg-[#ff2d3d]">
-              Написать в MAX
-            </a>
-          </div>
-        </section>
-      </div>
-    </main>
+        ))}
+      </section>
+    </PublicInfoShell>
   );
 }

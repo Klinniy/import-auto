@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PublicSiteHeader from "@/components/PublicSiteHeader";
 
 const PHONE_DISPLAY = "+7 916 712-73-06";
 const PHONE_HREF = "tel:+79167127306";
@@ -47,6 +48,24 @@ const capabilities = [
   {
     title: "Понятный путь покупки",
     text: "Основные этапы от выбора автомобиля до получения собраны в отдельной инструкции.",
+  },
+];
+
+const infoLinks = [
+  {
+    href: "/about",
+    title: "О MosaicAuto",
+    text: "Как устроен сервис и какие данные доступны при выборе автомобиля.",
+  },
+  {
+    href: "/delivery",
+    title: "Доставка",
+    text: "Этапы после покупки: отправка, таможня, лаборатория и доставка в город.",
+  },
+  {
+    href: "/contacts",
+    title: "Контакты",
+    text: "Телефон менеджера и MAX для обсуждения конкретного автомобиля.",
   },
 ];
 
@@ -182,6 +201,33 @@ function HowToBuySection() {
   );
 }
 
+function InformationSection() {
+  return (
+    <section className="mt-10 rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8">
+      <div className="max-w-3xl">
+        <div className="text-xs font-black uppercase tracking-[0.3em] text-[#ff2d3d]">Перед покупкой</div>
+        <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#07152f] sm:text-3xl">Информация о сервисе, доставке и контактах</h2>
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {infoLinks.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-2xl bg-[#f7f9fc] p-5 ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+          >
+            <h3 className="text-lg font-black text-[#07152f]">{item.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{item.text}</p>
+            <div className="mt-4 text-sm font-black text-[#ff2d3d]">Подробнее →</div>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-5 text-xs font-bold text-slate-400">
+        <Link href="/privacy" className="hover:text-[#07152f]">Обработка персональных данных</Link>
+      </div>
+    </section>
+  );
+}
+
 function ContactSection() {
   return (
     <section className="mt-10 mb-16 overflow-hidden rounded-[2rem] bg-[#07152f] px-6 py-7 text-white shadow-xl shadow-slate-300/60 sm:px-8 lg:flex lg:items-center lg:justify-between lg:gap-8">
@@ -205,30 +251,13 @@ function ContactSection() {
 export default function HomeLanding() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:py-4 lg:px-6">
-          <Link href="/" className="flex items-center gap-3" aria-label="MosaicAuto">
-            <img src="/brand/mosaicauto-logo.svg" alt="MosaicAuto" className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14" />
-            <span className="leading-none">
-              <span className="block text-xl font-black tracking-[-0.05em] text-[#020b1f] sm:text-[22px]">
-                Mosaic<span className="text-[#ff2d3d]">Auto</span>
-              </span>
-              <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.28em] text-slate-400 sm:text-[10px]">импорт автомобилей</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Link href="/how-to-buy" className="hidden rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#07152f] hover:text-white sm:inline-flex">
-              Как купить
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 lg:px-6 lg:py-10">
         <HeroSection />
         <CapabilitiesSection />
         <HowToBuySection />
+        <InformationSection />
         <ContactSection />
       </div>
     </main>
