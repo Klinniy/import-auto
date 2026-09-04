@@ -7,7 +7,7 @@ const MAX_HREF = "https://max.ru/u/f9LHodD0cOI_qf3LXsnjJrhrQP1KGWSV8M01vyrAEtwN2
 
 export const metadata: Metadata = {
   title: "Как купить автомобиль",
-  description: "Как выбрать автомобиль из Японии или Китая, рассчитать стоимость и пройти основные этапы покупки и доставки.",
+  description: "Как выбрать автомобиль из Японии или Китая, рассчитать стоимость, проверить основные данные и пройти этапы покупки и доставки.",
 };
 
 const chooseSteps = [
@@ -68,6 +68,21 @@ const buySteps = [
   },
 ];
 
+const beforePurchase = [
+  {
+    title: "Проверьте конкретный лот",
+    text: "Сравнивайте не только модель и год, но и пробег, состояние, оценку, фотографии и доступные документы конкретного автомобиля.",
+  },
+  {
+    title: "Считайте стоимость как ориентир",
+    text: "Калькулятор помогает понять порядок итоговой суммы, но актуальные расходы по конкретному автомобилю нужно подтвердить перед покупкой.",
+  },
+  {
+    title: "Уточните маршрут доставки",
+    text: "Страна покупки, место автомобиля и город назначения влияют на маршрут, сроки и расходы после покупки.",
+  },
+];
+
 function StepList({ items }: { items: typeof chooseSteps }) {
   return (
     <div className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-200/60 ring-1 ring-slate-200">
@@ -90,11 +105,15 @@ export default function HowToBuyPage() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
       <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-4 lg:px-6">
           <Link href="/" className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-[#07152f] hover:text-white">
             ← На главную
           </Link>
-          <div className="text-sm font-black text-[#07152f]">Как купить</div>
+          <nav className="flex flex-wrap gap-2 text-sm font-black">
+            <Link href="/about" className="rounded-xl px-3 py-2 text-slate-500 hover:bg-slate-100 hover:text-[#07152f]">О сервисе</Link>
+            <Link href="/delivery" className="rounded-xl px-3 py-2 text-slate-500 hover:bg-slate-100 hover:text-[#07152f]">Доставка</Link>
+            <Link href="/contacts" className="rounded-xl px-3 py-2 text-slate-500 hover:bg-slate-100 hover:text-[#07152f]">Контакты</Link>
+          </nav>
         </div>
       </header>
 
@@ -121,6 +140,20 @@ export default function HowToBuyPage() {
           <StepList items={buySteps} />
         </section>
 
+        <section className="mt-10">
+          <div className="text-xs font-black uppercase tracking-[0.28em] text-[#ff2d3d]">Перед решением</div>
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">Что важно подтвердить до покупки</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {beforePurchase.map((item) => (
+              <article key={item.title} className="rounded-[1.5rem] bg-white p-5 shadow-lg shadow-slate-200/50 ring-1 ring-slate-200">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ff2d3d] text-sm font-black text-white">✓</div>
+                <h3 className="mt-4 text-lg font-black text-[#07152f]">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="mt-10 grid gap-4 md:grid-cols-2">
           <Link href="/japan" className="rounded-[1.6rem] bg-white p-6 shadow-lg shadow-slate-200/60 ring-1 ring-slate-200 transition hover:-translate-y-0.5">
             <div className="text-xs font-black uppercase tracking-[0.25em] text-[#ff2d3d]">Япония</div>
@@ -134,6 +167,20 @@ export default function HowToBuyPage() {
             <p className="mt-3 text-sm leading-6 text-slate-500">Перейти к актуальным предложениям и калькулятору стоимости автомобиля из Китая.</p>
             <div className="mt-5 text-sm font-black text-[#07152f]">Перейти →</div>
           </Link>
+        </section>
+
+        <section className="mt-10 grid gap-4 sm:grid-cols-3">
+          {[
+            ["/about", "О MosaicAuto", "Какие данные и инструменты доступны на сайте."],
+            ["/delivery", "Доставка", "Этапы после покупки и что влияет на маршрут."],
+            ["/contacts", "Контакты", "Телефон менеджера и MAX."],
+          ].map(([href, title, text]) => (
+            <Link key={href} href={href} className="rounded-2xl bg-[#f7f9fc] p-5 ring-1 ring-slate-200 transition hover:bg-white hover:shadow-lg">
+              <div className="font-black text-[#07152f]">{title}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-500">{text}</div>
+              <div className="mt-4 text-sm font-black text-[#ff2d3d]">Подробнее →</div>
+            </Link>
+          ))}
         </section>
 
         <section className="mt-10 mb-12 rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8 lg:flex lg:items-center lg:justify-between lg:gap-8">
