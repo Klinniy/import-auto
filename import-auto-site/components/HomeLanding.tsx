@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PublicSiteHeader from "@/components/PublicSiteHeader";
 
 const PHONE_DISPLAY = "+7 916 712-73-06";
 const PHONE_HREF = "tel:+79167127306";
@@ -250,34 +251,7 @@ function ContactSection() {
 export default function HomeLanding() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <header className="border-t-4 border-[#ff2d3d] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:py-4 lg:px-6">
-          <Link href="/" className="flex items-center gap-3" aria-label="MosaicAuto">
-            <img src="/brand/mosaicauto-logo.svg" alt="MosaicAuto" className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14" />
-            <span className="leading-none">
-              <span className="block text-xl font-black tracking-[-0.05em] text-[#020b1f] sm:text-[22px]">
-                Mosaic<span className="text-[#ff2d3d]">Auto</span>
-              </span>
-              <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.28em] text-slate-400 sm:text-[10px]">импорт автомобилей</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Link href="/about" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
-              О сервисе
-            </Link>
-            <Link href="/delivery" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
-              Доставка
-            </Link>
-            <Link href="/contacts" className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-[#07152f] lg:inline-flex">
-              Контакты
-            </Link>
-            <Link href="/how-to-buy" className="hidden rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-black text-[#07152f] transition hover:bg-[#07152f] hover:text-white sm:inline-flex">
-              Как купить
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 lg:px-6 lg:py-10">
         <HeroSection />
