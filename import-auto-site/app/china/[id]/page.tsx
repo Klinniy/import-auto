@@ -5,7 +5,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import ChinaLotTabs from "@/components/ChinaLotTabs";
 import SeoJsonLd from "@/components/SeoJsonLd";
-import { getChinaLot } from "@/lib/china/catalog";
+import { getChinaLotExact } from "@/lib/china/lot-detail";
 import { breadcrumbJsonLd, carJsonLd } from "@/lib/seo";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export const revalidate = 0;
 
 type Params = Promise<{ id: string }> | { id: string };
 
-const getLot = cache(async (id: string) => getChinaLot(id));
+const getLot = cache(async (id: string) => getChinaLotExact(id));
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
