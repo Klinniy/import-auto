@@ -58,16 +58,18 @@ export default function PublicInfoShell({
   intro,
   children,
   contact = true,
+  currentPath = "",
 }: {
   eyebrow: string;
   title: string;
   intro: string;
   children: ReactNode;
   contact?: boolean;
+  currentPath?: string;
 }) {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-[#07152f]">
-      <PublicSiteHeader />
+      <PublicSiteHeader currentPath={currentPath} />
 
       <div className="mx-auto max-w-[1200px] px-4 py-8 lg:px-6 lg:py-12">
         <section className="rounded-[2rem] bg-[#07152f] p-6 text-white shadow-xl shadow-slate-300/60 sm:p-8 lg:p-10">
